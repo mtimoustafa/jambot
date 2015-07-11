@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 ﻿Build started 11-Jul-2015 15:36:35.
      1>Project "C:\Users\emerson\Documents\School\FYDP\jambot\JamBot\JamBot.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
@@ -9,7 +10,39 @@
      1>c1xx : fatal error C1083: Cannot open source file: 'InputChannelReader.cpp': No such file or directory
          Generating Code...
      1>Done Building Project "C:\Users\emerson\Documents\School\FYDP\jambot\JamBot\JamBot.vcxproj" (Build target(s)) -- FAILED.
+=======
+﻿Build started 7/11/2015 4:51:53 PM.
+     1>Project "D:\FYDP\JamBot\JamBot\JamBot.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         D:\Program Files (x86)\Microsoft Visual Studio 12.0 (2013 Pro)\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"Debug\JamBot.pch" /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt BestFitOptimizationAlgorithm.cpp Constructs.cpp Helpers.cpp
+         Helpers.cpp
+         BestFitOptimizationAlgorithm.cpp
+     1>d:\fydp\jambot\jambot\bestfitoptimizationalgorithm.cpp(174): warning C4244: 'argument' : conversion from 'time_t' to 'unsigned int', possible loss of data
+         Generating Code...
+         Skipping... (no relevant changes detected)
+         Constructs.cpp
+       Link:
+         D:\Program Files (x86)\Microsoft Visual Studio 12.0 (2013 Pro)\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"D:\FYDP\JamBot\Debug\JamBot.exe" /INCREMENTAL /NOLOGO /LIBPATH:D:\Workspace\Jambot\libs portaudio_x86.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib libsoundfile.a /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"D:\FYDP\JamBot\Debug\JamBot.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:\FYDP\JamBot\Debug\JamBot.lib" /MACHINE:X86 Debug\JamBot.res
+         Debug\FileIO.obj
+         Debug\Options.obj
+         Debug\Options_private.obj
+         Debug\soundfilehelpers.obj
+         Debug\SoundFileRead.obj
+         Debug\SoundFileWrite.obj
+         Debug\SoundHeader.obj
+         Debug\BestFitOptimizationAlgorithm.obj
+         Debug\Constructs.obj
+         Debug\Helpers.obj
+         Debug\JamBot.obj
+         Debug\stdafx.obj
+         JamBot.vcxproj -> D:\FYDP\JamBot\Debug\JamBot.exe
+     1>Done Building Project "D:\FYDP\JamBot\JamBot\JamBot.vcxproj" (Build target(s)).
+>>>>>>> Stashed changes
 
-Build FAILED.
+Build succeeded.
 
+<<<<<<< Updated upstream
 Time Elapsed 00:00:01.41
+=======
+Time Elapsed 00:00:01.61
+>>>>>>> Stashed changes

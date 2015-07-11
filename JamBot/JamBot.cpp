@@ -3,13 +3,20 @@
 
 #include "stdafx.h"
 #include "JamBot.h"
+#include "BestFitOptimizationAlgorithm.h"
 
 #define MAX_LOADSTRING 100
+
+// Objects definition - name + id
+#define IDC_OPTIALGOTEST_BUTTON 101
+#define IDC_AUDIOINPUTTEST_BUTTON 102
+#define IDC_WAVGENTEST_BUTTON 103
 
 // Global Variables:
 HINSTANCE hInst;								// current instance
 TCHAR szTitle[MAX_LOADSTRING];					// The title bar text
 TCHAR szWindowClass[MAX_LOADSTRING];			// the main window class name
+BestFitOptimizationAlgorithm optiAlgo;
 
 // Forward declarations of functions included in this code module:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
@@ -128,15 +135,67 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	int wmId, wmEvent;
 	PAINTSTRUCT ps;
 	HDC hdc;
+	HWND hWndOptiAlgoButton, hWndAudioInputButton, hWndWavGenButton;
 
 	switch (message)
 	{
+	case WM_CREATE:
+		// Create buttons
+		hWndOptiAlgoButton = CreateWindowEx(NULL,
+			_T("BUTTON"),
+			_T("Test Optimization Algorithm"),
+			WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
+			10,
+			10,
+			250,
+			24,
+			hWnd,
+			(HMENU)IDC_OPTIALGOTEST_BUTTON,
+			GetModuleHandle(NULL),
+			NULL);
+		hWndAudioInputButton = CreateWindowEx(NULL,
+			_T("BUTTON"),
+			_T("Test Audio Input"),
+			WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
+			10,
+			40,
+			250,
+			24,
+			hWnd,
+			(HMENU)IDC_AUDIOINPUTTEST_BUTTON,
+			GetModuleHandle(NULL),
+			NULL);
+		hWndWavGenButton = CreateWindowEx(NULL,
+			_T("BUTTON"),
+			_T("Test Wave Generation"),
+			WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
+			10,
+			70,
+			250,
+			24,
+			hWnd,
+			(HMENU)IDC_WAVGENTEST_BUTTON,
+			GetModuleHandle(NULL),
+			NULL);
+
+		break;
 	case WM_COMMAND:
 		wmId    = LOWORD(wParam);
 		wmEvent = HIWORD(wParam);
 		// Parse the menu selections:
 		switch (wmId)
 		{
+		case IDC_OPTIALGOTEST_BUTTON:
+			// Run optimization algorithm test
+			optiAlgo = BestFitOptimizationAlgorithm();
+			optiAlgo.start();
+			break;
+		case IDC_AUDIOINPUTTEST_BUTTON:
+			// Do audio input test
+			break;
+		case IDC_WAVGENTEST_BUTTON:
+			// Do wav generation test
+			break;
 		case IDM_ABOUT:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
 			break;

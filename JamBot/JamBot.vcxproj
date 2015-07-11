@@ -83,6 +83,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BestFitOptimizationAlgorithm.h" />
     <ClInclude Include="Constants.h" />
     <ClInclude Include="Constructs.h" />
     <ClInclude Include="Helpers.h" />
@@ -102,7 +103,6 @@
     <ClCompile Include="Constructs.cpp" />
     <ClCompile Include="Helpers.cpp" />
     <ClCompile Include="JamBot.cpp" />
-    <ClCompile Include="InputChannelReader.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
