@@ -9,8 +9,8 @@
 // Copyright:     Copyright 2002 Craig Stuart Sapp
 //
 
-#include "..\include\SoundFileWrite.h"
-#include "..\include\soundfilehelpers.h"
+#include "SoundFileWrite.h"
+#include "soundfilehelpers.h"
 
 #include <stdlib.h>
 #include <string.h>

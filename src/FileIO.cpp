@@ -17,9 +17,9 @@
 //                endian format.
 //
 
-#include "..\include\sigConfiguration.h"
+#include "sigConfiguration.h"
 
-#include "..\include\FileIO.h"
+#include "FileIO.h"
 
 #ifndef OLDCPP
    using namespace std;

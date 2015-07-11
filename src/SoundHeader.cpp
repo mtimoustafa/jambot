@@ -9,7 +9,7 @@
 // Syntax:        C++ 
 //
 
-#include "..\include\SoundHeader.h"
+#include "SoundHeader.h"
 
 #include <ctype.h>
 #include <string.h>

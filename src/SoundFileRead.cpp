@@ -10,7 +10,7 @@
 // Syntax:        C++ 
 //
 
-#include "..\include\SoundFileRead.h"
+#include "SoundFileRead.h"
 
 #include <stdlib.h>
 #include <string.h>

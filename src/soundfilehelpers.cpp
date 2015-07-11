@@ -9,7 +9,7 @@
 // Copyright:     Copyright 2002 Craig Stuart Sapp
 //
 
-#include "..\include\soundfilehelpers.h"
+#include "soundfilehelpers.h"
 
 #include <stdlib.h>
 #include <string.h>
