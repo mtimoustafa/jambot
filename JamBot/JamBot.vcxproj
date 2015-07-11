@@ -83,9 +83,11 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Constants.h" />
+    <ClInclude Include="Constructs.h" />
+    <ClInclude Include="Helpers.h" />
     <ClInclude Include="JamBot.h" />
     <ClInclude Include="Resource.h" />
-    <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
@@ -96,6 +98,9 @@
     <ClCompile Include="..\src\SoundFileRead.cpp" />
     <ClCompile Include="..\src\SoundFileWrite.cpp" />
     <ClCompile Include="..\src\SoundHeader.cpp" />
+    <ClCompile Include="BestFitOptimizationAlgorithm.cpp" />
+    <ClCompile Include="Constructs.cpp" />
+    <ClCompile Include="Helpers.cpp" />
     <ClCompile Include="JamBot.cpp" />
     <ClCompile Include="InputChannelReader.cpp" />
     <ClCompile Include="stdafx.cpp">
