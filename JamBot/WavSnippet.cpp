@@ -3,10 +3,12 @@
 
 #include "stdafx.h"
 #include "soundfile.h"
+#include "WavManipulation.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctime>
+#include <vector>
 #include <cmath>
 
 
@@ -17,88 +19,95 @@ using namespace std;
 #include <iostream.h>
 #endif
 
-class WavManipulation {
-
-private:
-	int durationTicks[20];
+//Vector is the best option
 
 
-public : 
+WavManipulation::WavManipulation(){
+	durations = vector<short>();
+	filenames = vector<string>();
+	durationCounter = 0;
+	directoryPath = "";
+}
+WavManipulation::~WavManipulation(){
 
-	static int wavComparison(int argc, char** argv) {
-		char* inputname1 = "C:\\Users\\emerson\\Documents\\Visual Studio 2013\\Projects\\SoundSubTest\\SoundSubTest\\Debug\\crunchy_bass_swag.flv(1).wav";
-		char* inputname2 = "C:\\Users\\emerson\\Documents\\Visual Studio 2013\\Projects\\SoundSubTest\\SoundSubTest\\Debug\\crunchy_bass_swag.flv.wav";
-		char* outputname = "C:\\Users\\emerson\\Documents\\Visual Studio 2013\\Projects\\SoundSubTest\\SoundSubTest\\Debug\\Subtest1.wav";
+}
+///////////////////////////////////////////
+///	wavComparison: Compares a wav file with realtime input
+///					Runs until it finds a match or hits the end of the files
+/// Input: short realTimeBuffer[] - the buffered values of the real time input
+///		   string - directoryPath - the directory path name
+/// Output: char*
 
+string WavManipulation::wavComparison(short realTimeBuffer[]) {
 
-		SoundFileRead  insound1(inputname1);
-		SoundFileRead  insound2(inputname2);
-		SoundFileWrite outsound(outputname, insound1);
-		double exectime;
-		time_t start = time(nullptr);
+	int i, j, channel;
+	int error_counter = 0;
+	double threshold = 0.4;
 
-		int i, channel;
-		int error_counter = 0;
-		double threshold;
-		double sample = 0.0;
-		for (i = 0; i<insound1.getSamples(); i++) {
+	short sample = 0;
+	if (durationCounter > 0){
+		durationCounter--;
+		return;
+	}
+	for (j = 0; j < filenames.size(); j++){
+		string readFile = directoryPath + filenames[j];
+		SoundFileRead  insound1(readFile.c_str());
+		for (i = 0; i < insound1.getSamples(); i++) {
+			if (error_counter == 0){
+				durationCounter = durations[j];
+				break;
+			}
 			for (channel = 0; channel < insound1.getChannels(); channel++) {
-				sample = insound1.getCurrentSampleDouble(channel);
-				sample = sample - insound2.getCurrentSampleDouble(channel);
-				outsound.writeSampleDouble(sample);
+				sample = insound1.getCurrentSample16Bit(channel);
+				sample = sample - realTimeBuffer[i];
+				if (sample > threshold){
+					error_counter--;
+				}
+				else{
+					error_counter++;
+				}
 			}
 			insound1.incrementSample();
-			insound2.incrementSample();
 		}
-		time_t end = time(nullptr);
-		exectime = difftime(end, start);
-		return 0;
-	}
-
-	void snipAudio(string names[], double startTimes[], double durationTimes[], char* filePath, int numofsnips){
-
-		SoundFileRead insound(filePath);
-		SoundHeader header = insound;
-		int startSample = 0;
-		int stopSample = 0;
-		int n = 0;
-		int numSnips = 0;
-
-
-		for (int i = 0; i < numofsnips; i++){
-			durationTicks[i] = ceil(durationTimes[i] / 0.2);
-			string outName = names[i] + ".wav3";
-			SoundFileWrite outsound(outName.c_str(), header);
-			startSample = (int)(startTimes[i] * insound.getSrate() + 0.5);
-			stopSample = (int)((startTimes[i] + 0.2) * insound.getSrate() + 0.5);
-			n = stopSample - startSample;
-			insound.gotoSample(startSample);
-			for (int j = 0; j < n; j++){
-				for (int k = 0; k < header.getChannels(); k++) {
-					double sample = insound.getCurrentSampleDouble(k);
-					outsound.writeSampleDouble(insound.getCurrentSampleDouble(k));
-				}
-				insound.incrementSample();
-			}
-
+		if (error_counter > 0){
+			return filenames[j];
 		}
 	}
-
-};
-
-int _tmain(int argc, _TCHAR* argv[])
-{
-	WavManipulation wav;
-	double exectime;
-	string name[1] = { "Chorus" };
-	double start[1] = { 3.0 };
-	int num = sizeof(start)/ sizeof(start[0]);
-	double duration[1] = { 1.0 };
-	char* file = "C:\\Users\\emerson\\Documents\\Visual Studio 2013\\Projects\\WavSnippet\\WavSnippet\\crunchy_bass_swag.flv.wav";
-	time_t startTime = time(nullptr);
-	wav.snipAudio(name, start, duration, file, num);
-	time_t endTime = time(nullptr);
-	exectime = difftime(endTime, startTime);
-	return 0;
+	return "No Equal Found";
 }
+///////////////////////////////////////////
+///	snipAudio: Snips the audio file into sections, all wav files using the names in names vector
+/// Input: vector: names - The names of each sections in order of the time they appear in the song
+///		   vector: startTimes - The times (in seconds) of each section
+///		   vector: durationTimes - The length (in seconds) of each section
+///		   filepath - The path of the file being cut
+/// Output: VOID
 
+void WavManipulation::snipAudio(vector<string> names, vector<short> startTimes, vector<short> durationTimes, string filePath){
+
+	SoundFileRead insound(filePath.c_str());
+	SoundHeader header = insound;
+	int startSample = 0;
+	int stopSample = 0;
+	int n = 0;
+	int numSnips = 0;
+
+	for (int i = 0; i < startTimes.size(); i++){
+		durations.push_back((int)ceil(durationTimes[i] / 0.2));  //store durations as a number of 200ms bursts
+		string outName = names[i] + ".wav";
+		filenames.push_back(names[i]); //store file names for the sections
+		SoundFileWrite outsound(outName.c_str(), header);
+		startSample = (int)(startTimes[i] * insound.getSrate() + 0.5);  //starting sample
+		stopSample = (int)((startTimes[i] + 0.2) * insound.getSrate() + 0.5);//ending sample
+		n = stopSample - startSample; //number of samples
+		insound.gotoSample(startSample);
+		for (int j = 0; j < n; j++){
+			for (int k = 0; k < header.getChannels(); k++) { //for each channel of each sample
+				//write the sample from original to current file
+				outsound.writeSample16Bit(insound.getCurrentSample16Bit(k));
+			}
+			insound.incrementSample();
+		}
+
+	}
+}
