@@ -38,16 +38,16 @@ WavManipulation::~WavManipulation(){
 ///		   string - directoryPath - the directory path name
 /// Output: char*
 
-string WavManipulation::wavComparison(short realTimeBuffer[]) {
+string WavManipulation::wavComparison(short* realTimeBuffer) {
 
 	int i, j, channel;
 	int error_counter = 0;
-	double threshold = 0.4;
+	short threshold = 100;
 
 	short sample = 0;
 	if (durationCounter > 0){
 		durationCounter--;
-		return;
+		return "";
 	}
 	for (j = 0; j < filenames.size(); j++){
 		string readFile = directoryPath + filenames[j];
@@ -93,12 +93,12 @@ void WavManipulation::snipAudio(vector<string> names, vector<short> startTimes, 
 	int numSnips = 0;
 
 	for (int i = 0; i < startTimes.size(); i++){
-		durations.push_back((int)ceil(durationTimes[i] / 0.2));  //store durations as a number of 200ms bursts
+		durations.push_back((short)ceil(durationTimes[i] / 0.2));  //store durations as a number of 200ms bursts
 		string outName = names[i] + ".wav";
 		filenames.push_back(names[i]); //store file names for the sections
 		SoundFileWrite outsound(outName.c_str(), header);
-		startSample = (int)(startTimes[i] * insound.getSrate() + 0.5);  //starting sample
-		stopSample = (int)((startTimes[i] + 0.2) * insound.getSrate() + 0.5);//ending sample
+		startSample = (short)(startTimes[i] * insound.getSrate() + 0.5);  //starting sample
+		stopSample = (short)((startTimes[i] + 0.2) * insound.getSrate() + 0.5);//ending sample
 		n = stopSample - startSample; //number of samples
 		insound.gotoSample(startSample);
 		for (int j = 0; j < n; j++){

@@ -1,3 +1,7 @@
+#include <string.h>
+#include <vector>
+
+using namespace std;
 
 class WavManipulation {
 
@@ -8,9 +12,9 @@ private:
 	string directoryPath;
 
 public: 
-	WavManipulation(void);
+	WavManipulation();
 	~WavManipulation();
-	string wavComparison(short[]);
+	string wavComparison(short*);
 	void snipAudio(vector<string>, vector<short>, vector<short>,string);
 
 

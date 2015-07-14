@@ -42,6 +42,9 @@
     <ClInclude Include="OptiAlgo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\WavManipulation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -77,10 +80,10 @@
     <ClCompile Include="Helpers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="WavSnippet.cpp">
+    <ClCompile Include="OptiAlgo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="OptiAlgo.cpp">
+    <ClCompile Include="WavManipulation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

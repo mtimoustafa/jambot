@@ -1,55 +1,28 @@
-﻿Build started 7/14/2015 11:58:32 AM.
-     1>Project "D:\FYDP\JamBot\JamBot\JamBot.vcxproj" on node 2 (Rebuild target(s)).
+﻿Build started 14-Jul-2015 13:55:58.
+     1>Project "C:\Users\emerson\Documents\School\FYDP\jambot\JamBot\JamBot.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
-         D:\Program Files (x86)\Microsoft Visual Studio 12.0 (2013 Pro)\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yc"stdafx.h" /Fp"Debug\JamBot.pch" /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt stdafx.cpp
-         stdafx.cpp
-         D:\Program Files (x86)\Microsoft Visual Studio 12.0 (2013 Pro)\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"Debug\JamBot.pch" /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt ..\src\FileIO.cpp ..\src\Options.cpp ..\src\Options_private.cpp ..\src\soundfilehelpers.cpp ..\src\SoundFileRead.cpp ..\src\SoundFileWrite.cpp ..\src\SoundHeader.cpp OptiAlgo.cpp Constructs.cpp Helpers.cpp JamBot.cpp WavSnippet.cpp
-         WavSnippet.cpp
-     1>d:\fydp\jambot\include\wavmanipulation.h(5): error C2143: syntax error : missing ';' before '<'
-     1>d:\fydp\jambot\include\wavmanipulation.h(5): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
-     1>d:\fydp\jambot\include\wavmanipulation.h(5): error C2238: unexpected token(s) preceding ';'
-     1>d:\fydp\jambot\include\wavmanipulation.h(6): error C2143: syntax error : missing ';' before '<'
-     1>d:\fydp\jambot\include\wavmanipulation.h(6): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
-     1>d:\fydp\jambot\include\wavmanipulation.h(6): error C2238: unexpected token(s) preceding ';'
-     1>d:\fydp\jambot\include\wavmanipulation.h(14): error C2061: syntax error : identifier 'vector'
-     1>d:\fydp\jambot\jambot\wavsnippet.cpp(26): error C2065: 'durations' : undeclared identifier
-     1>d:\fydp\jambot\jambot\wavsnippet.cpp(27): error C2065: 'filenames' : undeclared identifier
-     1>d:\fydp\jambot\jambot\wavsnippet.cpp(50): error C2561: 'WavManipulation::wavComparison' : function must return a value
-                 d:\fydp\jambot\include\wavmanipulation.h(13) : see declaration of 'WavManipulation::wavComparison'
-     1>d:\fydp\jambot\jambot\wavsnippet.cpp(52): error C2065: 'filenames' : undeclared identifier
-     1>d:\fydp\jambot\jambot\wavsnippet.cpp(52): error C2228: left of '.size' must have class/struct/union
-                 type is 'unknown-type'
-     1>d:\fydp\jambot\jambot\wavsnippet.cpp(53): error C2065: 'filenames' : undeclared identifier
-     1>d:\fydp\jambot\jambot\wavsnippet.cpp(57): error C2065: 'durations' : undeclared identifier
-     1>d:\fydp\jambot\jambot\wavsnippet.cpp(73): error C2065: 'filenames' : undeclared identifier
-     1>d:\fydp\jambot\jambot\wavsnippet.cpp(86): error C2511: 'void WavManipulation::snipAudio(std::vector<std::string,std::allocator<_Ty>>,std::vector<short,std::allocator<short>>,std::vector<short,std::allocator<short>>,std::string)' : overloaded member function not found in 'WavManipulation'
-                 with
-                 [
-                     _Ty=std::string
-                 ]
-                 d:\fydp\jambot\include\wavmanipulation.h(2) : see declaration of 'WavManipulation'
-     1>d:\fydp\jambot\jambot\wavsnippet.cpp(95): warning C4018: '<' : signed/unsigned mismatch
-     1>d:\fydp\jambot\jambot\wavsnippet.cpp(96): error C2065: 'durations' : undeclared identifier
-     1>d:\fydp\jambot\jambot\wavsnippet.cpp(96): error C2228: left of '.push_back' must have class/struct/union
-                 type is 'unknown-type'
-     1>d:\fydp\jambot\jambot\wavsnippet.cpp(98): error C2065: 'filenames' : undeclared identifier
-     1>d:\fydp\jambot\jambot\wavsnippet.cpp(98): error C2228: left of '.push_back' must have class/struct/union
-                 type is 'unknown-type'
-         JamBot.cpp
-         Helpers.cpp
-         Constructs.cpp
-         OptiAlgo.cpp
-     1>d:\fydp\jambot\jambot\optialgo.cpp(205): warning C4244: 'argument' : conversion from 'time_t' to 'unsigned int', possible loss of data
-         SoundHeader.cpp
-         SoundFileWrite.cpp
-         SoundFileRead.cpp
-         soundfilehelpers.cpp
-         Options_private.cpp
-         Options.cpp
-         FileIO.cpp
-         Generating Code...
-     1>Done Building Project "D:\FYDP\JamBot\JamBot\JamBot.vcxproj" (Rebuild target(s)) -- FAILED.
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"Debug\JamBot.pch" /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt WavManipulation.cpp
+         WavManipulation.cpp
+     1>c:\users\emerson\documents\school\fydp\jambot\jambot\wavmanipulation.cpp(52): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\users\emerson\documents\school\fydp\jambot\jambot\wavmanipulation.cpp(95): warning C4018: '<' : signed/unsigned mismatch
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\emerson\Documents\School\FYDP\jambot\Debug\JamBot.exe" /INCREMENTAL /NOLOGO /LIBPATH:D:\Workspace\Jambot\libs portaudio_x86.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib libsoundfile.a /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\emerson\Documents\School\FYDP\jambot\Debug\JamBot.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\emerson\Documents\School\FYDP\jambot\Debug\JamBot.lib" /MACHINE:X86 Debug\JamBot.res
+         Debug\FileIO.obj
+         Debug\Options.obj
+         Debug\Options_private.obj
+         Debug\soundfilehelpers.obj
+         Debug\SoundFileRead.obj
+         Debug\SoundFileWrite.obj
+         Debug\SoundHeader.obj
+         Debug\OptiAlgo.obj
+         Debug\Constructs.obj
+         Debug\Helpers.obj
+         Debug\JamBot.obj
+         Debug\stdafx.obj
+         Debug\WavManipulation.obj
+         JamBot.vcxproj -> C:\Users\emerson\Documents\School\FYDP\jambot\Debug\JamBot.exe
+     1>Done Building Project "C:\Users\emerson\Documents\School\FYDP\jambot\JamBot\JamBot.vcxproj" (Build target(s)).
 
-Build FAILED.
+Build succeeded.
 
-Time Elapsed 00:00:04.93
+Time Elapsed 00:00:01.93
