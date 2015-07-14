@@ -83,7 +83,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BestFitOptimizationAlgorithm.h" />
+    <ClInclude Include="OptiAlgo.h" />
     <ClInclude Include="Constants.h" />
     <ClInclude Include="Constructs.h" />
     <ClInclude Include="Helpers.h" />
@@ -99,7 +99,7 @@
     <ClCompile Include="..\src\SoundFileRead.cpp" />
     <ClCompile Include="..\src\SoundFileWrite.cpp" />
     <ClCompile Include="..\src\SoundHeader.cpp" />
-    <ClCompile Include="BestFitOptimizationAlgorithm.cpp" />
+    <ClCompile Include="OptiAlgo.cpp" />
     <ClCompile Include="Constructs.cpp" />
     <ClCompile Include="Helpers.cpp" />
     <ClCompile Include="JamBot.cpp" />
