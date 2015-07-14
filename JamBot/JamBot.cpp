@@ -3,7 +3,7 @@
 
 #include "stdafx.h"
 #include "JamBot.h"
-#include "BestFitOptimizationAlgorithm.h"
+#include "OptiAlgo.h"
 
 #define MAX_LOADSTRING 100
 
@@ -16,7 +16,7 @@
 HINSTANCE hInst;								// current instance
 TCHAR szTitle[MAX_LOADSTRING];					// The title bar text
 TCHAR szWindowClass[MAX_LOADSTRING];			// the main window class name
-BestFitOptimizationAlgorithm optiAlgo;
+OptiAlgo optiAlgo;
 
 // Forward declarations of functions included in this code module:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
@@ -187,7 +187,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 		case IDC_OPTIALGOTEST_BUTTON:
 			// Run optimization algorithm test
-			optiAlgo = BestFitOptimizationAlgorithm();
+			optiAlgo = OptiAlgo();
 			optiAlgo.start();
 			break;
 		case IDC_AUDIOINPUTTEST_BUTTON:

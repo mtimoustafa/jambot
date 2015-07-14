@@ -1,45 +1,55 @@
-﻿Build started 13-Jul-2015 17:57:02.
-     1>Project "C:\Users\emerson\Documents\School\FYDP\jambot\JamBot\JamBot.vcxproj" on node 2 (Build target(s)).
+﻿Build started 7/14/2015 11:58:32 AM.
+     1>Project "D:\FYDP\JamBot\JamBot\JamBot.vcxproj" on node 2 (Rebuild target(s)).
      1>ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"Debug\JamBot.pch" /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt WavSnippet.cpp
+         D:\Program Files (x86)\Microsoft Visual Studio 12.0 (2013 Pro)\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yc"stdafx.h" /Fp"Debug\JamBot.pch" /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt stdafx.cpp
+         stdafx.cpp
+         D:\Program Files (x86)\Microsoft Visual Studio 12.0 (2013 Pro)\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"Debug\JamBot.pch" /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt ..\src\FileIO.cpp ..\src\Options.cpp ..\src\Options_private.cpp ..\src\soundfilehelpers.cpp ..\src\SoundFileRead.cpp ..\src\SoundFileWrite.cpp ..\src\SoundHeader.cpp OptiAlgo.cpp Constructs.cpp Helpers.cpp JamBot.cpp WavSnippet.cpp
          WavSnippet.cpp
-     1>c:\users\emerson\documents\school\fydp\jambot\include\wavmanipulation.h(5): error C2143: syntax error : missing ';' before '<'
-     1>c:\users\emerson\documents\school\fydp\jambot\include\wavmanipulation.h(5): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
-     1>c:\users\emerson\documents\school\fydp\jambot\include\wavmanipulation.h(5): error C2238: unexpected token(s) preceding ';'
-     1>c:\users\emerson\documents\school\fydp\jambot\include\wavmanipulation.h(6): error C2143: syntax error : missing ';' before '<'
-     1>c:\users\emerson\documents\school\fydp\jambot\include\wavmanipulation.h(6): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
-     1>c:\users\emerson\documents\school\fydp\jambot\include\wavmanipulation.h(6): error C2238: unexpected token(s) preceding ';'
-     1>c:\users\emerson\documents\school\fydp\jambot\include\wavmanipulation.h(14): error C2061: syntax error : identifier 'vector'
-     1>c:\users\emerson\documents\school\fydp\jambot\jambot\wavsnippet.cpp(26): error C2065: 'durations' : undeclared identifier
-     1>c:\users\emerson\documents\school\fydp\jambot\jambot\wavsnippet.cpp(27): error C2065: 'filenames' : undeclared identifier
-     1>c:\users\emerson\documents\school\fydp\jambot\jambot\wavsnippet.cpp(41): error C2511: 'std::string WavManipulation::wavComparison(short [])' : overloaded member function not found in 'WavManipulation'
-                 c:\users\emerson\documents\school\fydp\jambot\include\wavmanipulation.h(2) : see declaration of 'WavManipulation'
-     1>c:\users\emerson\documents\school\fydp\jambot\jambot\wavsnippet.cpp(48): error C2597: illegal reference to non-static member 'WavManipulation::durationCounter'
-     1>c:\users\emerson\documents\school\fydp\jambot\jambot\wavsnippet.cpp(48): error C3867: 'WavManipulation::durationCounter': function call missing argument list; use '&WavManipulation::durationCounter' to create a pointer to member
-     1>c:\users\emerson\documents\school\fydp\jambot\jambot\wavsnippet.cpp(49): error C2597: illegal reference to non-static member 'WavManipulation::durationCounter'
-     1>c:\users\emerson\documents\school\fydp\jambot\jambot\wavsnippet.cpp(49): error C3867: 'WavManipulation::durationCounter': function call missing argument list; use '&WavManipulation::durationCounter' to create a pointer to member
-     1>c:\users\emerson\documents\school\fydp\jambot\jambot\wavsnippet.cpp(49): error C2105: '--' needs l-value
-     1>c:\users\emerson\documents\school\fydp\jambot\jambot\wavsnippet.cpp(52): error C2065: 'filenames' : undeclared identifier
-     1>c:\users\emerson\documents\school\fydp\jambot\jambot\wavsnippet.cpp(52): error C2228: left of '.size' must have class/struct/union
+     1>d:\fydp\jambot\include\wavmanipulation.h(5): error C2143: syntax error : missing ';' before '<'
+     1>d:\fydp\jambot\include\wavmanipulation.h(5): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+     1>d:\fydp\jambot\include\wavmanipulation.h(5): error C2238: unexpected token(s) preceding ';'
+     1>d:\fydp\jambot\include\wavmanipulation.h(6): error C2143: syntax error : missing ';' before '<'
+     1>d:\fydp\jambot\include\wavmanipulation.h(6): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+     1>d:\fydp\jambot\include\wavmanipulation.h(6): error C2238: unexpected token(s) preceding ';'
+     1>d:\fydp\jambot\include\wavmanipulation.h(14): error C2061: syntax error : identifier 'vector'
+     1>d:\fydp\jambot\jambot\wavsnippet.cpp(26): error C2065: 'durations' : undeclared identifier
+     1>d:\fydp\jambot\jambot\wavsnippet.cpp(27): error C2065: 'filenames' : undeclared identifier
+     1>d:\fydp\jambot\jambot\wavsnippet.cpp(50): error C2561: 'WavManipulation::wavComparison' : function must return a value
+                 d:\fydp\jambot\include\wavmanipulation.h(13) : see declaration of 'WavManipulation::wavComparison'
+     1>d:\fydp\jambot\jambot\wavsnippet.cpp(52): error C2065: 'filenames' : undeclared identifier
+     1>d:\fydp\jambot\jambot\wavsnippet.cpp(52): error C2228: left of '.size' must have class/struct/union
                  type is 'unknown-type'
-     1>c:\users\emerson\documents\school\fydp\jambot\jambot\wavsnippet.cpp(53): error C2065: 'filenames' : undeclared identifier
-     1>c:\users\emerson\documents\school\fydp\jambot\jambot\wavsnippet.cpp(57): error C2065: 'durations' : undeclared identifier
-     1>c:\users\emerson\documents\school\fydp\jambot\jambot\wavsnippet.cpp(73): error C2065: 'filenames' : undeclared identifier
-     1>c:\users\emerson\documents\school\fydp\jambot\jambot\wavsnippet.cpp(86): error C2511: 'void WavManipulation::snipAudio(std::vector<std::string,std::allocator<_Ty>>,std::vector<short,std::allocator<short>>,std::vector<short,std::allocator<short>>,char *)' : overloaded member function not found in 'WavManipulation'
+     1>d:\fydp\jambot\jambot\wavsnippet.cpp(53): error C2065: 'filenames' : undeclared identifier
+     1>d:\fydp\jambot\jambot\wavsnippet.cpp(57): error C2065: 'durations' : undeclared identifier
+     1>d:\fydp\jambot\jambot\wavsnippet.cpp(73): error C2065: 'filenames' : undeclared identifier
+     1>d:\fydp\jambot\jambot\wavsnippet.cpp(86): error C2511: 'void WavManipulation::snipAudio(std::vector<std::string,std::allocator<_Ty>>,std::vector<short,std::allocator<short>>,std::vector<short,std::allocator<short>>,std::string)' : overloaded member function not found in 'WavManipulation'
                  with
                  [
                      _Ty=std::string
                  ]
-                 c:\users\emerson\documents\school\fydp\jambot\include\wavmanipulation.h(2) : see declaration of 'WavManipulation'
-     1>c:\users\emerson\documents\school\fydp\jambot\jambot\wavsnippet.cpp(95): warning C4018: '<' : signed/unsigned mismatch
-     1>c:\users\emerson\documents\school\fydp\jambot\jambot\wavsnippet.cpp(96): error C2065: 'durations' : undeclared identifier
-     1>c:\users\emerson\documents\school\fydp\jambot\jambot\wavsnippet.cpp(96): error C2228: left of '.push_back' must have class/struct/union
+                 d:\fydp\jambot\include\wavmanipulation.h(2) : see declaration of 'WavManipulation'
+     1>d:\fydp\jambot\jambot\wavsnippet.cpp(95): warning C4018: '<' : signed/unsigned mismatch
+     1>d:\fydp\jambot\jambot\wavsnippet.cpp(96): error C2065: 'durations' : undeclared identifier
+     1>d:\fydp\jambot\jambot\wavsnippet.cpp(96): error C2228: left of '.push_back' must have class/struct/union
                  type is 'unknown-type'
-     1>c:\users\emerson\documents\school\fydp\jambot\jambot\wavsnippet.cpp(98): error C2065: 'filenames' : undeclared identifier
-     1>c:\users\emerson\documents\school\fydp\jambot\jambot\wavsnippet.cpp(98): error C2228: left of '.push_back' must have class/struct/union
+     1>d:\fydp\jambot\jambot\wavsnippet.cpp(98): error C2065: 'filenames' : undeclared identifier
+     1>d:\fydp\jambot\jambot\wavsnippet.cpp(98): error C2228: left of '.push_back' must have class/struct/union
                  type is 'unknown-type'
-     1>Done Building Project "C:\Users\emerson\Documents\School\FYDP\jambot\JamBot\JamBot.vcxproj" (Build target(s)) -- FAILED.
+         JamBot.cpp
+         Helpers.cpp
+         Constructs.cpp
+         OptiAlgo.cpp
+     1>d:\fydp\jambot\jambot\optialgo.cpp(205): warning C4244: 'argument' : conversion from 'time_t' to 'unsigned int', possible loss of data
+         SoundHeader.cpp
+         SoundFileWrite.cpp
+         SoundFileRead.cpp
+         soundfilehelpers.cpp
+         Options_private.cpp
+         Options.cpp
+         FileIO.cpp
+         Generating Code...
+     1>Done Building Project "D:\FYDP\JamBot\JamBot\JamBot.vcxproj" (Rebuild target(s)) -- FAILED.
 
 Build FAILED.
 
-Time Elapsed 00:00:01.08
+Time Elapsed 00:00:04.93

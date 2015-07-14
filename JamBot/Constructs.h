@@ -23,4 +23,14 @@ public:
 	void set_tempo(double freq);
 };
 
+
+class LightsInfo
+{
+public:
+	unsigned int red_intensity, blue_intensity, green_intensity, white_intensity;
+	unsigned int strobing_speed, dimness;
+
+	bool operator == (const LightsInfo& b) const;
+};
+
 #endif

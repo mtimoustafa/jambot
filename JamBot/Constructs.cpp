@@ -95,3 +95,18 @@ void AudioInfo::set_tempo(double freq)
 }
 
 #pragma endregion
+
+
+#pragma region LightsInfo // For info interfacing between algorithm and output
+
+bool LightsInfo::operator == (const LightsInfo& b) const
+{
+	return abs((int)red_intensity - (int)b.red_intensity) <= 2.0 &&
+		abs((int)blue_intensity - (int)b.blue_intensity) <= 2.0 &&
+		abs((int)green_intensity - (int)b.green_intensity) <= 2.0 &&
+		abs((int)white_intensity - (int)b.white_intensity) <= 2.0 &&
+		abs((int)strobing_speed - (int)b.strobing_speed) <= 2.0 &&
+		abs((int)dimness - (int)b.dimness) <= 2.0;;
+}
+
+#pragma endregion
