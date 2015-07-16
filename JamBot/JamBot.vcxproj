@@ -59,7 +59,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>D:\Workspace\Jambot\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>portaudio_x86.lib;%(AdditionalDependencies);libsoundfile.a</AdditionalDependencies>
+      <AdditionalDependencies>portaudio_x86.lib;%(AdditionalDependencies);libsoundfile.a;ftd2xx.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -84,7 +84,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\WavManipulation.h" />
+    <ClInclude Include="DMXOutput.h" />
+    <ClInclude Include="FTD2XX.H" />
     <ClInclude Include="InputChannelReader.h" />
+    <ClInclude Include="ms_stdint.h" />
     <ClInclude Include="OptiAlgo.h" />
     <ClInclude Include="Constants.h" />
     <ClInclude Include="Constructs.h" />
@@ -101,6 +104,7 @@
     <ClCompile Include="..\src\SoundFileRead.cpp" />
     <ClCompile Include="..\src\SoundFileWrite.cpp" />
     <ClCompile Include="..\src\SoundHeader.cpp" />
+    <ClCompile Include="DMXOutput.cpp" />
     <ClCompile Include="InputChannelReader.cpp" />
     <ClCompile Include="OptiAlgo.cpp" />
     <ClCompile Include="Constructs.cpp" />

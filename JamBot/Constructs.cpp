@@ -48,6 +48,32 @@ bool AudioInfo::operator == (const AudioInfo& b) const
 	return a_has_no_nulls && b_has_no_nulls && a_equal_b;
 }
 
+AudioInfo AudioInfo::differences(AudioInfo b)
+{
+	AudioInfo diffs;
+	double freqa, louda, tempoa;
+	double freqb, loudb, tempob;
+	double freq, loud, tempo;
+
+	if (this->get_frequency(freqa) && b.get_frequency(freqb))
+	{
+		freq = freqa - freqb;
+		diffs.set_frequency(freq);
+	}
+	if (this->get_frequency(louda) && b.get_frequency(loudb))
+	{
+		loud = louda - loudb;
+		diffs.get_loudness(loud);
+	}
+	if (this->get_frequency(tempoa) && b.get_frequency(tempob))
+	{
+		tempo = tempoa - tempob;
+		diffs.get_tempo(tempo);
+	}
+	return diffs;
+}
+
+
 // Getters/setters
 bool AudioInfo::get_frequency(double & freq) const
 {
@@ -107,18 +133,6 @@ bool LightsInfo::operator == (const LightsInfo& b) const
 		abs((int)white_intensity - (int)b.white_intensity) <= LI_EQUAL_THRESH &&
 		abs((int)strobing_speed - (int)b.strobing_speed) <= LI_EQUAL_THRESH &&
 		abs((int)dimness - (int)b.dimness) <= LI_EQUAL_THRESH;;
-}
-
-bool LightsInfo::is_similar_to(LightsInfo b)
-{
-	bool result = true;
-	result = result && abs((int)red_intensity - (int)b.red_intensity) <= LI_SIMILAR_THRESH;
-	result = result && abs((int)blue_intensity - (int)b.blue_intensity) <= LI_SIMILAR_THRESH;
-	result = result && abs((int)green_intensity - (int)b.green_intensity) <= LI_SIMILAR_THRESH;
-	result = result && abs((int)white_intensity - (int)b.white_intensity) <= LI_SIMILAR_THRESH;
-	result = result && abs((int)strobing_speed - (int)b.strobing_speed) <= LI_SIMILAR_THRESH;
-	result = result && abs((int)dimness - (int)b.dimness) <= LI_SIMILAR_THRESH;
-	return result;
 }
 
 #pragma endregion

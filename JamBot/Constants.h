@@ -14,12 +14,19 @@ const double AI_EQUAL_THRESH = 2.0;
 
 //LightsInfo thresholds
 const double LI_EQUAL_THRESH = 2.0;
-const double LI_SIMILAR_THRESH = 7.0;
 
 #pragma region Optimization Algorithm parameters
 const unsigned int AUDIO_BUF_SIZE = 256;
 const unsigned int HISTORY_BUF_SIZE = 5;
-const unsigned int NUDGES_TO_CHANGE = 4;
+const unsigned int NUDGES_TO_CHANGE = 3;
+const unsigned int SILENCES_TO_STOP = 10;
+const unsigned int DIFFS_FOR_CHANGE = 4;
+
+const double FREQ_SMOOTH_THRESH = 50.0;
+const double LOUD_SMOOTH_THRESH = 50.0;
+const double TEMPO_SMOOTH_THRESH = 50.0;
+
+const double SILENCE_THRESH = 20;
 
 const double FREQ_MODS [8] = { 0.8, 0.0, 0.2, 100.0, 127.0, 0.0, 0.0, 0.0 };
 const double PACE_MODS[8] = { 0.0, 0.5, 0.0, 0.0, 220, 0.0, 0.0, 0.0 };

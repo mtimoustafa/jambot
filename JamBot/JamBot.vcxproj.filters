@@ -48,6 +48,15 @@
     <ClInclude Include="InputChannelReader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DMXOutput.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ms_stdint.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FTD2XX.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -90,6 +99,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="InputChannelReader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DMXOutput.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

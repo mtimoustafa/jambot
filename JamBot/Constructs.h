@@ -14,6 +14,7 @@ public:
 	void randomize_info();
 
 	bool operator == (const AudioInfo& b) const;
+	AudioInfo differences(AudioInfo b);
 
 	bool get_frequency(double & freq) const;
 	void set_frequency(double freq);
@@ -31,7 +32,6 @@ public:
 	unsigned int strobing_speed, dimness;
 
 	bool operator == (const LightsInfo& b) const;
-	bool is_similar_to(LightsInfo b);
 };
 
 #endif
