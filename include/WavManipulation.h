@@ -1,5 +1,6 @@
 #include <string.h>
 #include <vector>
+#include "Helpers.h"
 
 using namespace std;
 
@@ -14,7 +15,7 @@ private:
 public: 
 	WavManipulation();
 	~WavManipulation();
-	string wavComparison(short*);
+	Helpers::SongStructure wavComparison(short*);
 	void snipAudio(vector<string>, vector<short>, vector<short>,string);
 
 
