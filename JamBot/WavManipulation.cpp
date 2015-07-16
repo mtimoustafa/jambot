@@ -96,7 +96,7 @@ Helpers::SongStructure WavManipulation::wavComparison(short* realTimeBuffer) {
 			}
 			for (channel = 0; channel < insound1.getChannels(); channel++) {
 				sample = insound1.getCurrentSample16Bit(channel);
-				sample = sample - realTimeBuffer[k + channel];
+				sample = sample - realTimeBuffer[k + (channel*2)];
 				if (abs(sample) > threshold){
 					error_counter--;
 				}
@@ -104,13 +104,13 @@ Helpers::SongStructure WavManipulation::wavComparison(short* realTimeBuffer) {
 					error_counter++;
 				}
 			}
-			k += 2;
+			k += 4;
 			insound1.incrementSample();
 		}
 		if (error_counter > 0){
 			element = getElement(filenames[i]);
-
-			return Helpers::SongStructure(element, 0);
+			num = getNum(filenames[i]);
+			return Helpers::SongStructure(element, num);
 		}
 	}
 	return Helpers::SongStructure(element, 0);
