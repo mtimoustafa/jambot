@@ -5,6 +5,7 @@
 #include "JamBot.h"
 #include "OptiAlgo.h"
 #include "InputChannelReader.h"
+#include "DMXOutput.h"
 
 #define MAX_LOADSTRING 100
 
@@ -13,12 +14,14 @@
 #define IDC_AUDIOINPUTTESTSTART_BUTTON 102
 #define IDC_AUDIOINPUTTESTSTOP_BUTTON 103
 #define IDC_WAVGENTEST_BUTTON 104
+#define IDC_LIGHTTEST_BUTTON 199
 
 // Global Variables:
 HINSTANCE hInst;								// current instance
 TCHAR szTitle[MAX_LOADSTRING];					// The title bar text
 TCHAR szWindowClass[MAX_LOADSTRING];			// the main window class name
 OptiAlgo optiAlgo;
+DMXOutput lightsTest;
 InputChannelReader inputChannelReader = InputChannelReader();
 
 // Forward declarations of functions included in this code module:
@@ -138,7 +141,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	int wmId, wmEvent;
 	PAINTSTRUCT ps;
 	HDC hdc;
-	HWND hWndOptiAlgoButton, hWndAudioInputButton, hWndWavGenButton;
+	HWND hWndOptiAlgoButton, hWndAudioInputButton, hWndWavGenButton, hWndDMXLightsButton;
 
 	switch (message)
 	{
@@ -192,6 +195,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			(HMENU)IDC_WAVGENTEST_BUTTON,
 			GetModuleHandle(NULL),
 			NULL);
+		hWndDMXLightsButton = CreateWindowEx(NULL,
+			_T("BUTTON"),
+			_T("Test DMX Lights"),
+			WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
+			10,
+			100,
+			250,
+			24,
+			hWnd,
+			(HMENU)IDC_LIGHTTEST_BUTTON,
+			GetModuleHandle(NULL),
+			NULL);
 
 		break;
 	case WM_COMMAND:
@@ -215,6 +230,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 		case IDC_WAVGENTEST_BUTTON:
 			// Do wav generation test
+			break;
+		case IDC_LIGHTTEST_BUTTON:
+			lightsTest = DMXOutput();
+			lightsTest.start();
+			// Test DMX lights
 			break;
 		case IDM_ABOUT:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);

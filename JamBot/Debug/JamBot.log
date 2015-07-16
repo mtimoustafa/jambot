@@ -1,12 +1,10 @@
-﻿Build started 2015-07-16 09:52:13.
-     1>Project "D:\Workspace\Jambot\JamBot\JamBot.vcxproj" on node 2 (Build target(s)).
+﻿Build started 16/07/2015 4:56:53 PM.
+     1>Project "C:\Users\Jack\Documents\University\Courses\ECE 498A\jambot\JamBot\JamBot.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _CRT_SECURE_NO_WARNINGS /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"Debug\JamBot.pch" /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt InputChannelReader.cpp
-         InputChannelReader.cpp
-     1>d:\workspace\jambot\jambot\inputchannelreader.cpp(103): warning C4101: 'sampleTempo' : unreferenced local variable
-     1>d:\workspace\jambot\jambot\inputchannelreader.cpp(105): warning C4101: 'j' : unreferenced local variable
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _CRT_SECURE_NO_WARNINGS /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"Debug\JamBot.pch" /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt JamBot.cpp
+         JamBot.cpp
        Link:
-         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"D:\Workspace\Jambot\Debug\JamBot.exe" /INCREMENTAL /NOLOGO /LIBPATH:D:\Workspace\Jambot\libs portaudio_x86.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib libsoundfile.a /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"D:\Workspace\Jambot\Debug\JamBot.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:\Workspace\Jambot\Debug\JamBot.lib" /MACHINE:X86 Debug\JamBot.res
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\Jack\Documents\University\Courses\ECE 498A\jambot\Debug\JamBot.exe" /INCREMENTAL /NOLOGO /LIBPATH:D:\Workspace\Jambot\libs portaudio_x86.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib libsoundfile.a ftd2xx.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\Jack\Documents\University\Courses\ECE 498A\jambot\Debug\JamBot.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\Jack\Documents\University\Courses\ECE 498A\jambot\Debug\JamBot.lib" /MACHINE:X86 Debug\JamBot.res
          Debug\FileIO.obj
          Debug\Options.obj
          Debug\Options_private.obj
@@ -14,6 +12,7 @@
          Debug\SoundFileRead.obj
          Debug\SoundFileWrite.obj
          Debug\SoundHeader.obj
+         Debug\DMXOutput.obj
          Debug\InputChannelReader.obj
          Debug\OptiAlgo.obj
          Debug\Constructs.obj
@@ -21,9 +20,118 @@
          Debug\JamBot.obj
          Debug\stdafx.obj
          Debug\WavManipulation.obj
-         JamBot.vcxproj -> D:\Workspace\Jambot\Debug\JamBot.exe
-     1>Done Building Project "D:\Workspace\Jambot\JamBot\JamBot.vcxproj" (Build target(s)).
+         JamBot.vcxproj -> C:\Users\Jack\Documents\University\Courses\ECE 498A\jambot\Debug\JamBot.exe
+     1>Done Building Project "C:\Users\Jack\Documents\University\Courses\ECE 498A\jambot\JamBot\JamBot.vcxproj" (Build target(s)).
+
+Project Performance Summary:
+     1203 ms  C:\Users\Jack\Documents\University\Courses\ECE 498A\jambot\JamBot\JamBot.vcxproj   1 calls
+               1203 ms  Build                                      1 calls
+
+Target Performance Summary:
+        0 ms  AfterBuild                                 1 calls
+        0 ms  ResolveReferences                          1 calls
+        0 ms  SelectClCompile                            1 calls
+        0 ms  GetCopyToOutputDirectoryXamlAppDefs        1 calls
+        0 ms  _CheckForCompileOutputs                    1 calls
+        0 ms  _Manifest                                  1 calls
+        0 ms  _SelectedFiles                             1 calls
+        0 ms  PostBuildEvent                             1 calls
+        0 ms  _Midl                                      1 calls
+        0 ms  ComputeManifestGeneratedLinkerInputs       1 calls
+        0 ms  SelectCustomBuild                          1 calls
+        0 ms  GetReferenceAssemblyPaths                  1 calls
+        0 ms  CreateCustomManifestResourceNames          1 calls
+        0 ms  ResolveAssemblyReferences                  1 calls
+        0 ms  BeforeLink                                 1 calls
+        0 ms  ComputeCLInputPDBName                      1 calls
+        0 ms  AfterBuildCompileEvent                     1 calls
+        0 ms  ComputeManifestInputsTargets               1 calls
+        0 ms  _BuildLinkAction                           1 calls
+        0 ms  _ClCompile                                 1 calls
+        0 ms  ComputeCLCompileGeneratedXDCFiles          1 calls
+        0 ms  AfterBuildGenerateSources                  1 calls
+        0 ms  BuildCompileTraverse                       1 calls
+        0 ms  BuildGenerateSources                       1 calls
+        0 ms  _CopySourceItemsToOutputDirectory          1 calls
+        0 ms  AfterResourceCompile                       1 calls
+        0 ms  _Xsd                                       1 calls
+        0 ms  MakeDirsForBscMake                         1 calls
+        0 ms  ComputeLinkSwitches                        1 calls
+        0 ms  _GenerateSatelliteAssemblyInputs           1 calls
+        0 ms  MakeDirsForResourceCompile                 1 calls
+        0 ms  _ResourceCompile                           1 calls
+        0 ms  ComputeLinkInputsFromProject               1 calls
+        0 ms  Build                                      1 calls
+        0 ms  _Link                                      1 calls
+        0 ms  BuildLinkTraverse                          1 calls
+        0 ms  ComputeRCOutputs                           1 calls
+        0 ms  _XdcMake                                   1 calls
+        0 ms  CreateSatelliteAssemblies                  1 calls
+        0 ms  CopyFilesToOutputDirectory                 1 calls
+        0 ms  SelectResourceCompile                      1 calls
+        0 ms  ExpandSDKReferences                        1 calls
+        0 ms  BeforeResourceCompile                      1 calls
+        0 ms  AfterMidl                                  1 calls
+        0 ms  ComputeMIDLGeneratedCompileInputs          1 calls
+        0 ms  _Deploy                                    1 calls
+        0 ms  AfterBuildGenerateSourcesEvent             1 calls
+        0 ms  BeforeClCompile                            1 calls
+        0 ms  AfterResolveReferences                     1 calls
+        0 ms  BeforeResolveReferences                    1 calls
+        0 ms  ComputeReferenceCLInput                    1 calls
+        0 ms  PrepareForRun                              1 calls
+        0 ms  MakeDirsForMidl                            1 calls
+        0 ms  PrepareResourceNames                       1 calls
+        0 ms  _BscMake                                   1 calls
+        0 ms  _BuildGenerateSourcesAction                1 calls
+        0 ms  BuildLink                                  1 calls
+        0 ms  ResolveSDKReferences                       1 calls
+        0 ms  _ALink                                     1 calls
+        0 ms  ComputeCLGeneratedLinkInputs               1 calls
+        0 ms  _SplitProjectReferencesByFileExistence     1 calls
+        0 ms  BuildGenerateSourcesTraverse               1 calls
+        0 ms  _Appverifier                               1 calls
+        0 ms  AfterLink                                  1 calls
+        0 ms  DoLinkOutputFilesMatch                     1 calls
+        0 ms  PlatformPrepareForBuild                    1 calls
+        0 ms  SplitResourcesByCulture                    1 calls
+        0 ms  BeforeBuildGenerateSources                 1 calls
+        0 ms  MakeDirsForXdcMake                         1 calls
+        0 ms  _PrepareForReferenceResolution             1 calls
+        0 ms  _BuildCompileAction                        1 calls
+        0 ms  GetInstalledSDKLocations                   1 calls
+        0 ms  BuildCompile                               1 calls
+        0 ms  ComputeRCGeneratedLinkInputs               1 calls
+        0 ms  ResolvedXDCMake                            1 calls
+        1 ms  ComputeCLOutputs                           1 calls
+        1 ms  MakeDirsForCl                              1 calls
+        1 ms  ResolveProjectReferences                   1 calls
+        1 ms  GetCopyToOutputDirectoryItems              1 calls
+        1 ms  SetBuildDefaultEnvironmentVariables        1 calls
+        1 ms  AssignTargetPaths                          1 calls
+        1 ms  AfterClCompile                             1 calls
+        1 ms  ComputeCustomBuildOutput                   1 calls
+        1 ms  GetFrameworkPaths                          1 calls
+        1 ms  ComputeCLCompileGeneratedSbrFiles          1 calls
+        1 ms  ComputeLegacyManifestEmbedding             1 calls
+        1 ms  GetResolvedWinMD                           1 calls
+        1 ms  PreBuildEvent                              1 calls
+        1 ms  PreLinkEvent                               1 calls
+        1 ms  AssignProjectConfiguration                 1 calls
+        1 ms  _PrepareForBuild                           1 calls
+        1 ms  RegisterOutput                             1 calls
+        2 ms  FinalizeBuildStatus                        1 calls
+        2 ms  MakeDirsForLink                            1 calls
+        3 ms  _CheckForInvalidConfigurationAndPlatform   1 calls
+        4 ms  ComputeLinkImportLibraryOutputsForClean    1 calls
+        5 ms  PrepareForBuild                            1 calls
+        6 ms  ResourceCompile                            1 calls
+        6 ms  InitializeBuildStatus                      1 calls
+        6 ms  WarnCompileDuplicatedFilename              1 calls
+        8 ms  SetCABuildNativeEnvironmentVariables       1 calls
+      245 ms  Link                                       1 calls
+      894 ms  ClCompile                                  1 calls
 
 Build succeeded.
 
-Time Elapsed 00:00:00.65
+Time Elapsed 00:00:01.20
