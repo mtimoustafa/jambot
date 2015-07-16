@@ -8,11 +8,11 @@
 #define IDR_MAINFRAME			128
 #define IDD_JAMBOT_DIALOG	102
 #define IDD_ABOUTBOX			103
-#define IDM_ABOUT				104
-#define IDM_EXIT				105
-#define IDI_JAMBOT			107
-#define IDI_SMALL				108
-#define IDC_JAMBOT			109
+#define IDM_ABOUT				105
+#define IDM_EXIT				106
+#define IDI_JAMBOT			108
+#define IDI_SMALL				109
+#define IDC_JAMBOT			110
 #define IDC_MYICON				2
 #ifndef IDC_STATIC
 #define IDC_STATIC				-1

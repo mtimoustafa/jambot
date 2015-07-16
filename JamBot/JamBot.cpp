@@ -4,19 +4,22 @@
 #include "stdafx.h"
 #include "JamBot.h"
 #include "OptiAlgo.h"
+#include "InputChannelReader.h"
 
 #define MAX_LOADSTRING 100
 
 // Objects definition - name + id
 #define IDC_OPTIALGOTEST_BUTTON 101
-#define IDC_AUDIOINPUTTEST_BUTTON 102
-#define IDC_WAVGENTEST_BUTTON 103
+#define IDC_AUDIOINPUTTESTSTART_BUTTON 102
+#define IDC_AUDIOINPUTTESTSTOP_BUTTON 103
+#define IDC_WAVGENTEST_BUTTON 104
 
 // Global Variables:
 HINSTANCE hInst;								// current instance
 TCHAR szTitle[MAX_LOADSTRING];					// The title bar text
 TCHAR szWindowClass[MAX_LOADSTRING];			// the main window class name
 OptiAlgo optiAlgo;
+InputChannelReader inputChannelReader = InputChannelReader();
 
 // Forward declarations of functions included in this code module:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
@@ -155,14 +158,26 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			NULL);
 		hWndAudioInputButton = CreateWindowEx(NULL,
 			_T("BUTTON"),
-			_T("Test Audio Input"),
+			_T("Start Audio Input"),
 			WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
 			10,
 			40,
-			250,
+			120,
 			24,
 			hWnd,
-			(HMENU)IDC_AUDIOINPUTTEST_BUTTON,
+			(HMENU)IDC_AUDIOINPUTTESTSTART_BUTTON,
+			GetModuleHandle(NULL),
+			NULL);
+		hWndAudioInputButton = CreateWindowEx(NULL,
+			_T("BUTTON"),
+			_T("Stop Audio Input "),
+			WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
+			140,
+			40,
+			120,
+			24,
+			hWnd,
+			(HMENU)IDC_AUDIOINPUTTESTSTOP_BUTTON,
 			GetModuleHandle(NULL),
 			NULL);
 		hWndWavGenButton = CreateWindowEx(NULL,
@@ -190,8 +205,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			optiAlgo = OptiAlgo();
 			optiAlgo.start();
 			break;
-		case IDC_AUDIOINPUTTEST_BUTTON:
-			// Do audio input test
+		case IDC_AUDIOINPUTTESTSTART_BUTTON:
+			// Do audio input start test
+			inputChannelReader.start();
+			break;
+		case IDC_AUDIOINPUTTESTSTOP_BUTTON:
+			// Do audio input stop test
+			inputChannelReader.stop();
 			break;
 		case IDC_WAVGENTEST_BUTTON:
 			// Do wav generation test

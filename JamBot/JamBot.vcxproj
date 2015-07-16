@@ -40,8 +40,9 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\include\</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\include\;$(RemoteDebuggerWorkingDirectory)</IncludePath>
     <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(SolutionDir)\libs\</LibraryPath>
+    <SourcePath>D:\Workspace\Jambot\src;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -51,9 +52,8 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -84,6 +84,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\WavManipulation.h" />
+    <ClInclude Include="InputChannelReader.h" />
     <ClInclude Include="OptiAlgo.h" />
     <ClInclude Include="Constants.h" />
     <ClInclude Include="Constructs.h" />
@@ -100,6 +101,7 @@
     <ClCompile Include="..\src\SoundFileRead.cpp" />
     <ClCompile Include="..\src\SoundFileWrite.cpp" />
     <ClCompile Include="..\src\SoundHeader.cpp" />
+    <ClCompile Include="InputChannelReader.cpp" />
     <ClCompile Include="OptiAlgo.cpp" />
     <ClCompile Include="Constructs.cpp" />
     <ClCompile Include="Helpers.cpp" />
