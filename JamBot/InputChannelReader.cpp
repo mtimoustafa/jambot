@@ -150,7 +150,7 @@ void InputChannelReader::start()
 
 int InputChannelReader::main(void)
 {
-	PaStreamParameters  inputParameters, outputParameters;
+	PaStreamParameters  inputParameters;
 	PaStream*           stream;
 	PaError             err = paNoError;
 	paData				data;

@@ -355,7 +355,7 @@ public:
 	m_hfprev(0)
     {
 	int lfbinmax = 6;
-	m_blockSize = (m_inputSampleRate * lfbinmax) / m_lfmax;
+	m_blockSize = ((int)m_inputSampleRate * lfbinmax) / m_lfmax;
 	m_stepSize = m_blockSize / 2;
 
 	m_lf = new FourierFilterbank(m_blockSize, m_inputSampleRate, 
