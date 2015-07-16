@@ -21,3 +21,27 @@ void Helpers::print_debug(const char * s)
 	os << s;
 	OutputDebugString(os.str().c_str());
 }
+
+#pragma region SongStructure
+
+Helpers::SongStructure::SongStructure(SongElement elem, unsigned int num)
+{
+	set_structure(elem, num);
+}
+
+void Helpers::SongStructure::set_structure(SongElement elem, unsigned int num)
+{
+	this->element = elem;
+	this->elemNumber = num;
+}
+
+Helpers::SongElement Helpers::SongStructure::get_element()
+{
+	return this->element;
+}
+unsigned int Helpers::SongStructure::get_elemNumber()
+{
+	return this->elemNumber;
+}
+
+#pragma endregion

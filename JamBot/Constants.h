@@ -9,7 +9,17 @@ const double LOUD_LB = 0.0;
 const double TEMPO_UB = 500.0;
 const double TEMPO_LB = 10.0;
 
+// AudioInfo thresholds
+const double AI_EQUAL_THRESH = 2.0;
+
+//LightsInfo thresholds
+const double LI_EQUAL_THRESH = 2.0;
+const double LI_SIMILAR_THRESH = 7.0;
+
 #pragma region Optimization Algorithm parameters
+const unsigned int AUDIO_BUF_SIZE = 256;
+const unsigned int HISTORY_BUF_SIZE = 5;
+const unsigned int NUDGES_TO_CHANGE = 4;
 
 const double FREQ_MODS [8] = { 0.8, 0.0, 0.2, 100.0, 127.0, 0.0, 0.0, 0.0 };
 const double PACE_MODS[8] = { 0.0, 0.5, 0.0, 0.0, 220, 0.0, 0.0, 0.0 };
