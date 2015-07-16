@@ -31,6 +31,7 @@ public:
 	unsigned int strobing_speed, dimness;
 
 	bool operator == (const LightsInfo& b) const;
+	bool is_similar_to(LightsInfo b);
 };
 
 #endif

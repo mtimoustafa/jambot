@@ -44,7 +44,7 @@ bool AudioInfo::operator == (const AudioInfo& b) const
 	double freqa, louda, tempoa, freqb, loudb, tempob;
 	bool a_has_no_nulls = this->get_frequency(freqa) && this->get_loudness(louda) && this->get_tempo(tempoa);
 	bool b_has_no_nulls = b.get_frequency(freqb) && b.get_loudness(loudb) && b.get_tempo(tempob);
-	bool a_equal_b = abs(freqa - freqb) <= 2.0 && abs(louda - loudb) <= 2.0 && abs(tempoa - tempob) <= 2.0;
+	bool a_equal_b = abs(freqa - freqb) <= AI_EQUAL_THRESH && abs(louda - loudb) <= AI_EQUAL_THRESH && abs(tempoa - tempob) <= AI_EQUAL_THRESH;
 	return a_has_no_nulls && b_has_no_nulls && a_equal_b;
 }
 
@@ -101,12 +101,24 @@ void AudioInfo::set_tempo(double freq)
 
 bool LightsInfo::operator == (const LightsInfo& b) const
 {
-	return abs((int)red_intensity - (int)b.red_intensity) <= 2.0 &&
-		abs((int)blue_intensity - (int)b.blue_intensity) <= 2.0 &&
-		abs((int)green_intensity - (int)b.green_intensity) <= 2.0 &&
-		abs((int)white_intensity - (int)b.white_intensity) <= 2.0 &&
-		abs((int)strobing_speed - (int)b.strobing_speed) <= 2.0 &&
-		abs((int)dimness - (int)b.dimness) <= 2.0;;
+	return abs((int)red_intensity - (int)b.red_intensity) <= LI_EQUAL_THRESH &&
+		abs((int)blue_intensity - (int)b.blue_intensity) <= LI_EQUAL_THRESH &&
+		abs((int)green_intensity - (int)b.green_intensity) <= LI_EQUAL_THRESH &&
+		abs((int)white_intensity - (int)b.white_intensity) <= LI_EQUAL_THRESH &&
+		abs((int)strobing_speed - (int)b.strobing_speed) <= LI_EQUAL_THRESH &&
+		abs((int)dimness - (int)b.dimness) <= LI_EQUAL_THRESH;;
+}
+
+bool LightsInfo::is_similar_to(LightsInfo b)
+{
+	bool result = true;
+	result = result && abs((int)red_intensity - (int)b.red_intensity) <= LI_SIMILAR_THRESH;
+	result = result && abs((int)blue_intensity - (int)b.blue_intensity) <= LI_SIMILAR_THRESH;
+	result = result && abs((int)green_intensity - (int)b.green_intensity) <= LI_SIMILAR_THRESH;
+	result = result && abs((int)white_intensity - (int)b.white_intensity) <= LI_SIMILAR_THRESH;
+	result = result && abs((int)strobing_speed - (int)b.strobing_speed) <= LI_SIMILAR_THRESH;
+	result = result && abs((int)dimness - (int)b.dimness) <= LI_SIMILAR_THRESH;
+	return result;
 }
 
 #pragma endregion

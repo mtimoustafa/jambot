@@ -11,11 +11,13 @@
 #include <string>
 #include <ctime>
 #include <sstream>
+#include <queue>
 
 #include "Constructs.h"
 #include "Constants.h"
 #include "Helpers.h"
 #include "OptiAlgo.h"
+
 using namespace std;
 
 map<string, double> new_modifiers_set(const double * mods)
@@ -202,7 +204,15 @@ OptiAlgo::ProblemRepresentation OptiAlgo::TabuSearch::search(ProblemRepresentati
 
 OptiAlgo::OptiAlgo()
 {
-	srand(time(NULL));
+	srand(static_cast<unsigned int>(time(NULL)));
+	audio_buffer = queue<AudioInfo>();
+}
+
+bool OptiAlgo::receive_audio_input_sample(AudioInfo audio_sample)
+{
+	if (audio_buffer.size() < AUDIO_BUF_SIZE)
+		audio_buffer.push(audio_sample);
+	return audio_buffer.size() < AUDIO_BUF_SIZE;
 }
 
 map<string, double> OptiAlgo::execute_algorithm(TabuSearch algo, int n_iterations)
@@ -256,7 +266,7 @@ void OptiAlgo::test_algo()
 	tabuFile.open("tabu_results.csv");
 	tabuFile << "tenure;N_iterations;Mean;Max;Variance;Avg_time\n";
 	Helpers::print_debug("Testing Best-fit Tabu search Optimization Algorithm:");
-	for (int n_iterations = 1; n_iterations <= 100; n_iterations *= 10)
+	for (int n_iterations = 1; n_iterations <= 100; n_iterations = n_iterations==100 ? 150 : n_iterations * 10)
 	{
 		Helpers::print_debug(("\n" + to_string(n_iterations)).c_str());
 		for (int tenure = 1; tenure < 20; tenure++)
@@ -274,5 +284,47 @@ void OptiAlgo::test_algo()
 
 void OptiAlgo::start()
 {
-	test_algo();
+	unsigned int tenure = 5, n_iterations = 150;
+	TabuSearch algorithm = TabuSearch(tenure, n_iterations);
+	AudioInfo audio_sample;
+	ProblemRepresentation solution;
+	queue<ProblemRepresentation> sample_history; // TODO: incorporate more of history in smoothing and change
+	unsigned int nudges;
+
+	while (true) // TODO: stop when song ends
+	{
+		// Wait for audio input samples
+		while (audio_buffer.empty()) {}
+
+		// Find solution to audio sample
+		audio_sample = audio_buffer.front();
+
+		// TODO: score properties according to audio sample
+
+		// Use properties to find varying, near-optimal lights configuration
+		solution = algorithm.search(solution);
+
+		// Smooth solution
+		if (solution.representation.is_similar_to(sample_history.back().representation))
+			solution.representation = sample_history.back().representation;
+
+		// Trigger change
+		if (sample_history.back().representation == solution.representation) nudges++;
+		else nudges--;
+
+		if (nudges >= NUDGES_TO_CHANGE)
+		{
+
+		}
+
+		// Update history
+		if (sample_history.size() >= HISTORY_BUF_SIZE)
+			sample_history.pop();
+		sample_history.push(solution);
+
+		//TODO: give_jack(lightsInfo);
+
+		// Last step: remove analysed sample from buffer
+		audio_buffer.pop();
+	}
 }
