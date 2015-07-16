@@ -20,7 +20,26 @@
 
 using namespace std;
 
-map<string, double> new_modifiers_set(const double * mods)
+// TODO:
+// Formulate proper objective function
+// Tweak constants
+// Improve smoothing if needed
+// Improve change detection if needed
+// Add pre-recording integration
+// Implement output to Jack
+
+
+#pragma region AudioProps
+
+OptiAlgo::AudioProps::AudioProps()
+{
+	freq_conc = make_pair(new_modifiers_set(FREQ_MODS), 0.2);
+	pace = make_pair(new_modifiers_set(PACE_MODS), 0.4);
+	beatiness = make_pair(new_modifiers_set(BEATI_MODS), 0.1);
+	overall_intens = make_pair(new_modifiers_set(OV_INT_MODS), 0.3);
+}
+
+map<string, double> OptiAlgo::AudioProps::new_modifiers_set(const double * mods)
 {
 	map<string, double> modifiers;
 	modifiers.insert(make_pair("r_intens", mods[0]));
@@ -34,26 +53,8 @@ map<string, double> new_modifiers_set(const double * mods)
 	return modifiers;
 }
 
-class AudioProps
-{
-public:
-	pair<map<string, double>, double> freq_conc;
-	pair<map<string, double>, double> pace;
-	pair<map<string, double>, double> beatiness;
-	pair<map<string, double>, double> overall_intens;
+#pragma endregion
 
-
-
-	AudioProps()
-	{
-		freq_conc = make_pair(new_modifiers_set(FREQ_MODS), 0.2);
-		pace = make_pair(new_modifiers_set(PACE_MODS), 0.4);
-		beatiness = make_pair(new_modifiers_set(BEATI_MODS), 0.1);
-		overall_intens = make_pair(new_modifiers_set(OV_INT_MODS), 0.3);
-	}
-};
-
-AudioProps properties = AudioProps();
 
 #pragma region ProblemRepresentation
 
@@ -61,10 +62,16 @@ OptiAlgo::ProblemRepresentation::ProblemRepresentation()
 {
 	// Start with a random candidate solution
 	representation = LightsInfo();
-	rep_value = objective_function(representation);
+	rep_value = 0;
+}
+OptiAlgo::ProblemRepresentation::ProblemRepresentation(AudioProps properties)
+{
+	// Start with a random candidate solution
+	representation = LightsInfo();
+	rep_value = objective_function(representation, properties);
 }
 
-double OptiAlgo::ProblemRepresentation::objective_function(LightsInfo cand_sol)
+double OptiAlgo::ProblemRepresentation::objective_function(LightsInfo cand_sol, AudioProps properties)
 {
 	// Applies objective function to current solution
 	return
@@ -120,7 +127,7 @@ bool OptiAlgo::TabuSearch::pairCompare(const pair<LightsInfo, double>& firstElem
 
 }
 
-OptiAlgo::ProblemRepresentation OptiAlgo::TabuSearch::search(ProblemRepresentation problem)
+OptiAlgo::ProblemRepresentation OptiAlgo::TabuSearch::search(ProblemRepresentation problem, AudioProps audio_props)
 {
 	// Initialize structures
 	vector<pair<LightsInfo, double>> neighbours;
@@ -145,7 +152,7 @@ OptiAlgo::ProblemRepresentation OptiAlgo::TabuSearch::search(ProblemRepresentati
 		for (int j = 0; j < 5; j++)
 		{
 			temp_neighbour = problem.tune();
-			neighbours.push_back(make_pair(temp_neighbour, (problem.objective_function(temp_neighbour) - problem.objective_function(problem.representation))));
+			neighbours.push_back(make_pair(temp_neighbour, (problem.objective_function(temp_neighbour, audio_props) - problem.objective_function(problem.representation, audio_props))));
 		}
 		sort(neighbours.begin(), neighbours.end(), TabuSearch::pairCompare);
 		dbgn = neighbours;
@@ -202,6 +209,8 @@ OptiAlgo::ProblemRepresentation OptiAlgo::TabuSearch::search(ProblemRepresentati
 #pragma endregion
 
 
+#pragma region OptiAlgo
+
 OptiAlgo::OptiAlgo()
 {
 	srand(static_cast<unsigned int>(time(NULL)));
@@ -223,15 +232,16 @@ map<string, double> OptiAlgo::execute_algorithm(TabuSearch algo, int n_iteration
 	list<double> values;
 	ProblemRepresentation problem;
 	double mean, variance;
+	audio_props = AudioProps();
 
 	// Execute search multiple times, compute statistics
 	sum = 0;
 	sum_time = 0.0;
 	for (int i = 0; i < n_iterations; i++)
 	{
-		problem = ProblemRepresentation();
+		problem = ProblemRepresentation(audio_props);
 		begin = clock();
-		problem = algo.search(problem);
+		problem = algo.search(problem, audio_props);
 		end = clock();
 		values.push_back(problem.rep_value);
 		sum += problem.rep_value;
@@ -254,6 +264,7 @@ map<string, double> OptiAlgo::execute_algorithm(TabuSearch algo, int n_iteration
 
 	return stats;
 }
+
 
 void OptiAlgo::test_algo()
 {
@@ -282,49 +293,94 @@ void OptiAlgo::test_algo()
 	tabuFile.close();
 }
 
+
 void OptiAlgo::start()
 {
 	unsigned int tenure = 5, n_iterations = 150;
 	TabuSearch algorithm = TabuSearch(tenure, n_iterations);
-	AudioInfo audio_sample;
-	ProblemRepresentation solution;
-	queue<ProblemRepresentation> sample_history; // TODO: incorporate more of history in smoothing and change
-	unsigned int nudges;
+	AudioInfo audio_sample, prev_sample, sample_diff;
+	ProblemRepresentation solution, hist_sol;
+	LightsInfo lights_config;
+	queue<ProblemRepresentation> sample_history, temp_history;
+	unsigned int nudges = 0, silences = 0;
+	double current_loudness;
+	audio_props = AudioProps();
+	double freq, loud, tempo;
 
-	while (true) // TODO: stop when song ends
+	while (silences < SILENCES_TO_STOP)
 	{
 		// Wait for audio input samples
 		while (audio_buffer.empty()) {}
 
-		// Find solution to audio sample
+		// Grab sample
 		audio_sample = audio_buffer.front();
+
+		// Check for silence
+		if (audio_sample.get_loudness(current_loudness) && current_loudness <= SILENCE_THRESH) silences++;
+		else silences -= silences > 0 ? 2 : 0;
+
+		// Smooth input
+		sample_diff = audio_sample.differences(prev_sample);
+		if (sample_diff.get_frequency(freq) && abs(freq) >= FREQ_SMOOTH_THRESH)
+		{
+			prev_sample.get_frequency(freq);
+			audio_sample.set_frequency(freq);
+		}
+		if (sample_diff.get_frequency(loud) && abs(loud) >= LOUD_SMOOTH_THRESH &&
+			audio_sample.get_loudness(current_loudness) && current_loudness > SILENCE_THRESH)
+		{
+			prev_sample.get_frequency(loud);
+			audio_sample.set_frequency(loud);
+		}
+		if (sample_diff.get_frequency(tempo) && abs(tempo) >= TEMPO_SMOOTH_THRESH)
+		{
+			prev_sample.get_frequency(tempo);
+			audio_sample.set_frequency(tempo);
+		}
 
 		// TODO: score properties according to audio sample
 
 		// Use properties to find varying, near-optimal lights configuration
-		solution = algorithm.search(solution);
+		solution = algorithm.search(solution, audio_props);
 
-		// Smooth solution
-		if (solution.representation.is_similar_to(sample_history.back().representation))
-			solution.representation = sample_history.back().representation;
-
-		// Trigger change
-		if (sample_history.back().representation == solution.representation) nudges++;
-		else nudges--;
-
-		if (nudges >= NUDGES_TO_CHANGE)
-		{
-
-		}
+		// Sense change and adapt to it
+		// PROBABLY UNNECESSARY
+		//temp_history = sample_history;
+		//nudges = 0;
+		//while (!temp_history.empty())
+		//{
+		//	hist_sol = temp_history.front();
+		//	temp_history.pop();
+		//	if (!temp_history.empty())
+		//	{
+		//		if (hist_sol.representation.differences(temp_history.front().representation) >= DIFFS_FOR_CHANGE)
+		//		{
+		//			break;
+		//		}
+		//		else
+		//		{
+		//			nudges++;
+		//		}
+		//	}
+		//	else
+		//	{
+		//		nudges = 0;
+		//		break;
+		//	}
+		//}
+		//lights_config = (nudges >= NUDGES_TO_CHANGE) ? solution.representation : lights_config; // wrong logic :/
 
 		// Update history
-		if (sample_history.size() >= HISTORY_BUF_SIZE)
-			sample_history.pop();
+		if (sample_history.size() >= HISTORY_BUF_SIZE) sample_history.pop();
 		sample_history.push(solution);
+		prev_sample = audio_sample;
 
-		//TODO: give_jack(lightsInfo);
+		// Send solution to output controller
+		//TODO: give_jack(lights_config);
 
 		// Last step: remove analysed sample from buffer
 		audio_buffer.pop();
 	}
 }
+
+#pragma endregion
