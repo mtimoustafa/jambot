@@ -6,6 +6,7 @@
 #include "OptiAlgo.h"
 #include "InputChannelReader.h"
 #include "DMXOutput.h"
+#include "WavManipulation.h"
 
 #define MAX_LOADSTRING 100
 
@@ -23,6 +24,7 @@ TCHAR szWindowClass[MAX_LOADSTRING];			// the main window class name
 OptiAlgo optiAlgo;
 DMXOutput lightsTest;
 InputChannelReader inputChannelReader = InputChannelReader();
+WavManipulation wavmanipulation = WavManipulation();
 
 // Forward declarations of functions included in this code module:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
@@ -229,7 +231,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			inputChannelReader.stop();
 			break;
 		case IDC_WAVGENTEST_BUTTON:
-			// Do wav generation test
+			wavmanipulation.startSnip();
 			break;
 		case IDC_LIGHTTEST_BUTTON:
 			lightsTest = DMXOutput();

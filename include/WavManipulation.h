@@ -16,7 +16,8 @@ public:
 	WavManipulation();
 	~WavManipulation();
 	Helpers::SongStructure wavComparison(short*);
-	void snipAudio(vector<string>, vector<short>, vector<short>,string);
-
+	void snipAudio(vector<string>, vector<short>, vector<short>, string, string);
+	void comparisonPolling();
+	void startSnip();
 
 };

@@ -12,6 +12,7 @@
 #include <vector>
 #include <cmath>
 #include <iostream>
+#include <deque>
 
 
 //#ifndef OLDCPP
@@ -81,17 +82,14 @@ Helpers::SongStructure WavManipulation::wavComparison(short* realTimeBuffer) {
 	Helpers::SongElement element = Helpers::NIL;
 	int num = 0;
 	short sample = 0;
-	if (durationCounter > 0){
-		durationCounter--;
-		return Helpers::SongStructure(element, 0);
-	}
+
 	for (j = 0; j < filenames.size(); j++){
 		short k = 0;
 		string readFile = directoryPath + filenames[j];
 		SoundFileRead  insound1(readFile.c_str());
+		durationCounter = durations[j];
 		for (i = 0; i < insound1.getSamples(); i++) {
 			if (error_counter == 0){
-				durationCounter = durations[j];
 				break;
 			}
 			for (channel = 0; channel < insound1.getChannels(); channel++) {
@@ -123,9 +121,9 @@ Helpers::SongStructure WavManipulation::wavComparison(short* realTimeBuffer) {
 ///		   filepath - The path of the file being cut
 /// Output: VOID
 
-void WavManipulation::snipAudio(vector<string> names, vector<short> startTimes, vector<short> durationTimes, string filePath){
+void WavManipulation::snipAudio(vector<string> names, vector<short> startTimes, vector<short> durationTimes, string filePath, string filename){
 
-	SoundFileRead insound(filePath.c_str());
+	SoundFileRead insound((filePath + filename).c_str());
 	SoundHeader header = insound;
 	int startSample = 0;
 	int stopSample = 0;
@@ -152,4 +150,27 @@ void WavManipulation::snipAudio(vector<string> names, vector<short> startTimes, 
 	}
 }
 
+void WavManipulation::comparisonPolling(){
+	//Queue pull
+	short* indata = 0; // data->recordedBuffer.begin();
+	std::deque<Helpers::SongStructure>  structurequeue;
+	//
+	while (true){
+		if (durationCounter > 0){
+			durationCounter--;
+		}
+		else{
+			Helpers::SongStructure section = wavComparison(indata);
+			structurequeue.push_back(section);
+		}
+	}
+}
 
+void WavManipulation::startSnip(){
+	string filename = "crunchy_bass_swag.flv";
+	string filepath = "C:\\Users\\emerson\\Documents\\School\\FYDP\\jambot\\JamBot";
+	vector<string> names;
+	vector<short> durations;
+	vector<short> startTimes;
+	snipAudio(names, startTimes, durations, filepath, filename);
+}
