@@ -7,6 +7,7 @@
 #include "InputChannelReader.h"
 #include "DMXOutput.h"
 #include "WavManipulation.h"
+#include "strsafe.h"
 
 #define MAX_LOADSTRING 100
 
@@ -17,20 +18,40 @@
 #define IDC_WAVGENTEST_BUTTON 104
 #define IDC_LIGHTTEST_BUTTON 199
 
+// Thread-related global constants
+#define MAX_THREADS 4
+#define AUDIOINPUT_THREAD_ARR_ID 0
+#define WAVGEN_THREAD_ARR_ID 1
+#define OPTIALGO_THREAD_ARR_ID 2
+#define AUDIOOUTPUT_THREAD_ARR_ID 3
+
 // Global Variables:
 HINSTANCE hInst;								// current instance
 TCHAR szTitle[MAX_LOADSTRING];					// The title bar text
 TCHAR szWindowClass[MAX_LOADSTRING];			// the main window class name
+HANDLE hThreadArray[MAX_THREADS];				// Array of threads
+DWORD dwThreadArray[MAX_THREADS];				// Array of returned thread IDs
 OptiAlgo optiAlgo;
 DMXOutput lightsTest;
 InputChannelReader inputChannelReader = InputChannelReader();
 WavManipulation wavmanipulation = WavManipulation();
+
+// Functions to run components in threads (because WINAPI lol)
+DWORD WINAPI AudioInputThreadStartFn(LPVOID lpParam) { inputChannelReader.start(); return 0; }
+DWORD WINAPI AudioInputThreadStopFn(LPVOID lpParam) { inputChannelReader.stop(); return 0; }
+DWORD WINAPI WavGenThreadStartFn(LPVOID lpParam) { wavmanipulation.startSnip(); return 0; }
+DWORD WINAPI OptiAlgoThreadStartFn(LPVOID lpParam) { OptiAlgo optiAlgo = OptiAlgo(); optiAlgo.test_algo(); return 0; }
+DWORD WINAPI AudioOutputThreadStartFn(LPVOID lpParam) { lightsTest = DMXOutput(); lightsTest.start(); return 0; }
+
 
 // Forward declarations of functions included in this code module:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
 BOOL				InitInstance(HINSTANCE, int);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
+void CloseThread(int id);
+void CloseAllThreads();
+void ErrorHandler(LPTSTR lpszFunction);
 
 int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -219,24 +240,82 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 		case IDC_OPTIALGOTEST_BUTTON:
 			// Run optimization algorithm test
-			optiAlgo = OptiAlgo();
-			optiAlgo.start();
+			hThreadArray[OPTIALGO_THREAD_ARR_ID] = CreateThread(
+				NULL,
+				0,
+				OptiAlgoThreadStartFn,
+				NULL,
+				0,
+				&dwThreadArray[OPTIALGO_THREAD_ARR_ID]);
+			if (hThreadArray[OPTIALGO_THREAD_ARR_ID] == NULL)
+			{
+				ErrorHandler(TEXT("CreateThread"));
+				CloseAllThreads();
+				ExitProcess(3);
+			}
 			break;
 		case IDC_AUDIOINPUTTESTSTART_BUTTON:
 			// Do audio input start test
-			inputChannelReader.start();
+			hThreadArray[AUDIOINPUT_THREAD_ARR_ID] = CreateThread(
+				NULL,
+				0,
+				AudioInputThreadStartFn,
+				NULL,
+				0,
+				&dwThreadArray[AUDIOINPUT_THREAD_ARR_ID]);
+			if (hThreadArray[AUDIOINPUT_THREAD_ARR_ID] == NULL)
+			{
+				ErrorHandler(TEXT("CreateThread"));
+				CloseAllThreads();
+				ExitProcess(3);
+			}
 			break;
 		case IDC_AUDIOINPUTTESTSTOP_BUTTON:
 			// Do audio input stop test
-			inputChannelReader.stop();
+			hThreadArray[AUDIOINPUT_THREAD_ARR_ID] = CreateThread(
+				NULL,
+				0,
+				AudioInputThreadStopFn,
+				NULL,
+				0,
+				&dwThreadArray[AUDIOINPUT_THREAD_ARR_ID]);
+			if (hThreadArray[AUDIOINPUT_THREAD_ARR_ID] == NULL)
+			{
+				ErrorHandler(TEXT("CreateThread"));
+				CloseAllThreads();
+				ExitProcess(3);
+			}
 			break;
 		case IDC_WAVGENTEST_BUTTON:
-			wavmanipulation.startSnip();
+			hThreadArray[WAVGEN_THREAD_ARR_ID] = CreateThread(
+				NULL,
+				0,
+				WavGenThreadStartFn,
+				NULL,
+				0,
+				&dwThreadArray[WAVGEN_THREAD_ARR_ID]);
+			if (hThreadArray[WAVGEN_THREAD_ARR_ID] == NULL)
+			{
+				ErrorHandler(TEXT("CreateThread"));
+				CloseAllThreads();
+				ExitProcess(3);
+			}
 			break;
 		case IDC_LIGHTTEST_BUTTON:
-			lightsTest = DMXOutput();
-			lightsTest.start();
 			// Test DMX lights
+			hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID] = CreateThread(
+				NULL,
+				0,
+				AudioOutputThreadStartFn,
+				NULL,
+				0,
+				&dwThreadArray[AUDIOOUTPUT_THREAD_ARR_ID]);
+			if (hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID] == NULL)
+			{
+				ErrorHandler(TEXT("CreateThread"));
+				CloseAllThreads();
+				ExitProcess(3);
+			}
 			break;
 		case IDM_ABOUT:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
@@ -254,6 +333,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		EndPaint(hWnd, &ps);
 		break;
 	case WM_DESTROY:
+		CloseAllThreads();
 		PostQuitMessage(0);
 		break;
 	default:
@@ -280,4 +360,50 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	}
 	return (INT_PTR)FALSE;
+}
+
+void CloseThread(int id)
+{
+	CloseHandle(hThreadArray[id]);
+}
+void CloseAllThreads()
+{
+	for (int i = 0; i<MAX_THREADS; i++)
+	{
+		CloseHandle(hThreadArray[i]);
+	}
+}
+
+void ErrorHandler(LPTSTR lpszFunction)
+{
+	// Retrieve the system error message for the last-error code.
+
+	LPVOID lpMsgBuf;
+	LPVOID lpDisplayBuf;
+	DWORD dw = GetLastError();
+
+	FormatMessage(
+		FORMAT_MESSAGE_ALLOCATE_BUFFER |
+		FORMAT_MESSAGE_FROM_SYSTEM |
+		FORMAT_MESSAGE_IGNORE_INSERTS,
+		NULL,
+		dw,
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		(LPTSTR)&lpMsgBuf,
+		0, NULL);
+
+	// Display the error message.
+
+	lpDisplayBuf = (LPVOID)LocalAlloc(LMEM_ZEROINIT,
+		(lstrlen((LPCTSTR)lpMsgBuf) + lstrlen((LPCTSTR)lpszFunction) + 40) * sizeof(TCHAR));
+	StringCchPrintf((LPTSTR)lpDisplayBuf,
+		LocalSize(lpDisplayBuf) / sizeof(TCHAR),
+		TEXT("%s failed with error %d: %s"),
+		lpszFunction, dw, lpMsgBuf);
+	MessageBox(NULL, (LPCTSTR)lpDisplayBuf, TEXT("Error"), MB_OK);
+
+	// Free error-handling buffer allocations.
+
+	LocalFree(lpMsgBuf);
+	LocalFree(lpDisplayBuf);
 }
