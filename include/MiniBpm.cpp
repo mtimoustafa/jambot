@@ -58,13 +58,13 @@
  * - Find the peak of the resulting filtered autocorrelation and
  *   return its corresponding tempo.
  */
-
 #include "MiniBpm.h"
 
 #include <vector>
 #include <map>
 #include <utility>
 #include <cmath>
+#include <algorithm>
 
 #ifdef __MSVC__
 #define R__ __restrict
@@ -376,7 +376,7 @@ public:
 	m_input = new double[m_blockSize];
 	m_partial = new double[m_stepSize];
 
-    int frameSize = max(lfsize, hfsize);
+    int frameSize = std::max<int>(lfsize, hfsize);
 	m_frame = new double[frameSize];
 
         zero(m_input, m_blockSize);

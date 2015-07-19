@@ -43,7 +43,9 @@
 #include "write_wav.cpp"
 #include "MiniBpm.cpp"
 #include <string>
-#include <deque>
+#include <queue>
+
+MiniBPM tempo = MiniBPM((float)SAMPLE_RATE);
 
 InputChannelReader::InputChannelReader() 
 {
@@ -62,8 +64,8 @@ int InputChannelReader::recordCallback(const void *inputBuffer, void *outputBuff
 {
 	paData *data = (paData *)userData;
 	const short *rptr = (const short*)inputBuffer;
-	short *wptr = data->recordedSamples;
-	int numSamples = FRAMES_PER_BUFFER * NUM_CHANNELS;
+	float *wptr = data->recordedSamples;
+	int numSamples = FRAMES_PER_BUFFER * NUM_CHANNELS * 2;
 
 	// Prevent unused variable warnings.
 	(void)outputBuffer;
@@ -73,24 +75,37 @@ int InputChannelReader::recordCallback(const void *inputBuffer, void *outputBuff
 
 	if (inputBuffer == NULL)
 	{
-		for (int i = 0; i<FRAMES_PER_BUFFER; i++)
+		for (int i = 0; i<FRAMES_PER_BUFFER; i += NUM_CHANNELS)
 		{
-			*wptr++ = SAMPLE_SILENCE;  //left
-			if (NUM_CHANNELS == 2) *wptr++ = SAMPLE_SILENCE;  //right
+			for (int j = 0; j < NUM_CHANNELS; j++)
+			{
+				*wptr++ = (float)SAMPLE_SILENCE;  //left
+				*wptr++ = (float)SAMPLE_SILENCE;  //right
+			}
 		}
 	}
 	else
 	{
-		for (int i = 0; i<FRAMES_PER_BUFFER; i++)
+		for (int i = 0; i < FRAMES_PER_BUFFER; i += NUM_CHANNELS)
 		{
-			*wptr++ = *rptr++;  //left
-			if (NUM_CHANNELS == 2) *wptr++ = *rptr++;  //right
+			for (int j = 0; j < NUM_CHANNELS; j++)
+			{
+				if (IS_STEREO)	//left
+				{
+					*wptr++ = (float)*rptr++;
+				}
+				else
+				{
+					*wptr++ = (float)*rptr;
+				}
+				*wptr++ = (float)*rptr++;	//right
+			}
 		}
 	}
 
 	// Save Buffer
-	data->recordedBuffer.push_back(data->recordedSamples);
-	data->recordedSamples = new short[numSamples];	//Reaollocate recorded samples
+	data->recordedBuffer.push(data->recordedSamples);
+	data->recordedSamples = new float[numSamples];	//Reaollocate recorded samples
 
 	return 0;
 }
@@ -98,14 +113,12 @@ int InputChannelReader::recordCallback(const void *inputBuffer, void *outputBuff
 // This routine will be called whenever a Buffer has finished recording
 void InputChannelReader::analyseBuffer(paData *data)
 {
-	short val = 0;
+	float val = 0.0;
 	double average = 0.0;
-	double sampleTempo;
-	int numSamples = FRAMES_PER_BUFFER * NUM_CHANNELS;
-	int i, j, k = 0;
+	int numSamples = FRAMES_PER_BUFFER * NUM_CHANNELS * 2;
 
 	// Measure average peak amplitude
-	for (i = 0; i < numSamples; i++)
+	for (int i = 0; i < numSamples; i++)
 	{
 		val = data->recordedBuffer.back()[i];
 		if (val < 0) val = -val; /* ABS */
@@ -114,28 +127,17 @@ void InputChannelReader::analyseBuffer(paData *data)
 	average = average / (double)numSamples;
 	data->sampleInfo[0] = average;
 
-	Helpers::print_debug(("Average sample loudness (dB): " + std::to_string(data->sampleInfo[0])).c_str());
+	printf("Average sample loudness (dB): %f\n", data->sampleInfo[0]);
 
-	// Measure average tempo (for first 10s)
-	//if (data->bufferCount < 50 && (data->recordedBuffer.size() % 5) == 0)
-	//{
-	//	float *bufferedSamples = new float[data->recordedBuffer.size() * numSamples];
-	//	MiniBPM tempo = MiniBPM((float)SAMPLE_RATE);
+	// Measure average tempo every 1.5s
+	tempo.process(const_cast<float*>(data->recordedBuffer.back()), numSamples);
 
-	//	for (i = 0; i < data->recordedBuffer.size(); i++)
-	//	{
-	//		for (j = 0; j < numSamples; j++)
-	//		{
-	//			bufferedSamples[k] = (float)(data->recordedBuffer[i])[j];
-	//			k++;
-	//		}
-	//	}
-	//	sampleTempo = tempo.estimateTempoOfSamples(bufferedSamples, numSamples * i);
-	//	data->sampleInfo[1] = sampleTempo;	//Compute moving average
-
-	//	Helpers::print_debug(("Average sample tempo (bps): " + std::to_string(data->sampleInfo[1])).c_str());
-	//	delete[] bufferedSamples;
-	//}
+	if ((data->recordedBuffer.size() % 15) == 0)
+	{
+		data->sampleInfo[1] = tempo.estimateTempo();
+		printf("Average sample tempo (bpm): %f\n\n", data->sampleInfo[1]);
+		tempo.reset();
+	}
 }
 
 void InputChannelReader::stop()
@@ -158,20 +160,21 @@ int InputChannelReader::main(void)
 	int                 numSamples;
 	int					totalSamples;
 	int                 numBytes;
-	short*				streamBuffers;
+	float*				streamBuffers;
 
 	printf("patest_record.c\n"); fflush(stdout);
 
-	numSamples = FRAMES_PER_BUFFER * NUM_CHANNELS;
-	numBytes = numSamples * sizeof(short);
-	data.recordedSamples = (short *)malloc(numBytes); // From now on, recordedSamples is initialised. 
-	data.bufferCount = 0;
+	numSamples = FRAMES_PER_BUFFER * NUM_CHANNELS * 2;
+	numBytes = numSamples * sizeof(float);
+	data.recordedSamples = (float *)malloc(numBytes); // From now on, recordedSamples is initialised. 
+	data.bufferedSamples = 0;
+	tempo.setBPMRange(50.0, 250.0);
 	if (data.recordedSamples == NULL)
 	{
 		printf("Could not allocate record array.\n");
 		goto done;
 	}
-	for (i = 0; i<numSamples; i++) data.recordedSamples[i] = 0;
+	for (i = 0; i<numSamples; i++) data.recordedSamples[i] = 0.0;
 
 	err = Pa_Initialize();
 	if (err != paNoError) goto done;
@@ -181,7 +184,7 @@ int InputChannelReader::main(void)
 		fprintf(stderr, "Error: No default input device.\n");
 		goto done;
 	}
-	inputParameters.channelCount = 2;                    /* stereo input */
+	inputParameters.channelCount = NUM_CHANNELS * (1 + IS_STEREO);                    /* channel inputs */
 	inputParameters.sampleFormat = paInt16;
 	inputParameters.suggestedLatency = Pa_GetDeviceInfo(inputParameters.device)->defaultLowInputLatency;
 	inputParameters.hostApiSpecificStreamInfo = NULL;
@@ -202,13 +205,13 @@ int InputChannelReader::main(void)
 	if (err != paNoError) goto done;
 	printf("\n=== Now recording! Please speak into the microphone. ===\n"); fflush(stdout);
 
-	while (!stopStream)
+	while (stopStream)
 	{
 		// Analyse Buffer when new Buffer available
-		if (data.bufferCount != data.recordedBuffer.size())
+		if (data.bufferedSamples != data.recordedBuffer.size())
 		{
 			analyseBuffer(&data);
-			data.bufferCount++;
+			data.bufferedSamples++;
 		}
 	}
 
@@ -216,7 +219,7 @@ int InputChannelReader::main(void)
 	if (err != paNoError) goto done;
 
 	totalSamples = numSamples * data.recordedBuffer.size();
-	streamBuffers = (short *)malloc(totalSamples*sizeof(short));
+	streamBuffers = (float *)malloc(totalSamples*sizeof(float));
 
 	// Load all Buffer samples
 	while (!data.recordedBuffer.empty())
@@ -226,13 +229,13 @@ int InputChannelReader::main(void)
 			streamBuffers[j] = data.recordedBuffer.front()[i];
 			j++;
 		}
-		data.recordedBuffer.pop_front();
+		data.recordedBuffer.pop();
 	}
 
 	// Write recorded data to a file. 
 	WAV_Writer *writer = new WAV_Writer();
 	long openFile, writeFile;
-	openFile = Audio_WAV_OpenWriter(writer, "Output.wav", SAMPLE_RATE, NUM_CHANNELS);
+	openFile = Audio_WAV_OpenWriter(writer, "Output.wav", SAMPLE_RATE, 2);
 	if (openFile < 0)
 	{
 		printf("Could not open file.\n");

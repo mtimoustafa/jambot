@@ -138,14 +138,14 @@ long Audio_WAV_OpenWriter( WAV_Writer *writer, const char *fileName, int frameRa
  * Returns bytes written or negative error code.
  */
 long Audio_WAV_WriteShorts( WAV_Writer *writer,
-		short *samples,
+		float *samples,
 		int numSamples
 		)
 {
 	unsigned char buffer[2];
     unsigned char *bufferPtr;
 	int i;
-	short *p = samples;
+	float *p = samples;
     int numWritten;
     int bytesWritten;
 	if( numSamples <= 0 )
@@ -156,7 +156,7 @@ long Audio_WAV_WriteShorts( WAV_Writer *writer,
     for( i=0; i<numSamples; i++ )
 	{
         bufferPtr = buffer;
-		WriteShortLE( &bufferPtr, *p++ );
+		WriteShortLE( &bufferPtr, (unsigned short)*p++ );
         numWritten = fwrite( buffer, 1, sizeof( buffer), writer->fid );
         if( numWritten != sizeof(buffer) ) return -1;
 	}
