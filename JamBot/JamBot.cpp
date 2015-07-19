@@ -7,16 +7,14 @@
 #include "InputChannelReader.h"
 #include "DMXOutput.h"
 #include "WavManipulation.h"
+#include "Helpers.h"
 #include "strsafe.h"
 
 #define MAX_LOADSTRING 100
 
 // Objects definition - name + id
-#define IDC_OPTIALGOTEST_BUTTON 101
-#define IDC_AUDIOINPUTTESTSTART_BUTTON 102
-#define IDC_AUDIOINPUTTESTSTOP_BUTTON 103
-#define IDC_WAVGENTEST_BUTTON 104
-#define IDC_LIGHTTEST_BUTTON 199
+#define IDC_STARTSYS_BUTTON 101
+#define IDC_STOPSYS_BUTTON  102
 
 // Thread-related global constants
 #define MAX_THREADS 4
@@ -31,17 +29,16 @@ TCHAR szTitle[MAX_LOADSTRING];					// The title bar text
 TCHAR szWindowClass[MAX_LOADSTRING];			// the main window class name
 HANDLE hThreadArray[MAX_THREADS];				// Array of threads
 DWORD dwThreadArray[MAX_THREADS];				// Array of returned thread IDs
-OptiAlgo optiAlgo;
-DMXOutput lightsTest;
 InputChannelReader inputChannelReader = InputChannelReader();
 WavManipulation wavmanipulation = WavManipulation();
+OptiAlgo optiAlgo = OptiAlgo();
+DMXOutput lightsTest = DMXOutput();
 
-// Functions to run components in threads (because WINAPI lol)
-DWORD WINAPI AudioInputThreadStartFn(LPVOID lpParam) { inputChannelReader.start(); return 0; }
-DWORD WINAPI AudioInputThreadStopFn(LPVOID lpParam) { inputChannelReader.stop(); return 0; }
-DWORD WINAPI WavGenThreadStartFn(LPVOID lpParam) { wavmanipulation.startSnip(); return 0; }
-DWORD WINAPI OptiAlgoThreadStartFn(LPVOID lpParam) { OptiAlgo optiAlgo = OptiAlgo(); optiAlgo.test_algo(); return 0; }
-DWORD WINAPI AudioOutputThreadStartFn(LPVOID lpParam) { lightsTest = DMXOutput(); lightsTest.start(); return 0; }
+// Functions to run components in threads
+DWORD WINAPI AudioInputThread(LPVOID lpParam) { inputChannelReader = InputChannelReader(); Helpers::print_debug("START audio input.\n"); inputChannelReader.start(); return 0; }
+DWORD WINAPI WavGenThread(LPVOID lpParam) { wavmanipulation = WavManipulation(); Helpers::print_debug("START wav manip.\n"); wavmanipulation.startSnip(); return 0; }
+DWORD WINAPI OptiAlgoThread(LPVOID lpParam) { optiAlgo = OptiAlgo(); Helpers::print_debug("START opti algo.\n"); optiAlgo.start(); return 0; }
+DWORD WINAPI AudioOutputThread(LPVOID lpParam) { lightsTest = DMXOutput(); Helpers::print_debug("START audio output.\n"); lightsTest.start(); return 0; }
 
 
 // Forward declarations of functions included in this code module:
@@ -164,73 +161,37 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	int wmId, wmEvent;
 	PAINTSTRUCT ps;
 	HDC hdc;
-	HWND hWndOptiAlgoButton, hWndAudioInputButton, hWndWavGenButton, hWndDMXLightsButton;
+	DWORD result;
+	HWND hWndStartSysButton, hWndStopSysButton;
 
 	switch (message)
 	{
 	case WM_CREATE:
 		// Create buttons
-		hWndOptiAlgoButton = CreateWindowEx(NULL,
+		hWndStartSysButton = CreateWindowEx(NULL,
 			_T("BUTTON"),
-			_T("Test Optimization Algorithm"),
+			_T("Start system"),
 			WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
 			10,
 			10,
 			250,
 			24,
 			hWnd,
-			(HMENU)IDC_OPTIALGOTEST_BUTTON,
+			(HMENU)IDC_STARTSYS_BUTTON,
 			GetModuleHandle(NULL),
 			NULL);
-		hWndAudioInputButton = CreateWindowEx(NULL,
+		hWndStopSysButton = CreateWindowEx(NULL,
 			_T("BUTTON"),
-			_T("Start Audio Input"),
+			_T("Stop system"),
 			WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
 			10,
 			40,
-			120,
-			24,
-			hWnd,
-			(HMENU)IDC_AUDIOINPUTTESTSTART_BUTTON,
-			GetModuleHandle(NULL),
-			NULL);
-		hWndAudioInputButton = CreateWindowEx(NULL,
-			_T("BUTTON"),
-			_T("Stop Audio Input "),
-			WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-			140,
-			40,
-			120,
-			24,
-			hWnd,
-			(HMENU)IDC_AUDIOINPUTTESTSTOP_BUTTON,
-			GetModuleHandle(NULL),
-			NULL);
-		hWndWavGenButton = CreateWindowEx(NULL,
-			_T("BUTTON"),
-			_T("Test Wave Generation"),
-			WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-			10,
-			70,
 			250,
 			24,
 			hWnd,
-			(HMENU)IDC_WAVGENTEST_BUTTON,
+			(HMENU)IDC_STOPSYS_BUTTON,
 			GetModuleHandle(NULL),
 			NULL);
-		hWndDMXLightsButton = CreateWindowEx(NULL,
-			_T("BUTTON"),
-			_T("Test DMX Lights"),
-			WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-			10,
-			100,
-			250,
-			24,
-			hWnd,
-			(HMENU)IDC_LIGHTTEST_BUTTON,
-			GetModuleHandle(NULL),
-			NULL);
-
 		break;
 	case WM_COMMAND:
 		wmId    = LOWORD(wParam);
@@ -238,12 +199,24 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		// Parse the menu selections:
 		switch (wmId)
 		{
-		case IDC_OPTIALGOTEST_BUTTON:
-			// Run optimization algorithm test
+		case IDC_STARTSYS_BUTTON:
+			//hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID] = CreateThread(
+			//	NULL,
+			//	0,
+			//	AudioOutputThread,
+			//	NULL,
+			//	0,
+			//	&dwThreadArray[AUDIOOUTPUT_THREAD_ARR_ID]);
+			//if (hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID] == NULL)
+			//{
+			//	ErrorHandler(TEXT("CreateThread"));
+			//	CloseAllThreads();
+			//	ExitProcess(3);
+			//}
 			hThreadArray[OPTIALGO_THREAD_ARR_ID] = CreateThread(
 				NULL,
 				0,
-				OptiAlgoThreadStartFn,
+				OptiAlgoThread,
 				NULL,
 				0,
 				&dwThreadArray[OPTIALGO_THREAD_ARR_ID]);
@@ -253,13 +226,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				CloseAllThreads();
 				ExitProcess(3);
 			}
-			break;
-		case IDC_AUDIOINPUTTESTSTART_BUTTON:
-			// Do audio input start test
+			//hThreadArray[WAVGEN_THREAD_ARR_ID] = CreateThread(
+			//	NULL,
+			//	0,
+			//	WavGenThread,
+			//	NULL,
+			//	0,
+			//	&dwThreadArray[WAVGEN_THREAD_ARR_ID]);
+			//if (hThreadArray[WAVGEN_THREAD_ARR_ID] == NULL)
+			//{
+			//	ErrorHandler(TEXT("CreateThread"));
+			//	CloseAllThreads();
+			//	ExitProcess(3);
+			//}
 			hThreadArray[AUDIOINPUT_THREAD_ARR_ID] = CreateThread(
 				NULL,
 				0,
-				AudioInputThreadStartFn,
+				AudioInputThread,
 				NULL,
 				0,
 				&dwThreadArray[AUDIOINPUT_THREAD_ARR_ID]);
@@ -270,52 +253,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				ExitProcess(3);
 			}
 			break;
-		case IDC_AUDIOINPUTTESTSTOP_BUTTON:
-			// Do audio input stop test
-			hThreadArray[AUDIOINPUT_THREAD_ARR_ID] = CreateThread(
-				NULL,
-				0,
-				AudioInputThreadStopFn,
-				NULL,
-				0,
-				&dwThreadArray[AUDIOINPUT_THREAD_ARR_ID]);
-			if (hThreadArray[AUDIOINPUT_THREAD_ARR_ID] == NULL)
-			{
-				ErrorHandler(TEXT("CreateThread"));
-				CloseAllThreads();
-				ExitProcess(3);
-			}
-			break;
-		case IDC_WAVGENTEST_BUTTON:
-			hThreadArray[WAVGEN_THREAD_ARR_ID] = CreateThread(
-				NULL,
-				0,
-				WavGenThreadStartFn,
-				NULL,
-				0,
-				&dwThreadArray[WAVGEN_THREAD_ARR_ID]);
-			if (hThreadArray[WAVGEN_THREAD_ARR_ID] == NULL)
-			{
-				ErrorHandler(TEXT("CreateThread"));
-				CloseAllThreads();
-				ExitProcess(3);
-			}
-			break;
-		case IDC_LIGHTTEST_BUTTON:
-			// Test DMX lights
-			hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID] = CreateThread(
-				NULL,
-				0,
-				AudioOutputThreadStartFn,
-				NULL,
-				0,
-				&dwThreadArray[AUDIOOUTPUT_THREAD_ARR_ID]);
-			if (hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID] == NULL)
-			{
-				ErrorHandler(TEXT("CreateThread"));
-				CloseAllThreads();
-				ExitProcess(3);
-			}
+		case IDC_STOPSYS_BUTTON:
+			Helpers::print_debug("Stopping audio input...\n");
+			inputChannelReader.stop();
+			result = WaitForSingleObject(hThreadArray[AUDIOINPUT_THREAD_ARR_ID], 500);
+			if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP audio input.\n"); }
+			else if (result == WAIT_FAILED) { ErrorHandler(TEXT("WaitForSingleObject")); }
+			else { Helpers::print_debug("FAILED stopping audio input.\n"); }
+
+			// TODO: stop all components like this
+
+			Helpers::print_debug("Stopping optimization algorithm...\n");
+			optiAlgo.stop();
+			result = WaitForSingleObject(hThreadArray[OPTIALGO_THREAD_ARR_ID], 500);
+			if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP opti algo.\n"); }
+			else if (result == WAIT_FAILED) { ErrorHandler(TEXT("WaitForSingleObject")); }
+			else { Helpers::print_debug("FAILED stopping optimization algorithm.\n"); }
 			break;
 		case IDM_ABOUT:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);

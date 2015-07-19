@@ -211,10 +211,13 @@ OptiAlgo::ProblemRepresentation OptiAlgo::TabuSearch::search(ProblemRepresentati
 
 #pragma region OptiAlgo
 
+static queue<AudioInfo> audio_buffer = queue<AudioInfo>();
+
 OptiAlgo::OptiAlgo()
 {
 	srand(static_cast<unsigned int>(time(NULL)));
 	audio_buffer = queue<AudioInfo>();
+	terminate = false;
 }
 
 bool OptiAlgo::receive_audio_input_sample(AudioInfo audio_sample)
@@ -307,10 +310,12 @@ void OptiAlgo::start()
 	audio_props = AudioProps();
 	double freq, loud, tempo;
 
-	while (silences < SILENCES_TO_STOP)
+	while (!terminate && silences < SILENCES_TO_STOP)
 	{
 		// Wait for audio input samples
-		while (audio_buffer.empty()) {}
+		while (audio_buffer.empty()) {
+			if (terminate) { return; }
+		}
 
 		// Grab sample
 		audio_sample = audio_buffer.front();
@@ -381,6 +386,11 @@ void OptiAlgo::start()
 		// Last step: remove analysed sample from buffer
 		audio_buffer.pop();
 	}
+}
+
+void OptiAlgo::stop()
+{
+	terminate = true;
 }
 
 #pragma endregion
