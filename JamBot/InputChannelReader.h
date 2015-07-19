@@ -15,7 +15,6 @@ typedef struct
 	float*					recordedSamples;
 	std::queue<float*>		recordedBuffer;
 	int						bufferedSamples;
-	double					sampleInfo[3];
 }
 paData;
 

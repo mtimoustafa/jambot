@@ -17,11 +17,8 @@ using namespace std;
 
 AudioInfo::AudioInfo()
 {
-	_frequency = new double;
-	_loudness = new double;
-	_tempo = new double;
-	randomize_info();
 }
+
 AudioInfo::AudioInfo(double * freq, double * loudness, double * tempo)
 {
 	_frequency = new double;

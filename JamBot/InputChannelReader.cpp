@@ -40,12 +40,16 @@
 #include "Helpers.h"
 #include "InputChannelReader.h"
 #include "portaudio.h"
+#include "OptiAlgo.h"
+#include "Constants.h"
+#include "Constructs.h"
 #include "write_wav.cpp"
 #include "MiniBpm.cpp"
 #include <string>
 #include <queue>
 
 MiniBPM tempo = MiniBPM((float)SAMPLE_RATE);
+AudioInfo audioSamples = AudioInfo();
 
 InputChannelReader::InputChannelReader() 
 {
@@ -125,17 +129,17 @@ void InputChannelReader::analyseBuffer(paData *data)
 		average += val;
 	}
 	average = average / (double)numSamples;
-	data->sampleInfo[0] = average;
+	audioSamples.set_loudness(average);
 
-	printf("Average sample loudness (dB): %f\n", data->sampleInfo[0]);
+	Helpers::print_debug(("Average sample loudness (dB): " + to_string(average) + "\n").c_str());
 
 	// Measure average tempo every 1.5s
 	tempo.process(const_cast<float*>(data->recordedBuffer.back()), numSamples);
 
 	if ((data->recordedBuffer.size() % 15) == 0)
 	{
-		data->sampleInfo[1] = tempo.estimateTempo();
-		printf("Average sample tempo (bpm): %f\n\n", data->sampleInfo[1]);
+		audioSamples.set_tempo(tempo.estimateTempo());
+		Helpers::print_debug(("Average sample tempo (bpm): " + to_string(tempo.estimateTempo()) + "\n\n").c_str());
 		tempo.reset();
 	}
 }
@@ -162,16 +166,15 @@ int InputChannelReader::main(void)
 	int                 numBytes;
 	float*				streamBuffers;
 
-	printf("patest_record.c\n"); fflush(stdout);
+	tempo.setBPMRange(TEMPO_LB, TEMPO_UB);	//Set up tempo ranges
 
 	numSamples = FRAMES_PER_BUFFER * NUM_CHANNELS * 2;
 	numBytes = numSamples * sizeof(float);
-	data.recordedSamples = (float *)malloc(numBytes); // From now on, recordedSamples is initialised. 
+	data.recordedSamples = (float *)malloc(numBytes); //From now on, recordedSamples is initialised. 
 	data.bufferedSamples = 0;
-	tempo.setBPMRange(50.0, 250.0);
 	if (data.recordedSamples == NULL)
 	{
-		printf("Could not allocate record array.\n");
+		Helpers::print_debug("Could not allocate record array.\n");
 		goto done;
 	}
 	for (i = 0; i<numSamples; i++) data.recordedSamples[i] = 0.0;
@@ -179,12 +182,11 @@ int InputChannelReader::main(void)
 	err = Pa_Initialize();
 	if (err != paNoError) goto done;
 
-	inputParameters.device = Pa_GetDefaultInputDevice(); /* default input device */
+	inputParameters.device = Pa_GetDefaultInputDevice();	//Default input device
 	if (inputParameters.device == paNoDevice) {
-		fprintf(stderr, "Error: No default input device.\n");
 		goto done;
 	}
-	inputParameters.channelCount = NUM_CHANNELS * (1 + IS_STEREO);                    /* channel inputs */
+	inputParameters.channelCount = NUM_CHANNELS * (1 + IS_STEREO);
 	inputParameters.sampleFormat = paInt16;
 	inputParameters.suggestedLatency = Pa_GetDeviceInfo(inputParameters.device)->defaultLowInputLatency;
 	inputParameters.hostApiSpecificStreamInfo = NULL;
@@ -203,7 +205,7 @@ int InputChannelReader::main(void)
 
 	err = Pa_StartStream(stream);
 	if (err != paNoError) goto done;
-	printf("\n=== Now recording! Please speak into the microphone. ===\n"); fflush(stdout);
+	Helpers::print_debug("\n=== Now recording! Please speak into the microphone. ===\n");
 
 	while (stopStream)
 	{
@@ -238,18 +240,18 @@ int InputChannelReader::main(void)
 	openFile = Audio_WAV_OpenWriter(writer, "Output.wav", SAMPLE_RATE, 2);
 	if (openFile < 0)
 	{
-		printf("Could not open file.\n");
+		Helpers::print_debug("Could not open file.\n");
 	}
 	else
 	{
 		writeFile = Audio_WAV_WriteShorts(writer, streamBuffers, totalSamples);
 		if (writeFile < 0)
 		{
-			printf("Could not write file.\n");
+			Helpers::print_debug("Could not write file.\n");
 		}
 		else
 		{
-			printf("Wrote %d bytes of data to 'Output.wav'.\n", writer->dataSize);
+			Helpers::print_debug(("Wrote " + to_string(writer->dataSize) + " bytes of data to 'Output.wav'.\n").c_str());
 		}
 	}
 	Audio_WAV_CloseWriter(writer);
@@ -262,9 +264,7 @@ done:
 		free(data.recordedSamples);
 	if (err != paNoError)
 	{
-		fprintf(stderr, "An error occured while using the portaudio stream\n");
-		fprintf(stderr, "Error number: %d\n", err);
-		fprintf(stderr, "Error message: %s\n", Pa_GetErrorText(err));
+		Helpers::print_debug("ERROR: Terminated InputChannelReader module");
 		err = 1;          /* Always return 0 or 1, but no other return codes. */
 	}
 
