@@ -1,2 +1,3 @@
-$GIT_DIR/JamBot/Debug/
-$GIT_DIR/JamBot.opensdf
+*.sdf
+*.suo
+JamBot/Debug/*

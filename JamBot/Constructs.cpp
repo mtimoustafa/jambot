@@ -122,6 +122,21 @@ void AudioInfo::set_tempo(double freq)
 
 #pragma region LightsInfo // For info interfacing between algorithm and output
 
+unsigned char* LightsInfo::convert_to_output(LightsInfo output)
+{
+	unsigned char* lightsOutput[8];
+	lightsOutput[0] = (unsigned char*)output.red_intensity;
+	lightsOutput[1] = (unsigned char*)output.green_intensity;
+	lightsOutput[2] = (unsigned char*)output.blue_intensity;
+	lightsOutput[3] = (unsigned char*)output.white_intensity;
+	lightsOutput[4] = 0;
+	lightsOutput[5] = (unsigned char*)output.strobing_speed;
+	lightsOutput[6] = 0;
+	lightsOutput[7] = (unsigned char*)output.dimness;
+	
+	return *lightsOutput;
+}
+
 bool LightsInfo::operator == (const LightsInfo& b) const
 {
 	return abs((int)red_intensity - (int)b.red_intensity) <= LI_EQUAL_THRESH &&

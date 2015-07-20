@@ -30,6 +30,7 @@ class LightsInfo
 public:
 	unsigned int red_intensity, blue_intensity, green_intensity, white_intensity;
 	unsigned int strobing_speed, dimness;
+	unsigned char* convert_to_output(LightsInfo output);
 
 	bool operator == (const LightsInfo& b) const;
 };
