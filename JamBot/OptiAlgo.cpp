@@ -12,6 +12,7 @@
 #include <ctime>
 #include <sstream>
 #include <queue>
+#include <exception>
 
 #include "Constructs.h"
 #include "Constants.h"
@@ -309,83 +310,101 @@ void OptiAlgo::start()
 	double current_loudness;
 	audio_props = AudioProps();
 	double freq, loud, tempo;
+	bool listen_for_silence = false;
+	char * err_str;
 
-	while (!terminate && silences < SILENCES_TO_STOP)
+	while (!terminate && (!listen_for_silence || silences < SILENCES_TO_STOP) )
 	{
-		// Wait for audio input samples
-		while (audio_buffer.empty()) {
-			if (terminate) { return; }
+		try {
+			// Wait for audio input samples
+			while (audio_buffer.empty()) {
+				if (terminate) { return; }
+			}
+
+			// Grab sample
+			audio_sample = audio_buffer.front();
+
+			// Check for silence
+			if (listen_for_silence)
+			{
+				if (audio_sample.get_loudness(current_loudness) && current_loudness <= SILENCE_THRESH) silences++;
+				else silences -= silences > 2 ? 2 : 0;
+			}
+
+			// Smooth input
+			sample_diff = audio_sample.differences(prev_sample);
+			if (sample_diff.get_frequency(freq) && abs(freq) >= FREQ_SMOOTH_THRESH)
+			{
+				prev_sample.get_frequency(freq);
+				audio_sample.set_frequency(freq);
+			}
+			if (sample_diff.get_loudness(loud) && abs(loud) >= LOUD_SMOOTH_THRESH &&
+				audio_sample.get_loudness(current_loudness) && current_loudness > SILENCE_THRESH)
+			{
+				prev_sample.get_loudness(loud);
+				audio_sample.get_loudness(loud);
+				if (!listen_for_silence) listen_for_silence = true;
+			}
+			if (sample_diff.get_tempo(tempo) && abs(tempo) >= TEMPO_SMOOTH_THRESH)
+			{
+				prev_sample.get_tempo(tempo);
+				audio_sample.get_tempo(tempo);
+			}
+
+			// TODO: score properties according to audio sample
+
+			// Use properties to find varying, near-optimal lights configuration
+			solution = algorithm.search(solution, audio_props);
+
+			// Sense change and adapt to it
+			// PROBABLY UNNECESSARY
+			//temp_history = sample_history;
+			//nudges = 0;
+			//while (!temp_history.empty())
+			//{
+			//	hist_sol = temp_history.front();
+			//	temp_history.pop();
+			//	if (!temp_history.empty())
+			//	{
+			//		if (hist_sol.representation.differences(temp_history.front().representation) >= DIFFS_FOR_CHANGE)
+			//		{
+			//			break;
+			//		}
+			//		else
+			//		{
+			//			nudges++;
+			//		}
+			//	}
+			//	else
+			//	{
+			//		nudges = 0;
+			//		break;
+			//	}
+			//}
+			//lights_config = (nudges >= NUDGES_TO_CHANGE) ? solution.representation : lights_config; // wrong logic :/
+
+			// Update history
+			if (sample_history.size() >= HISTORY_BUF_SIZE) sample_history.pop();
+			sample_history.push(solution);
+			prev_sample = audio_sample;
+
+			// Send solution to output controller
+			//TODO: give_jack(lights_config);
+
+			// Last step: remove analysed sample from buffer
+			audio_buffer.pop();
 		}
-
-		// Grab sample
-		audio_sample = audio_buffer.front();
-
-		// Check for silence
-		if (audio_sample.get_loudness(current_loudness) && current_loudness <= SILENCE_THRESH) silences++;
-		else silences -= silences > 0 ? 2 : 0;
-
-		// Smooth input
-		sample_diff = audio_sample.differences(prev_sample);
-		if (sample_diff.get_frequency(freq) && abs(freq) >= FREQ_SMOOTH_THRESH)
+		catch (exception e)
 		{
-			prev_sample.get_frequency(freq);
-			audio_sample.set_frequency(freq);
+			err_str = "";
+			strcat(err_str, "ERROR: OptiAlgo: ");
+			strcat(err_str, e.what());
+			strcat(err_str, "\n");
+			Helpers::print_debug(err_str);
 		}
-		if (sample_diff.get_frequency(loud) && abs(loud) >= LOUD_SMOOTH_THRESH &&
-			audio_sample.get_loudness(current_loudness) && current_loudness > SILENCE_THRESH)
-		{
-			prev_sample.get_frequency(loud);
-			audio_sample.set_frequency(loud);
-		}
-		if (sample_diff.get_frequency(tempo) && abs(tempo) >= TEMPO_SMOOTH_THRESH)
-		{
-			prev_sample.get_frequency(tempo);
-			audio_sample.set_frequency(tempo);
-		}
-
-		// TODO: score properties according to audio sample
-
-		// Use properties to find varying, near-optimal lights configuration
-		solution = algorithm.search(solution, audio_props);
-
-		// Sense change and adapt to it
-		// PROBABLY UNNECESSARY
-		//temp_history = sample_history;
-		//nudges = 0;
-		//while (!temp_history.empty())
-		//{
-		//	hist_sol = temp_history.front();
-		//	temp_history.pop();
-		//	if (!temp_history.empty())
-		//	{
-		//		if (hist_sol.representation.differences(temp_history.front().representation) >= DIFFS_FOR_CHANGE)
-		//		{
-		//			break;
-		//		}
-		//		else
-		//		{
-		//			nudges++;
-		//		}
-		//	}
-		//	else
-		//	{
-		//		nudges = 0;
-		//		break;
-		//	}
-		//}
-		//lights_config = (nudges >= NUDGES_TO_CHANGE) ? solution.representation : lights_config; // wrong logic :/
-
-		// Update history
-		if (sample_history.size() >= HISTORY_BUF_SIZE) sample_history.pop();
-		sample_history.push(solution);
-		prev_sample = audio_sample;
-
-		// Send solution to output controller
-		//TODO: give_jack(lights_config);
-
-		// Last step: remove analysed sample from buffer
-		audio_buffer.pop();
 	}
+	if (terminate) Helpers::print_debug("OptiAlgo: terminated.\n");
+	else Helpers::print_debug("OptiAlgo: stopped.\n");
 }
 
 void OptiAlgo::stop()

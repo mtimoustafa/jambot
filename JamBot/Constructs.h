@@ -8,7 +8,7 @@ class AudioInfo
 	double * _tempo;
 
 public:
-	AudioInfo();
+	AudioInfo(bool random = false);
 	AudioInfo(double * freq, double * loudness, double * tempo);
 
 	void randomize_info();

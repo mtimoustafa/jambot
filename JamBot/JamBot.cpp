@@ -161,7 +161,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	int wmId, wmEvent;
 	PAINTSTRUCT ps;
 	HDC hdc;
-	DWORD result;
 	HWND hWndStartSysButton, hWndStopSysButton;
 
 	switch (message)
@@ -254,21 +253,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 			break;
 		case IDC_STOPSYS_BUTTON:
-			Helpers::print_debug("Stopping audio input...\n");
-			inputChannelReader.stop();
-			result = WaitForSingleObject(hThreadArray[AUDIOINPUT_THREAD_ARR_ID], 500);
-			if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP audio input.\n"); }
-			else if (result == WAIT_FAILED) { ErrorHandler(TEXT("WaitForSingleObject")); }
-			else { Helpers::print_debug("FAILED stopping audio input.\n"); }
-
-			// TODO: stop all components like this
-
-			Helpers::print_debug("Stopping optimization algorithm...\n");
-			optiAlgo.stop();
-			result = WaitForSingleObject(hThreadArray[OPTIALGO_THREAD_ARR_ID], 500);
-			if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP opti algo.\n"); }
-			else if (result == WAIT_FAILED) { ErrorHandler(TEXT("WaitForSingleObject")); }
-			else { Helpers::print_debug("FAILED stopping optimization algorithm.\n"); }
+			CloseAllThreads();
 			break;
 		case IDM_ABOUT:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
@@ -321,10 +306,23 @@ void CloseThread(int id)
 }
 void CloseAllThreads()
 {
-	for (int i = 0; i<MAX_THREADS; i++)
-	{
-		CloseHandle(hThreadArray[i]);
-	}
+	DWORD result;
+
+	Helpers::print_debug("Stopping audio input...\n");
+	inputChannelReader.stop();
+	result = WaitForSingleObject(hThreadArray[AUDIOINPUT_THREAD_ARR_ID], 500);
+	if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP audio input.\n"); }
+	else if (result == WAIT_FAILED) { ErrorHandler(TEXT("WaitForSingleObject")); }
+	else { Helpers::print_debug("FAILED stopping audio input.\n"); }
+
+	// TODO: stop all components like this
+
+	Helpers::print_debug("Stopping optimization algorithm...\n");
+	optiAlgo.stop();
+	result = WaitForSingleObject(hThreadArray[OPTIALGO_THREAD_ARR_ID], 500);
+	if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP opti algo.\n"); }
+	else if (result == WAIT_FAILED) { ErrorHandler(TEXT("WaitForSingleObject")); }
+	else { Helpers::print_debug("FAILED stopping optimization algorithm.\n"); }
 }
 
 void ErrorHandler(LPTSTR lpszFunction)

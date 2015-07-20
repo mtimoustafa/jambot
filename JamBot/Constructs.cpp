@@ -15,8 +15,12 @@ using namespace std;
 
 #pragma region AudioInfo // For info interfacing between input and algorithm
 
-AudioInfo::AudioInfo()
+AudioInfo::AudioInfo(bool random) // argument defaults to false
 {
+	_frequency = new double;
+	_loudness = new double;
+	_tempo = new double;
+	if (random) randomize_info();
 }
 
 AudioInfo::AudioInfo(double * freq, double * loudness, double * tempo)

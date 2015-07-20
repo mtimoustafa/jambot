@@ -207,7 +207,7 @@ int InputChannelReader::main(void)
 	if (err != paNoError) goto done;
 	Helpers::print_debug("\n=== Now recording! Please speak into the microphone. ===\n");
 
-	while (stopStream)
+	while (!stopStream)
 	{
 		// Analyse Buffer when new Buffer available
 		if (data.bufferedSamples != data.recordedBuffer.size())

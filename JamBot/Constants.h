@@ -19,7 +19,7 @@ const double LI_EQUAL_THRESH = 2.0;
 const unsigned int AUDIO_BUF_SIZE = 256;
 const unsigned int HISTORY_BUF_SIZE = 5;
 const unsigned int NUDGES_TO_CHANGE = 3;
-const unsigned int SILENCES_TO_STOP = 10;
+const unsigned int SILENCES_TO_STOP = 10 * 5;
 const unsigned int DIFFS_FOR_CHANGE = 4;
 
 const double FREQ_SMOOTH_THRESH = 50.0;
