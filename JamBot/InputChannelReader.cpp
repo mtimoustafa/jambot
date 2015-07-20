@@ -142,6 +142,8 @@ void InputChannelReader::analyseBuffer(paData *data)
 		Helpers::print_debug(("Average sample tempo (bpm): " + to_string(tempo.estimateTempo()) + "\n\n").c_str());
 		tempo.reset();
 	}
+
+	OptiAlgo::receive_audio_input_sample(audioSamples);
 }
 
 void InputChannelReader::stop()
