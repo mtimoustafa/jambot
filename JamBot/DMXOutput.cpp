@@ -55,9 +55,9 @@ int DMXOutput::write(FT_HANDLE handle, unsigned char* data, int length)
 	DWORD bytesWritten;
 
 	status = FT_Write(handle, data, length, &bytesWritten);
-	if (status == FT_OK)
+	if (status != FT_OK)
 	{
-		lightsOutput.pop();
+		Helpers::print_debug("ERROR: DMXOutput: write unsuccessful (did not receive FT_OK).\n");
 	}
 	return status;
 }
@@ -84,6 +84,7 @@ bool DMXOutput::updateLightsOutputQueue(LightsInfo output)
 
 int DMXOutput::start_listening()
 {
+	LightsInfo info_packet;
 	//writeData
 	if (status == FT_OK)
 	{
@@ -91,11 +92,11 @@ int DMXOutput::start_listening()
 		status = FT_SetBreakOff(handle);
 		while (true)
 		{
-			while (lightsOutput.size() == 0)
-			{
-				Sleep(200);
-			}
-			bytesWritten = write(handle, buffer, packet_size);
+			while (lightsOutput.size() == 0) { }
+
+			info_packet = lightsOutput.front();
+			lightsOutput.pop();
+			bytesWritten = write(handle, info_packet.convert_to_output(), packet_size);
 		}
 	}
 	return 0;
