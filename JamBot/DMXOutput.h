@@ -19,7 +19,7 @@
 
 class DMXOutput
 {
-	unsigned char buffer[513];
+	unsigned char turnOffLightsPacket[513];
 	FT_HANDLE handle;
 	bool done;
 	bool connected;
@@ -41,6 +41,8 @@ public:
 	void init();
 
 	static bool updateLightsOutputQueue(LightsInfo output);
+	void stop();
+	void close();
 
 private:
 	int write(FT_HANDLE handle, unsigned char* data, int length);

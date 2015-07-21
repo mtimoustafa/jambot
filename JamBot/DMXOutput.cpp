@@ -32,6 +32,22 @@ void DMXOutput::start()
 	init();
 	start_listening();
 }
+
+void DMXOutput::stop()
+{
+	done = true;
+}	
+
+void DMXOutput::close()
+{
+	status = FT_Purge(handle, PURGE_TX);
+	status = FT_Purge(handle, PURGE_RX);
+	status = FT_Close(&handle);
+	if (status != FT_OK)
+	{
+		Helpers::print_debug("DMX device not closed properly\n");
+	}
+}
 //initilizing the hander and the status
 void DMXOutput::init()
 {
@@ -90,7 +106,7 @@ int DMXOutput::start_listening()
 	{
 		status = FT_SetBreakOn(handle);
 		status = FT_SetBreakOff(handle);
-		while (true)
+		while (!done)
 		{
 			while (lightsOutput.size() == 0) { }
 
@@ -98,6 +114,7 @@ int DMXOutput::start_listening()
 			lightsOutput.pop();
 			bytesWritten = write(handle, info_packet.convert_to_output(), packet_size);
 		}
+		write(handle, turnOffLightsPacket, packet_size);
 	}
 	return 0;
 }
