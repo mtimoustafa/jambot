@@ -64,12 +64,17 @@ void DMXOutput::init()
 	status = FT_ClrRts(handle);
 	status = FT_Purge(handle, PURGE_TX);
 	status = FT_Purge(handle, PURGE_RX);
+
+	bytesWritten = write(handle, turnOffLightsPacket, packet_size);
 }
 
 int DMXOutput::write(FT_HANDLE handle, unsigned char* data, int length)
 {
 	FT_STATUS status;
 	DWORD bytesWritten;
+
+	status = FT_SetBreakOn(handle);
+	status = FT_SetBreakOff(handle);
 
 	status = FT_Write(handle, data, length, &bytesWritten);
 	if (status != FT_OK)
@@ -94,20 +99,32 @@ int DMXOutput::start_listening()
 	//writeData
 	if (status == FT_OK)
 	{
-		status = FT_SetBreakOn(handle);
-		status = FT_SetBreakOff(handle);
+
 		while (!done)
 		{
 			try
 			{
-				while (lightsOutput.size() == 0) {
-					if (done) { return 0; }
+				while (lightsOutput.size() == 0) 
+				{
+					if (done) 
+					{ 
+						break;
+					}
+				}
+				
+				if (done)
+				{
+					//break the while loop
+					break;
 				}
 
+				//freeing the packet memory
 				delete info_packet;
 				info_packet = new unsigned char[513] {};
+				//converting to channel 7 format
 				info_packet = lightsOutput.front().convert_to_output(info_packet);
 				lightsOutput.pop();
+
 				bytesWritten = write(handle, info_packet, packet_size);
 			}
 			catch (exception e)
