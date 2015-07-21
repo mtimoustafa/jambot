@@ -3,50 +3,38 @@
 #include "DMXOutput.h"
 #include <string>
 #include <deque>
+#include <exception>
+
+using namespace std;
+
+static std::queue<LightsInfo> lightsOutput;
 
 DMXOutput::DMXOutput()
 {
-	
+
+	handle = NULL;
+	done = false;
+	connected = false;
+	bytesWritten = 0;
+	packet_size = 513;
+
+	BITS_8 = 8;
+	STOP_BITS_2 = 2;
+	Parity_None = 0;
+	FLOW_NONE = 0;
+	PURGE_RX = 1;
+	PURGE_TX = 2;
+
 };
 
 void DMXOutput::start()
 {
-	main();
+	init();
+	start_listening();
 }
-
-int DMXOutput::write(FT_HANDLE handle, unsigned char* data, int length)
+//initilizing the hander and the status
+void DMXOutput::init()
 {
-	FT_STATUS status;
-	DWORD bytesWritten;
-	unsigned char data2[513];
-	data2[1] = 255;
-	data2[2] = 255;
-	data2[3] = 255;
-	data2[4] = 255;
-	data2[5] = 255;
-	data2[6] = 255;
-	data2[7] = 255;
-	data2[8] = 255;
-	status = FT_Write(handle, data2, length, &bytesWritten);
-	return status;
-}
-
-int DMXOutput::main()
-{
-	static unsigned char buffer[513];
-	FT_HANDLE handle = NULL;
-	static bool done = false;
-	static bool connected = false;
-	static int bytesWritten = 0;
-	static FT_STATUS status;
-
-	const unsigned char BITS_8 = 8;
-	const unsigned char STOP_BITS_2 = 2;
-	const unsigned char Parity_None = 0;
-	const uint16_t FLOW_NONE = 0;
-	const unsigned char PURGE_RX = 1;
-	const unsigned char PURGE_TX = 2;
-
 	//start
 	handle = 0;
 	status = FT_Open(0, &handle);
@@ -59,13 +47,56 @@ int DMXOutput::main()
 	status = FT_ClrRts(handle);
 	status = FT_Purge(handle, PURGE_TX);
 	status = FT_Purge(handle, PURGE_RX);
+}
 
+int DMXOutput::write(FT_HANDLE handle, unsigned char* data, int length)
+{
+	FT_STATUS status;
+	DWORD bytesWritten;
+
+	status = FT_Write(handle, data, length, &bytesWritten);
+	if (status == FT_OK)
+	{
+		lightsOutput.pop();
+	}
+	return status;
+}
+
+bool DMXOutput::updateLightsOutputQueue(LightsInfo output)
+{
+	bool result = false;
+	char * err_str;
+	try
+	{
+		lightsOutput.push(output);
+		result = true;
+	}
+	catch (exception e)
+	{
+		err_str = "";
+		strcat(err_str, "ERROR: DMXOutput: ");
+		strcat(err_str, e.what());
+		strcat(err_str, "\n");
+		Helpers::print_debug(err_str);
+	}
+	return result;
+}
+
+int DMXOutput::start_listening()
+{
 	//writeData
 	if (status == FT_OK)
 	{
 		status = FT_SetBreakOn(handle);
 		status = FT_SetBreakOff(handle);
-		bytesWritten = write(handle, buffer, 513);
+		while (true)
+		{
+			while (lightsOutput.size() == 0)
+			{
+				Sleep(200);
+			}
+			bytesWritten = write(handle, buffer, packet_size);
+		}
 	}
 	return 0;
 }

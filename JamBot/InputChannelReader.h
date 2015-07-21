@@ -1,20 +1,20 @@
 #include "stdafx.h"
 #include "portaudio.h"
-#include <deque>
+#include <queue>
 
 #define SAMPLE_RATE  (22050)
 #define FRAMES_PER_BUFFER (4410)	//200ms of audio per buffer
-#define NUM_CHANNELS    (2)
+#define NUM_CHANNELS    (1)
+#define IS_STEREO		(0)
 #define DITHER_FLAG     (0)
 #define SAMPLE_SILENCE  (0)
 #define PRINTF_S_FORMAT "%d"
 
 typedef struct
 {
-	short*					recordedSamples;
-	std::deque<short*>		recordedBuffer;
-	int						bufferCount;
-	double					sampleInfo[3];
+	float*					recordedSamples;
+	std::queue<float*>		recordedBuffer;
+	int						bufferedSamples;
 }
 paData;
 

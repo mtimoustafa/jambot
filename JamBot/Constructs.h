@@ -8,8 +8,9 @@ class AudioInfo
 	double * _tempo;
 
 public:
-	AudioInfo();
+	AudioInfo(bool random = false);
 	AudioInfo(double * freq, double * loudness, double * tempo);
+	~AudioInfo();
 
 	void randomize_info();
 
@@ -30,6 +31,7 @@ class LightsInfo
 public:
 	unsigned int red_intensity, blue_intensity, green_intensity, white_intensity;
 	unsigned int strobing_speed, dimness;
+	unsigned char* convert_to_output(LightsInfo output);
 
 	bool operator == (const LightsInfo& b) const;
 };

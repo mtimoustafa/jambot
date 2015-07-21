@@ -60,17 +60,17 @@ class OptiAlgo
 		ProblemRepresentation search(ProblemRepresentation problem, AudioProps audio_props);
 	};
 
-	queue<AudioInfo> audio_buffer;
 	AudioProps audio_props;
+	bool terminate;
 
 public:
 	OptiAlgo();
 
-	bool receive_audio_input_sample(AudioInfo audio_sample); // returns false if internal buffer is full
+	static bool receive_audio_input_sample(AudioInfo audio_sample); // returns false if internal buffer is full
 	map<string, double> execute_algorithm(TabuSearch algo, int n_iterations);
 	void test_algo();
 	void start();
-
+	void stop();
 };
 
 #endif

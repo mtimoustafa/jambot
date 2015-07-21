@@ -15,13 +15,23 @@ using namespace std;
 
 #pragma region AudioInfo // For info interfacing between input and algorithm
 
-AudioInfo::AudioInfo()
+AudioInfo::AudioInfo(bool random) // argument defaults to false
 {
-	_frequency = new double;
-	_loudness = new double;
-	_tempo = new double;
-	randomize_info();
+	if (random)
+	{
+		_frequency = new double;
+		_loudness = new double;
+		_tempo = new double;
+		randomize_info();
+	}
+	else
+	{
+		_frequency = NULL;
+		_loudness = NULL;
+		_tempo = NULL;
+	}
 }
+
 AudioInfo::AudioInfo(double * freq, double * loudness, double * tempo)
 {
 	_frequency = new double;
@@ -30,6 +40,16 @@ AudioInfo::AudioInfo(double * freq, double * loudness, double * tempo)
 	if (freq != NULL) { *_frequency = *freq; }
 	if (loudness != NULL) { *_loudness = *loudness; }
 	if (tempo != NULL) { *_tempo = *tempo; }
+}
+
+AudioInfo::~AudioInfo()
+{
+	_frequency = NULL;
+	_loudness = NULL;
+	_tempo = NULL;
+	delete _frequency;
+	delete _loudness;
+	delete _tempo;
 }
 
 void AudioInfo::randomize_info()
@@ -82,6 +102,7 @@ bool AudioInfo::get_frequency(double & freq) const
 }
 void AudioInfo::set_frequency(double freq)
 {
+	if (_frequency == NULL) _frequency = new double;
 	if (freq > FREQ_UB)
 		*_frequency = FREQ_UB;
 	else if (freq < FREQ_LB)
@@ -97,6 +118,7 @@ bool AudioInfo::get_loudness(double & loud) const
 }
 void AudioInfo::set_loudness(double freq)
 {
+	if (_loudness == NULL) _loudness = new double;
 	if (freq > LOUD_UB)
 		*_loudness = LOUD_UB;
 	else if (freq < LOUD_LB)
@@ -112,6 +134,7 @@ bool AudioInfo::get_tempo(double & tempo) const
 }
 void AudioInfo::set_tempo(double freq)
 {
+	if (_tempo == NULL) _tempo = new double;
 	if (freq > TEMPO_UB)
 		*_tempo = TEMPO_UB;
 	else if (freq < TEMPO_LB)
@@ -124,6 +147,21 @@ void AudioInfo::set_tempo(double freq)
 
 
 #pragma region LightsInfo // For info interfacing between algorithm and output
+
+unsigned char* LightsInfo::convert_to_output(LightsInfo output)
+{
+	unsigned char* lightsOutput[8];
+	lightsOutput[0] = (unsigned char*)output.red_intensity;
+	lightsOutput[1] = (unsigned char*)output.green_intensity;
+	lightsOutput[2] = (unsigned char*)output.blue_intensity;
+	lightsOutput[3] = (unsigned char*)output.white_intensity;
+	lightsOutput[4] = 0;
+	lightsOutput[5] = (unsigned char*)output.strobing_speed;
+	lightsOutput[6] = 0;
+	lightsOutput[7] = (unsigned char*)output.dimness;
+	
+	return *lightsOutput;
+}
 
 bool LightsInfo::operator == (const LightsInfo& b) const
 {
