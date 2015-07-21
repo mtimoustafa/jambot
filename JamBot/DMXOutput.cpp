@@ -82,38 +82,42 @@ int DMXOutput::write(FT_HANDLE handle, unsigned char* data, int length)
 bool DMXOutput::updateLightsOutputQueue(LightsInfo output)
 {
 	bool result = false;
-	char * err_str;
-	try
-	{
-		lightsOutput.push(output);
-		result = true;
-	}
-	catch (exception e)
-	{
-		err_str = "";
-		strcat(err_str, "ERROR: DMXOutput: ");
-		strcat(err_str, e.what());
-		strcat(err_str, "\n");
-		Helpers::print_debug(err_str);
-	}
+	lightsOutput.push(output);
+	result = true;
 	return result;
 }
 
 int DMXOutput::start_listening()
 {
-	unsigned char* info_packet;
+	unsigned char * info_packet = new unsigned char[513] {};
+	char * err_str;
 	//writeData
 	if (status == FT_OK)
 	{
 		status = FT_SetBreakOn(handle);
 		status = FT_SetBreakOff(handle);
 		while (!done)
-		{ 
-			while (lightsOutput.size() == 0) { }
+		{
+			try
+			{
+				while (lightsOutput.size() == 0) {
+					if (done) { return 0; }
+				}
 
-			info_packet = lightsOutput.front().convert_to_output();
-			lightsOutput.pop();
-			bytesWritten = write(handle, info_packet, packet_size);
+				delete info_packet;
+				info_packet = new unsigned char[513] {};
+				info_packet = lightsOutput.front().convert_to_output(info_packet);
+				lightsOutput.pop();
+				bytesWritten = write(handle, info_packet, packet_size);
+			}
+			catch (exception e)
+			{
+				err_str = "";
+				strcat(err_str, "ERROR: DMXOutput: ");
+				strcat(err_str, e.what());
+				strcat(err_str, "\n");
+				Helpers::print_debug(err_str);
+			}
 		}
 		write(handle, turnOffLightsPacket, packet_size);
 	}

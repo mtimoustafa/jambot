@@ -319,28 +319,31 @@ void OptiAlgo::start()
 	int strobe = 0;
 	while (!terminate)
 	{
-		lights_config.red_intensity = 0;
+		lights_config.red_intensity = 255;
 		lights_config.blue_intensity = 0;
-		lights_config.green_intensity = 255;
+		lights_config.green_intensity = 0;
+		lights_config.white_intensity = 100;
 		lights_config.strobing_speed = strobe;
 		lights_config.dimness = 255;
 		DMXOutput::updateLightsOutputQueue(lights_config);
 		Sleep(1000);
-		//lights_config.red_intensity = 0;
-		//lights_config.blue_intensity = 255;
-		//lights_config.green_intensity = 0;
-		//lights_config.strobing_speed = strobe;
-		//lights_config.dimness = 255;
-		//DMXOutput::updateLightsOutputQueue(lights_config);
-		//Sleep(1000);
-		//lights_config.red_intensity = 255;
-		//lights_config.blue_intensity = 0;
-		//lights_config.green_intensity = 0;
-		//lights_config.strobing_speed = strobe;
-		//lights_config.dimness = 255;
-		//DMXOutput::updateLightsOutputQueue(lights_config);
-		////strobe = (strobe + 100) % 200;
-		//Sleep(1000);
+		lights_config.red_intensity = 0;
+		lights_config.blue_intensity = 0;
+		lights_config.green_intensity = 255;
+		lights_config.white_intensity = 100;
+		lights_config.strobing_speed = strobe;
+		lights_config.dimness = 255;
+		DMXOutput::updateLightsOutputQueue(lights_config);
+		Sleep(1000);
+		lights_config.red_intensity = 0;
+		lights_config.blue_intensity = 255;
+		lights_config.green_intensity = 0;
+		lights_config.white_intensity = 100;
+		lights_config.strobing_speed = strobe;
+		lights_config.dimness = 255;
+		DMXOutput::updateLightsOutputQueue(lights_config);
+		//strobe = (strobe + 100) % 200;
+		Sleep(1000);
 	}
 
 	//while (!terminate && (!listen_for_silence || silences < SILENCES_TO_STOP) )

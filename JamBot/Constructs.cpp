@@ -148,10 +148,10 @@ void AudioInfo::set_tempo(double freq)
 
 #pragma region LightsInfo // For info interfacing between algorithm and output
 
-unsigned char* LightsInfo::convert_to_output()
+// MUST PASS ARRAY OF SIZE 513
+unsigned char * LightsInfo::convert_to_output(unsigned char lightsOutput[])
 {
 	// Convert to 7-channel format
-	unsigned char lightsOutput[513] = {};
 	lightsOutput[0] = 0;
 	lightsOutput[1] = red_intensity;
 	lightsOutput[2] = green_intensity;
@@ -160,7 +160,7 @@ unsigned char* LightsInfo::convert_to_output()
 	lightsOutput[5] = 0;
 	lightsOutput[6] = strobing_speed;
 	lightsOutput[7] = dimness;
-	
+
 	return lightsOutput;
 }
 

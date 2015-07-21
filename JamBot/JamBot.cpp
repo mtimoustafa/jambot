@@ -317,7 +317,7 @@ void CloseAllThreads()
 
 	Helpers::print_debug("Stopping optimization algorithm...\n");
 	optiAlgo.stop();
-	result = WaitForSingleObject(hThreadArray[OPTIALGO_THREAD_ARR_ID], 500);
+	result = WaitForSingleObject(hThreadArray[OPTIALGO_THREAD_ARR_ID], 3000);
 	if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP opti algo.\n"); }
 	else if (result == WAIT_FAILED) { ErrorHandler(TEXT("WaitForSingleObject")); }
 	else { Helpers::print_debug("FAILED stopping optimization algorithm.\n"); }
@@ -330,8 +330,8 @@ void CloseAllThreads()
 	//else { Helpers::print_debug("FAILED stopping wav manip.\n"); }
 
 	Helpers::print_debug("Stopping audio output...\n");
-	//lightsTest.stop();
-	result = WaitForSingleObject(hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID], 500);
+	lightsTest.stop();
+	result = WaitForSingleObject(hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID], 3000);
 	if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP audio output.\n"); }
 	else if (result == WAIT_FAILED) { ErrorHandler(TEXT("WaitForSingleObject")); }
 	else { Helpers::print_debug("FAILED stopping audio output.\n"); }

@@ -1,3 +1,6 @@
 *.sdf
 *.suo
+Debug/*
 JamBot/Debug/*
+JamBot/Output.wav
+*.opensdf
