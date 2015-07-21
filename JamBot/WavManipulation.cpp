@@ -26,12 +26,14 @@ using namespace std;
 WavManipulation::WavManipulation(){
 	durations = vector<short>();
 	filenames = vector<string>();
+	realTimeBuffer = deque<float*>();
 	durationCounter = 0;
 	directoryPath = "";
 }
 WavManipulation::~WavManipulation(){
 	durations.clear();
 	filenames.clear();
+	realTimeBuffer.clear();
 	durationCounter = 0;
 	directoryPath = "";
 }
@@ -67,6 +69,9 @@ int getNum(string name){
 	}
 	return num;
 }
+void WavManipulation::realTimePush(float* buffer){
+	realTimeBuffer.push_back(buffer);
+}
 ///////////////////////////////////////////
 ///	wavComparison: Compares a wav file with realtime input
 ///					Runs until it finds a match or hits the end of the files
@@ -74,7 +79,7 @@ int getNum(string name){
 ///		   string - directoryPath - the directory path name
 /// Output: char*
 
-Helpers::SongStructure WavManipulation::wavComparison(short* realTimeBuffer) {
+Helpers::SongStructure WavManipulation::wavComparison(float* realTimeBuffer) {
 
 	unsigned short i, j, channel;
 	int error_counter = 0;
@@ -93,7 +98,7 @@ Helpers::SongStructure WavManipulation::wavComparison(short* realTimeBuffer) {
 				break;
 			}
 			for (channel = 0; channel < insound1.getChannels(); channel++) {
-				sample = insound1.getCurrentSample16Bit(channel);
+				sample = insound1.getCurrentSampleDouble(channel);
 				sample = sample - realTimeBuffer[k + (channel*2)];
 				if (abs(sample) > threshold){
 					error_counter--;
@@ -142,7 +147,7 @@ void WavManipulation::snipAudio(vector<string> names, vector<short> startTimes, 
 		for (int j = 0; j < n; j++){
 			for (int k = 0; k < header.getChannels(); k++) { //for each channel of each sample
 				//write the sample from original to current file
-				outsound.writeSample16Bit(insound.getCurrentSample16Bit(k));
+				outsound.writeSampleDouble(insound.getCurrentSampleDouble(k));
 			}
 			insound.incrementSample();
 		}
@@ -152,25 +157,29 @@ void WavManipulation::snipAudio(vector<string> names, vector<short> startTimes, 
 
 void WavManipulation::comparisonPolling(){
 	//Queue pull
-	short* indata = 0; // data->recordedBuffer.begin();
+	float* indata = 0; // data->recordedBuffer.begin();
 	std::deque<Helpers::SongStructure>  structurequeue;
 	//
 	while (true){
+		if (realTimeBuffer.empty()){
+			continue;
+		}
 		if (durationCounter > 0){
 			durationCounter--;
 		}
 		else{
 			Helpers::SongStructure section = wavComparison(indata);
-			structurequeue.push_back(section);
+			realTimeBuffer.pop_front();
+			structurequeue.push_back(section); //This needs to be adjusted to push to mohammed's queue
 		}
 	}
 }
 
 void WavManipulation::startSnip(){
 	string filename = "crunchy_bass_swag.flv";
-	string filepath = "C:\\Users\\emerson\\Documents\\School\\FYDP\\jambot\\JamBot";
-	vector<string> names;
-	vector<short> durations;
-	vector<short> startTimes;
+	string filepath = "C:\\Users\\emerson\\Documents\\School\\FYDP\\jambot\\JamBot\\";
+	vector<string> names = {"Intro","Chorus1","Verse1", "Outro"};
+	vector<short> durations = {1,1,1,1};
+	vector<short> startTimes = {1,3,5,7};
 	snipAudio(names, startTimes, durations, filepath, filename);
 }
