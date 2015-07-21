@@ -8,6 +8,8 @@
 using namespace std;
 
 static std::queue<LightsInfo> lightsOutput;
+unsigned char turnOffLightsPacket[513];
+
 
 DMXOutput::DMXOutput()
 {
@@ -24,7 +26,6 @@ DMXOutput::DMXOutput()
 	FLOW_NONE = 0;
 	PURGE_RX = 1;
 	PURGE_TX = 2;
-
 };
 
 void DMXOutput::start()
@@ -107,7 +108,7 @@ int DMXOutput::start_listening()
 		status = FT_SetBreakOn(handle);
 		status = FT_SetBreakOff(handle);
 		while (!done)
-		{
+		{ 
 			while (lightsOutput.size() == 0) { }
 
 			info_packet = lightsOutput.front().convert_to_output();
