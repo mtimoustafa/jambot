@@ -533,9 +533,9 @@ public:
             double weight;
             double centre = 130.0;
             if (bpm < centre) {
-                weight = 1.0 - pow(fabs(centre - bpm) / 100.0, 2.4);
-            } else {
                 weight = 1.0 - pow(fabs(centre - bpm) / 80.0, 2.4);
+            } else {
+                weight = 1.0 - pow(fabs(centre - bpm) / 100.0, 2.4);
             }                
 	    if (weight < 0.0) weight = 0.0;
 	    cf[i] *= weight;
