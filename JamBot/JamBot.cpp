@@ -315,14 +315,26 @@ void CloseAllThreads()
 	else if (result == WAIT_FAILED) { ErrorHandler(TEXT("WaitForSingleObject")); }
 	else { Helpers::print_debug("FAILED stopping audio input.\n"); }
 
-	// TODO: stop all components like this
-
 	Helpers::print_debug("Stopping optimization algorithm...\n");
 	optiAlgo.stop();
 	result = WaitForSingleObject(hThreadArray[OPTIALGO_THREAD_ARR_ID], 500);
 	if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP opti algo.\n"); }
 	else if (result == WAIT_FAILED) { ErrorHandler(TEXT("WaitForSingleObject")); }
 	else { Helpers::print_debug("FAILED stopping optimization algorithm.\n"); }
+
+	//Helpers::print_debug("Stopping wav manip...\n");
+	////wavmanipulation.stop();
+	//result = WaitForSingleObject(hThreadArray[WAVGEN_THREAD_ARR_ID], 500);
+	//if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP wav manip.\n"); }
+	//else if (result == WAIT_FAILED) { ErrorHandler(TEXT("WaitForSingleObject")); }
+	//else { Helpers::print_debug("FAILED stopping wav manip.\n"); }
+
+	Helpers::print_debug("Stopping audio output...\n");
+	//lightsTest.stop();
+	result = WaitForSingleObject(hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID], 500);
+	if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP audio output.\n"); }
+	else if (result == WAIT_FAILED) { ErrorHandler(TEXT("WaitForSingleObject")); }
+	else { Helpers::print_debug("FAILED stopping audio output.\n"); }
 }
 
 void ErrorHandler(LPTSTR lpszFunction)

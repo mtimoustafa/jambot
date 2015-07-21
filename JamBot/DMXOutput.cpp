@@ -100,7 +100,7 @@ bool DMXOutput::updateLightsOutputQueue(LightsInfo output)
 
 int DMXOutput::start_listening()
 {
-	LightsInfo info_packet;
+	unsigned char* info_packet;
 	//writeData
 	if (status == FT_OK)
 	{
@@ -110,9 +110,9 @@ int DMXOutput::start_listening()
 		{
 			while (lightsOutput.size() == 0) { }
 
-			info_packet = lightsOutput.front();
+			info_packet = lightsOutput.front().convert_to_output();
 			lightsOutput.pop();
-			bytesWritten = write(handle, info_packet.convert_to_output(), packet_size);
+			bytesWritten = write(handle, info_packet, packet_size);
 		}
 		write(handle, turnOffLightsPacket, packet_size);
 	}
