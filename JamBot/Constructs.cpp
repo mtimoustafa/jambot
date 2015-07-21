@@ -17,10 +17,19 @@ using namespace std;
 
 AudioInfo::AudioInfo(bool random) // argument defaults to false
 {
-	_frequency = new double;
-	_loudness = new double;
-	_tempo = new double;
-	if (random) randomize_info();
+	if (random)
+	{
+		_frequency = new double;
+		_loudness = new double;
+		_tempo = new double;
+		randomize_info();
+	}
+	else
+	{
+		_frequency = NULL;
+		_loudness = NULL;
+		_tempo = NULL;
+	}
 }
 
 AudioInfo::AudioInfo(double * freq, double * loudness, double * tempo)
@@ -31,6 +40,16 @@ AudioInfo::AudioInfo(double * freq, double * loudness, double * tempo)
 	if (freq != NULL) { *_frequency = *freq; }
 	if (loudness != NULL) { *_loudness = *loudness; }
 	if (tempo != NULL) { *_tempo = *tempo; }
+}
+
+AudioInfo::~AudioInfo()
+{
+	_frequency = NULL;
+	_loudness = NULL;
+	_tempo = NULL;
+	delete _frequency;
+	delete _loudness;
+	delete _tempo;
 }
 
 void AudioInfo::randomize_info()
@@ -83,6 +102,7 @@ bool AudioInfo::get_frequency(double & freq) const
 }
 void AudioInfo::set_frequency(double freq)
 {
+	if (_frequency == NULL) _frequency = new double;
 	if (freq > FREQ_UB)
 		*_frequency = FREQ_UB;
 	else if (freq < FREQ_LB)
@@ -98,6 +118,7 @@ bool AudioInfo::get_loudness(double & loud) const
 }
 void AudioInfo::set_loudness(double freq)
 {
+	if (_loudness == NULL) _loudness = new double;
 	if (freq > LOUD_UB)
 		*_loudness = LOUD_UB;
 	else if (freq < LOUD_LB)
@@ -113,6 +134,7 @@ bool AudioInfo::get_tempo(double & tempo) const
 }
 void AudioInfo::set_tempo(double freq)
 {
+	if (_tempo == NULL) _tempo = new double;
 	if (freq > TEMPO_UB)
 		*_tempo = TEMPO_UB;
 	else if (freq < TEMPO_LB)

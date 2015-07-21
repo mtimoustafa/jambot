@@ -40,8 +40,9 @@ public:
 	void start();
 	void init();
 
+	static bool updateLightsOutputQueue(LightsInfo output);
+
 private:
-	bool updateLightsOutputQueue(LightsInfo output);
 	int write(FT_HANDLE handle, unsigned char* data, int length);
 	int start_listening(void);
 };

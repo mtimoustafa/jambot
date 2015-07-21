@@ -3,6 +3,10 @@
 #include "DMXOutput.h"
 #include <string>
 #include <deque>
+#include <exception>
+
+using namespace std;
+
 static std::queue<LightsInfo> lightsOutput;
 
 DMXOutput::DMXOutput()
@@ -61,14 +65,19 @@ int DMXOutput::write(FT_HANDLE handle, unsigned char* data, int length)
 bool DMXOutput::updateLightsOutputQueue(LightsInfo output)
 {
 	bool result = false;
+	char * err_str;
 	try
 	{
 		lightsOutput.push(output);
 		result = true;
 	}
-	catch (int e)
+	catch (exception e)
 	{
-
+		err_str = "";
+		strcat(err_str, "ERROR: DMXOutput: ");
+		strcat(err_str, e.what());
+		strcat(err_str, "\n");
+		Helpers::print_debug(err_str);
 	}
 	return result;
 }

@@ -3,8 +3,8 @@
 
 // AudioInfo parameter bounds
 const double FREQ_UB = 20000.0;
-const double FREQ_LB = 20.0;
-const double LOUD_UB = 150.0;
+const double FREQ_LB = 0.0;
+const double LOUD_UB = 18000.0;
 const double LOUD_LB = 0.0;
 const double TEMPO_UB = 250.0;
 const double TEMPO_LB = 50.0;
@@ -26,7 +26,7 @@ const double FREQ_SMOOTH_THRESH = 50.0;
 const double LOUD_SMOOTH_THRESH = 50.0;
 const double TEMPO_SMOOTH_THRESH = 50.0;
 
-const double SILENCE_THRESH = 20;
+const double SILENCE_THRESH = 10.0;
 
 const double FREQ_MODS [8] = { 0.8, 0.0, 0.2, 100.0, 127.0, 0.0, 0.0, 0.0 };
 const double PACE_MODS[8] = { 0.0, 0.5, 0.0, 0.0, 220, 0.0, 0.0, 0.0 };

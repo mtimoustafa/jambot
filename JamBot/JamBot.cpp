@@ -199,19 +199,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		switch (wmId)
 		{
 		case IDC_STARTSYS_BUTTON:
-			//hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID] = CreateThread(
-			//	NULL,
-			//	0,
-			//	AudioOutputThread,
-			//	NULL,
-			//	0,
-			//	&dwThreadArray[AUDIOOUTPUT_THREAD_ARR_ID]);
-			//if (hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID] == NULL)
-			//{
-			//	ErrorHandler(TEXT("CreateThread"));
-			//	CloseAllThreads();
-			//	ExitProcess(3);
-			//}
+			hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID] = CreateThread(
+				NULL,
+				0,
+				AudioOutputThread,
+				NULL,
+				0,
+				&dwThreadArray[AUDIOOUTPUT_THREAD_ARR_ID]);
+			if (hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID] == NULL)
+			{
+				ErrorHandler(TEXT("CreateThread"));
+				CloseAllThreads();
+				ExitProcess(3);
+			}
 			hThreadArray[OPTIALGO_THREAD_ARR_ID] = CreateThread(
 				NULL,
 				0,
@@ -310,7 +310,7 @@ void CloseAllThreads()
 
 	Helpers::print_debug("Stopping audio input...\n");
 	inputChannelReader.stop();
-	result = WaitForSingleObject(hThreadArray[AUDIOINPUT_THREAD_ARR_ID], 500);
+	result = WaitForSingleObject(hThreadArray[AUDIOINPUT_THREAD_ARR_ID], 10000);
 	if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP audio input.\n"); }
 	else if (result == WAIT_FAILED) { ErrorHandler(TEXT("WaitForSingleObject")); }
 	else { Helpers::print_debug("FAILED stopping audio input.\n"); }

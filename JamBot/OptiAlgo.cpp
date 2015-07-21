@@ -18,6 +18,7 @@
 #include "Constants.h"
 #include "Helpers.h"
 #include "OptiAlgo.h"
+#include "DMXOutput.h"
 
 using namespace std;
 
@@ -313,6 +314,8 @@ void OptiAlgo::start()
 	bool listen_for_silence = false;
 	char * err_str;
 
+	double remembered_tempo = -1.0;
+
 	while (!terminate && (!listen_for_silence || silences < SILENCES_TO_STOP) )
 	{
 		try {
@@ -323,6 +326,7 @@ void OptiAlgo::start()
 
 			// Grab sample
 			audio_sample = audio_buffer.front();
+			// if (!audio_sample.get_tempo(remembered_tempo)) // TODO: remember tempo
 
 			// Check for silence
 			if (listen_for_silence)
@@ -390,6 +394,7 @@ void OptiAlgo::start()
 
 			// Send solution to output controller
 			//TODO: give_jack(lights_config);
+			DMXOutput::updateLightsOutputQueue(solution.representation);
 
 			// Last step: remove analysed sample from buffer
 			audio_buffer.pop();
