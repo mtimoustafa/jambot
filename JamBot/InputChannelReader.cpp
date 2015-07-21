@@ -169,6 +169,7 @@ int InputChannelReader::main(void)
 	float*				streamBuffers;
 
 	tempo.setBPMRange(TEMPO_LB, TEMPO_UB);	//Set up tempo ranges
+	tempo.setBeatsPerBar(2);	//Set up 2 beats per bar
 
 	numSamples = FRAMES_PER_BUFFER * NUM_CHANNELS * 2;
 	numBytes = numSamples * sizeof(float);

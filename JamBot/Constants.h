@@ -6,8 +6,8 @@ const double FREQ_UB = 20000.0;
 const double FREQ_LB = 0.0;
 const double LOUD_UB = 18000.0;
 const double LOUD_LB = 0.0;
-const double TEMPO_UB = 250.0;
-const double TEMPO_LB = 50.0;
+const double TEMPO_UB = 200.0;
+const double TEMPO_LB = 60.0;
 
 // AudioInfo thresholds
 const double AI_EQUAL_THRESH = 2.0;
