@@ -298,8 +298,55 @@ void OptiAlgo::test_algo()
 	tabuFile.close();
 }
 
+void OptiAlgo::test_lights()
+{
+	LightsInfo lights_config;
+	int strobe = 0;
+	char * err_str;
 
-void OptiAlgo::start()
+	while (!terminate)
+	{
+		try
+		{
+			lights_config.red_intensity = 255;
+			lights_config.blue_intensity = 0;
+			lights_config.green_intensity = 0;
+			lights_config.white_intensity = 100;
+			lights_config.strobing_speed = strobe;
+			lights_config.dimness = 255;
+			DMXOutput::updateLightsOutputQueue(lights_config);
+			Sleep(1000);
+			lights_config.red_intensity = 0;
+			lights_config.blue_intensity = 0;
+			lights_config.green_intensity = 255;
+			lights_config.white_intensity = 100;
+			lights_config.strobing_speed = strobe;
+			lights_config.dimness = 255;
+			DMXOutput::updateLightsOutputQueue(lights_config);
+			Sleep(1000);
+			lights_config.red_intensity = 0;
+			lights_config.blue_intensity = 255;
+			lights_config.green_intensity = 0;
+			lights_config.white_intensity = 100;
+			lights_config.strobing_speed = strobe;
+			lights_config.dimness = 255;
+			DMXOutput::updateLightsOutputQueue(lights_config);
+			//strobe = (strobe + 100) % 200;
+			Sleep(1000);
+		}
+		catch (exception e)
+		{
+			err_str = "";
+			strcat(err_str, "ERROR: OptiAlgo: ");
+			strcat(err_str, e.what());
+			strcat(err_str, "\n");
+			Helpers::print_debug(err_str);
+		}
+	}
+	Helpers::print_debug("OptiAlgo: stopped.\n");
+}
+
+void OptiAlgo::start_algo()
 {
 	unsigned int tenure = 5, n_iterations = 150;
 	TabuSearch algorithm = TabuSearch(tenure, n_iterations);
@@ -316,129 +363,106 @@ void OptiAlgo::start()
 
 	double remembered_tempo = -1.0;
 
-	int strobe = 0;
-	while (!terminate)
+	while (!terminate) //&& (!listen_for_silence || silences < SILENCES_TO_STOP))
 	{
-		lights_config.red_intensity = 255;
-		lights_config.blue_intensity = 0;
-		lights_config.green_intensity = 0;
-		lights_config.white_intensity = 100;
-		lights_config.strobing_speed = strobe;
-		lights_config.dimness = 255;
-		DMXOutput::updateLightsOutputQueue(lights_config);
-		Sleep(1000);
-		lights_config.red_intensity = 0;
-		lights_config.blue_intensity = 0;
-		lights_config.green_intensity = 255;
-		lights_config.white_intensity = 100;
-		lights_config.strobing_speed = strobe;
-		lights_config.dimness = 255;
-		DMXOutput::updateLightsOutputQueue(lights_config);
-		Sleep(1000);
-		lights_config.red_intensity = 0;
-		lights_config.blue_intensity = 255;
-		lights_config.green_intensity = 0;
-		lights_config.white_intensity = 100;
-		lights_config.strobing_speed = strobe;
-		lights_config.dimness = 255;
-		DMXOutput::updateLightsOutputQueue(lights_config);
-		//strobe = (strobe + 100) % 200;
-		Sleep(1000);
+		try {
+			// Wait for audio input samples
+			while (audio_buffer.empty()) {
+				if (terminate) { return; }
+			}
+
+			// Grab sample
+			audio_sample = audio_buffer.front();
+			// if (!audio_sample.get_tempo(remembered_tempo)) // TODO: remember tempo
+
+			// Check for silence
+			//if (listen_for_silence)
+			//{
+			//	if (audio_sample.get_loudness(current_loudness) && current_loudness <= SILENCE_THRESH) silences++;
+			//	else silences -= silences > 2 ? 2 : 0;
+			//}
+
+			// Smooth input
+			//sample_diff = audio_sample.differences(prev_sample);
+			//if (sample_diff.get_frequency(freq) && abs(freq) >= FREQ_SMOOTH_THRESH)
+			//{
+			//	prev_sample.get_frequency(freq);
+			//	audio_sample.set_frequency(freq);
+			//}
+			//if (sample_diff.get_loudness(loud) && abs(loud) >= LOUD_SMOOTH_THRESH &&
+			//	audio_sample.get_loudness(current_loudness) && current_loudness > SILENCE_THRESH)
+			//{
+			//	prev_sample.get_loudness(loud);
+			//	audio_sample.get_loudness(loud);
+			//	if (!listen_for_silence) listen_for_silence = true;
+			//}
+			//if (sample_diff.get_tempo(tempo) && abs(tempo) >= TEMPO_SMOOTH_THRESH)
+			//{
+			//	prev_sample.get_tempo(tempo);
+			//	audio_sample.get_tempo(tempo);
+			//}
+
+			// TODO: score properties according to audio sample
+
+			// Use properties to find varying, near-optimal lights configuration
+			solution = algorithm.search(solution, audio_props);
+
+			// Sense change and adapt to it
+			// PROBABLY UNNECESSARY
+			//temp_history = sample_history;
+			//nudges = 0;
+			//while (!temp_history.empty())
+			//{
+			//	hist_sol = temp_history.front();
+			//	temp_history.pop();
+			//	if (!temp_history.empty())
+			//	{
+			//		if (hist_sol.representation.differences(temp_history.front().representation) >= DIFFS_FOR_CHANGE)
+			//		{
+			//			break;
+			//		}
+			//		else
+			//		{
+			//			nudges++;
+			//		}
+			//	}
+			//	else
+			//	{
+			//		nudges = 0;
+			//		break;
+			//	}
+			//}
+			//lights_config = (nudges >= NUDGES_TO_CHANGE) ? solution.representation : lights_config; // wrong logic :/
+
+			// Update history
+			if (sample_history.size() >= HISTORY_BUF_SIZE) sample_history.pop();
+			sample_history.push(solution);
+			prev_sample = audio_sample;
+
+			// Send solution to output controller
+			// DMXOutput::updateLightsOutputQueue(lights_config);
+
+			// Last step: remove analysed sample from buffer
+			audio_buffer.pop();
+		}
+		catch (exception e)
+		{
+			err_str = "";
+			strcat(err_str, "ERROR: OptiAlgo: ");
+			strcat(err_str, e.what());
+			strcat(err_str, "\n");
+			Helpers::print_debug(err_str);
+		}
 	}
-
-	//while (!terminate && (!listen_for_silence || silences < SILENCES_TO_STOP) )
-	//{
-	//	try {
-	//		// Wait for audio input samples
-	//		while (audio_buffer.empty()) {
-	//			if (terminate) { return; }
-	//		}
-
-	//		// Grab sample
-	//		audio_sample = audio_buffer.front();
-	//		// if (!audio_sample.get_tempo(remembered_tempo)) // TODO: remember tempo
-
-	//		// Check for silence
-	//		if (listen_for_silence)
-	//		{
-	//			if (audio_sample.get_loudness(current_loudness) && current_loudness <= SILENCE_THRESH) silences++;
-	//			else silences -= silences > 2 ? 2 : 0;
-	//		}
-
-	//		// Smooth input
-	//		sample_diff = audio_sample.differences(prev_sample);
-	//		if (sample_diff.get_frequency(freq) && abs(freq) >= FREQ_SMOOTH_THRESH)
-	//		{
-	//			prev_sample.get_frequency(freq);
-	//			audio_sample.set_frequency(freq);
-	//		}
-	//		if (sample_diff.get_loudness(loud) && abs(loud) >= LOUD_SMOOTH_THRESH &&
-	//			audio_sample.get_loudness(current_loudness) && current_loudness > SILENCE_THRESH)
-	//		{
-	//			prev_sample.get_loudness(loud);
-	//			audio_sample.get_loudness(loud);
-	//			if (!listen_for_silence) listen_for_silence = true;
-	//		}
-	//		if (sample_diff.get_tempo(tempo) && abs(tempo) >= TEMPO_SMOOTH_THRESH)
-	//		{
-	//			prev_sample.get_tempo(tempo);
-	//			audio_sample.get_tempo(tempo);
-	//		}
-
-	//		// TODO: score properties according to audio sample
-
-	//		// Use properties to find varying, near-optimal lights configuration
-	//		solution = algorithm.search(solution, audio_props);
-
-	//		// Sense change and adapt to it
-	//		// PROBABLY UNNECESSARY
-	//		//temp_history = sample_history;
-	//		//nudges = 0;
-	//		//while (!temp_history.empty())
-	//		//{
-	//		//	hist_sol = temp_history.front();
-	//		//	temp_history.pop();
-	//		//	if (!temp_history.empty())
-	//		//	{
-	//		//		if (hist_sol.representation.differences(temp_history.front().representation) >= DIFFS_FOR_CHANGE)
-	//		//		{
-	//		//			break;
-	//		//		}
-	//		//		else
-	//		//		{
-	//		//			nudges++;
-	//		//		}
-	//		//	}
-	//		//	else
-	//		//	{
-	//		//		nudges = 0;
-	//		//		break;
-	//		//	}
-	//		//}
-	//		//lights_config = (nudges >= NUDGES_TO_CHANGE) ? solution.representation : lights_config; // wrong logic :/
-
-	//		// Update history
-	//		if (sample_history.size() >= HISTORY_BUF_SIZE) sample_history.pop();
-	//		sample_history.push(solution);
-	//		prev_sample = audio_sample;
-
-	//		// Send solution to output controller
-	//		DMXOutput::updateLightsOutputQueue(lights_config);
-
-	//		// Last step: remove analysed sample from buffer
-	//		audio_buffer.pop();
-	//	}
-	//	catch (exception e)
-	//	{
-	//		err_str = "";
-	//		strcat(err_str, "ERROR: OptiAlgo: ");
-	//		strcat(err_str, e.what());
-	//		strcat(err_str, "\n");
-	//		Helpers::print_debug(err_str);
-	//	}
-	//}
 	if (terminate) Helpers::print_debug("OptiAlgo: terminated.\n");
 	else Helpers::print_debug("OptiAlgo: stopped.\n");
+}
+
+
+void OptiAlgo::start()
+{
+	// start_algo();
+	test_lights();
 }
 
 void OptiAlgo::stop()
