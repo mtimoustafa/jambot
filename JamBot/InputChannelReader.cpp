@@ -56,10 +56,10 @@ InputChannelReader::InputChannelReader()
 	stopStream = false;
 };
 
-/* This routine will be called by the PortAudio engine when audio is needed.
-** It may be called at interrupt level on some machines so don't do anything
-** that could mess up the system like calling malloc() or free().
-*/
+// This routine will be called by the PortAudio engine when audio is needed.
+// It may be called at interrupt level on some machines so don't do anything
+// that could mess up the system like calling malloc() or free().
+
 int InputChannelReader::recordCallback(const void *inputBuffer, void *outputBuffer,
 	unsigned long framesPerBuffer,
 	const PaStreamCallbackTimeInfo* timeInfo,
@@ -125,7 +125,7 @@ void InputChannelReader::analyseBuffer(paData *data)
 	for (int i = 0; i < numSamples; i++)
 	{
 		val = data->recordedBuffer.back()[i];
-		if (val < 0) val = -val; /* ABS */
+		if (val < 0) val = -val;
 		average += val;
 	}
 	average = average / (double)numSamples;
@@ -194,14 +194,14 @@ int InputChannelReader::main(void)
 	inputParameters.suggestedLatency = Pa_GetDeviceInfo(inputParameters.device)->defaultLowInputLatency;
 	inputParameters.hostApiSpecificStreamInfo = NULL;
 
-	/* Record some audio. -------------------------------------------- */
+	// Record audio
 	err = Pa_OpenStream(
 		&stream,
 		&inputParameters,
-		NULL,                  /* &outputParameters, */
+		NULL,                
 		SAMPLE_RATE,
 		FRAMES_PER_BUFFER,
-		paClipOff,      /* we won't output out of range samples so don't bother clipping them */
+		paClipOff,      
 		recordCallback,
 		&data);
 	if (err != paNoError) goto done;
@@ -263,12 +263,12 @@ int InputChannelReader::main(void)
 
 done:
 	Pa_Terminate();
-	if (data.recordedSamples)       /* Sure it is NULL or valid. */
+	if (data.recordedSamples)
 		free(data.recordedSamples);
 	if (err != paNoError)
 	{
 		Helpers::print_debug("ERROR: Terminated InputChannelReader module");
-		err = 1;          /* Always return 0 or 1, but no other return codes. */
+		err = 1;       
 	}
 
 	return err;

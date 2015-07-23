@@ -99,7 +99,7 @@ double OptiAlgo::ProblemRepresentation::objective_function(LightsInfo cand_sol, 
 	obf_overall_tempo = 1 / (abs(b_big + (b - b_big)*weight - (double)cand_sol.blue_intensity) + 1) +
 		1 / (abs(weight*r + (double)cand_sol.red_intensity) + 1) +
 		1 / (abs(weight*g + (double)cand_sol.green_intensity) + 1) +
-		1 / (abs(weight*w + (double)cand_sol.white_intensity) + 1); // TODO: add strobing stuff
+		1 / (abs(weight*w + (double)cand_sol.white_intensity) + 1); // NT: add strobing stuff
 
 	weight = props.beatiness.second;
 	r = props.beatiness.first["r"].first;
@@ -111,7 +111,7 @@ double OptiAlgo::ProblemRepresentation::objective_function(LightsInfo cand_sol, 
 	obf_beatiness = 1 / (abs(g_big + (g - g_big)*weight - (double)cand_sol.green_intensity) + 1) +
 		1 / (abs(r_big + (r - r_big)*weight - (double)cand_sol.red_intensity) + 1) +
 		1 / (abs(weight*b + (double)cand_sol.blue_intensity) + 1) +
-		1 / (abs(weight*dim + (double)cand_sol.dimness) + 1); // TODO: add strobing stuff
+		1 / (abs(weight*dim + (double)cand_sol.dimness) + 1); // NT: add strobing stuff
 
 	weight = props.overall_intens.second;
 	g = props.overall_intens.first["g"].first;
@@ -119,36 +119,36 @@ double OptiAlgo::ProblemRepresentation::objective_function(LightsInfo cand_sol, 
 	dim = props.beatiness.first["dim"].second;
 	obf_overall_intens = 1 / (abs(weight*g + (double)cand_sol.green_intensity) + 1) +
 		1 / (abs(weight*w + (double)cand_sol.white_intensity) + 1) +
-		1 / (abs(weight*dim + (double)cand_sol.dimness) + 1); // TODO: add strobing stuff
+		1 / (abs(weight*dim + (double)cand_sol.dimness) + 1); // NT: add strobing stuff
 
 	return obf_freq_conc + obf_overall_tempo + obf_beatiness + obf_overall_intens;
 }
 
-LightsInfo OptiAlgo::ProblemRepresentation::tune()
+LightsInfo OptiAlgo::ProblemRepresentation::tune(LightsInfo tuned_rep)
 {
 	// Randomly alter variables
-	LightsInfo tuned_rep = LightsInfo();
+	//LightsInfo tuned_rep = LightsInfo();
 	tuned_rep.red_intensity += (int)Helpers::fRand(tune_lb, tune_ub);
 	if (tuned_rep.red_intensity > (int)R_UB) tuned_rep.red_intensity = (int)R_UB;
 	if (tuned_rep.red_intensity < (int)R_LB) tuned_rep.red_intensity = (int)R_LB;
 
 	tuned_rep.blue_intensity += (int)Helpers::fRand(tune_lb, tune_ub);
-	if (tuned_rep.blue_intensity >(int)B_UB) tuned_rep.blue_intensity = (int)B_UB;
+	if (tuned_rep.blue_intensity > (int)B_UB) tuned_rep.blue_intensity = (int)B_UB;
 	if (tuned_rep.blue_intensity < (int)B_LB) tuned_rep.blue_intensity = (int)B_LB;
 
 	tuned_rep.green_intensity += (int)Helpers::fRand(tune_lb, tune_ub);
-	if (tuned_rep.green_intensity >(int)G_UB) tuned_rep.green_intensity = (int)G_UB;
+	if (tuned_rep.green_intensity > (int)G_UB) tuned_rep.green_intensity = (int)G_UB;
 	if (tuned_rep.green_intensity < (int)G_LB) tuned_rep.green_intensity = (int)G_LB;
 
 	tuned_rep.white_intensity += (int)Helpers::fRand(tune_lb, tune_ub);
-	if (tuned_rep.white_intensity >(int)W_UB) tuned_rep.white_intensity = (int)W_UB;
+	if (tuned_rep.white_intensity > (int)W_UB) tuned_rep.white_intensity = (int)W_UB;
 	if (tuned_rep.white_intensity < (int)W_LB) tuned_rep.white_intensity = (int)W_LB;
 
 	// tuned_rep.strobing_speed += (int)Helpers::fRand(tune_lb, tune_ub);
-	tuned_rep.strobing_speed = 0; // TODO: add this in
+	tuned_rep.strobing_speed = 0; // NT: add this in
 
 	tuned_rep.dimness += (int)Helpers::fRand(tune_lb, tune_ub);
-	if (tuned_rep.dimness >(int)DIM_UB) tuned_rep.dimness = (int)DIM_UB;
+	if (tuned_rep.dimness > (int)DIM_UB) tuned_rep.dimness = (int)DIM_UB;
 	if (tuned_rep.dimness < (int)DIM_LB) tuned_rep.dimness = (int)DIM_LB;
 
 	return tuned_rep;
@@ -195,7 +195,7 @@ OptiAlgo::ProblemRepresentation OptiAlgo::TabuSearch::search(ProblemRepresentati
 		neighbours = vector<pair<LightsInfo, double>>();
 		for (int j = 0; j < 5; j++)
 		{
-			temp_neighbour = problem.tune();
+			temp_neighbour = problem.tune(problem.representation);
 			neighbours.push_back(make_pair(temp_neighbour, (problem.objective_function(temp_neighbour, audio_props) - problem.objective_function(problem.representation, audio_props))));
 		}
 		sort(neighbours.begin(), neighbours.end(), TabuSearch::pairCompare);
@@ -357,7 +357,7 @@ void OptiAlgo::test_lights()
 			lights_config.strobing_speed = strobe;
 			lights_config.dimness = 255;
 			DMXOutput::updateLightsOutputQueue(lights_config);
-			Sleep(500);
+			Sleep(200);
 			lights_config.red_intensity = 0;
 			lights_config.blue_intensity = 0;
 			lights_config.green_intensity = 255;
@@ -365,7 +365,7 @@ void OptiAlgo::test_lights()
 			lights_config.strobing_speed = strobe;
 			lights_config.dimness = 255;
 			DMXOutput::updateLightsOutputQueue(lights_config);
-			Sleep(500);
+			Sleep(200);
 			lights_config.red_intensity = 0;
 			lights_config.blue_intensity = 255;
 			lights_config.green_intensity = 0;
@@ -374,7 +374,7 @@ void OptiAlgo::test_lights()
 			lights_config.dimness = 255;
 			DMXOutput::updateLightsOutputQueue(lights_config);
 			//strobe = (strobe + 100) % 200;
-			Sleep(500);
+			Sleep(200);
 		}
 		catch (exception e)
 		{
@@ -393,7 +393,7 @@ void OptiAlgo::start_algo()
 	//unsigned int nudges = 0, silences = 0;
 	//bool listen_for_silence = false;
 
-	unsigned int tenure = 5, n_iterations = 150;
+	unsigned int tenure = 5, n_iterations = 10;
 	TabuSearch algorithm = TabuSearch(tenure, n_iterations);
 	ProblemRepresentation solution;
 	AudioInfo audio_sample, smoothed_input;
@@ -509,11 +509,12 @@ void OptiAlgo::start_algo()
 			out_str << lights_config.dimness << ",";
 			out_str << lights_config.strobing_speed << "]\n";
 			Helpers::print_debug(out_str.str().c_str());
+			out_str.str("");	//Clear string
 			DMXOutput::updateLightsOutputQueue(lights_config);
 
 		}
 		catch (exception e)
-		{
+		{	
 			err_str = "";
 			strcat(err_str, "ERROR: OptiAlgo: ");
 			strcat(err_str, e.what());

@@ -46,7 +46,7 @@ class OptiAlgo
 
 		double objective_function(LightsInfo cand_sol, AudioProps properties);
 
-		LightsInfo tune();
+		LightsInfo tune(LightsInfo tuned_rep);
 	};
 
 	class TabuSearch
