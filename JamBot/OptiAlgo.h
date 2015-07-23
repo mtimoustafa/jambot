@@ -23,13 +23,14 @@ class OptiAlgo
 	class AudioProps
 	{
 	public:
-		pair<map<string, double>, double> freq_conc;
-		pair<map<string, double>, double> pace;
-		pair<map<string, double>, double> beatiness;
-		pair<map<string, double>, double> overall_intens;
+		pair<map<string, pair<double, double>>, double> freq_conc;
+		pair<map<string, pair<double, double>>, double> overall_tempo;
+		pair<map<string, pair<double, double>>, double> beatiness;
+		pair<map<string, pair<double, double>>, double> overall_intens;
 
 		AudioProps();
-		map<string, double> new_modifiers_set(const double * mods);
+		map<string, pair<double, double>> new_modifiers_set(const double * mods);
+		void adjust_weights(AudioInfo input, double max_loud);
 	};
 
 	class ProblemRepresentation
