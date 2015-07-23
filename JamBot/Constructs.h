@@ -29,8 +29,8 @@ public:
 class LightsInfo
 {
 public:
-	unsigned int red_intensity, blue_intensity, green_intensity, white_intensity;
-	unsigned int strobing_speed, dimness;
+	int red_intensity, blue_intensity, green_intensity, white_intensity;
+	int strobing_speed, dimness;
 	unsigned char * convert_to_output(unsigned char lightsOutput[]);
 
 	bool operator == (const LightsInfo& b) const;

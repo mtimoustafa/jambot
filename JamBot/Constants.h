@@ -24,6 +24,8 @@ const double G_UB = 255.0;
 const double G_LB = 0.0;
 const double W_UB = 255.0;
 const double W_LB = 0.0;
+const double DIM_UB = 255.0;
+const double DIM_LB = 0.0;
 
 #pragma region Optimization Algorithm parameters
 const unsigned int AUDIO_BUF_SIZE = 256;

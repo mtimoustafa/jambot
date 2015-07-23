@@ -22,14 +22,6 @@
 
 using namespace std;
 
-// TODO:
-// Formulate proper objective function
-// Tweak constants
-// Improve smoothing if needed
-// Improve change detection if needed
-// Add pre-recording integration
-// Implement output to Jack
-
 
 #pragma region AudioProps
 
@@ -137,11 +129,28 @@ LightsInfo OptiAlgo::ProblemRepresentation::tune()
 	// Randomly alter variables
 	LightsInfo tuned_rep = LightsInfo();
 	tuned_rep.red_intensity += (int)Helpers::fRand(tune_lb, tune_ub);
+	if (tuned_rep.red_intensity > (int)R_UB) tuned_rep.red_intensity = (int)R_UB;
+	if (tuned_rep.red_intensity < (int)R_LB) tuned_rep.red_intensity = (int)R_LB;
+
 	tuned_rep.blue_intensity += (int)Helpers::fRand(tune_lb, tune_ub);
+	if (tuned_rep.blue_intensity >(int)B_UB) tuned_rep.blue_intensity = (int)B_UB;
+	if (tuned_rep.blue_intensity < (int)B_LB) tuned_rep.blue_intensity = (int)B_LB;
+
 	tuned_rep.green_intensity += (int)Helpers::fRand(tune_lb, tune_ub);
+	if (tuned_rep.green_intensity >(int)G_UB) tuned_rep.green_intensity = (int)G_UB;
+	if (tuned_rep.green_intensity < (int)G_LB) tuned_rep.green_intensity = (int)G_LB;
+
 	tuned_rep.white_intensity += (int)Helpers::fRand(tune_lb, tune_ub);
-	tuned_rep.strobing_speed += (int)Helpers::fRand(tune_lb, tune_ub);
+	if (tuned_rep.white_intensity >(int)W_UB) tuned_rep.white_intensity = (int)W_UB;
+	if (tuned_rep.white_intensity < (int)W_LB) tuned_rep.white_intensity = (int)W_LB;
+
+	// tuned_rep.strobing_speed += (int)Helpers::fRand(tune_lb, tune_ub);
+	tuned_rep.strobing_speed = 0; // TODO: add this in
+
 	tuned_rep.dimness += (int)Helpers::fRand(tune_lb, tune_ub);
+	if (tuned_rep.dimness >(int)DIM_UB) tuned_rep.dimness = (int)DIM_UB;
+	if (tuned_rep.dimness < (int)DIM_LB) tuned_rep.dimness = (int)DIM_LB;
+
 	return tuned_rep;
 }
 
@@ -348,7 +357,7 @@ void OptiAlgo::test_lights()
 			lights_config.strobing_speed = strobe;
 			lights_config.dimness = 255;
 			DMXOutput::updateLightsOutputQueue(lights_config);
-			Sleep(1000);
+			Sleep(500);
 			lights_config.red_intensity = 0;
 			lights_config.blue_intensity = 0;
 			lights_config.green_intensity = 255;
@@ -356,7 +365,7 @@ void OptiAlgo::test_lights()
 			lights_config.strobing_speed = strobe;
 			lights_config.dimness = 255;
 			DMXOutput::updateLightsOutputQueue(lights_config);
-			Sleep(1000);
+			Sleep(500);
 			lights_config.red_intensity = 0;
 			lights_config.blue_intensity = 255;
 			lights_config.green_intensity = 0;
@@ -365,7 +374,7 @@ void OptiAlgo::test_lights()
 			lights_config.dimness = 255;
 			DMXOutput::updateLightsOutputQueue(lights_config);
 			//strobe = (strobe + 100) % 200;
-			Sleep(1000);
+			Sleep(500);
 		}
 		catch (exception e)
 		{
@@ -381,16 +390,16 @@ void OptiAlgo::test_lights()
 
 void OptiAlgo::start_algo()
 {
-	ProblemRepresentation solution, hist_sol;
-	LightsInfo lights_config;
-	queue<ProblemRepresentation> sample_history, temp_history;
-	unsigned int nudges = 0, silences = 0;
-	bool listen_for_silence = false;
+	//unsigned int nudges = 0, silences = 0;
+	//bool listen_for_silence = false;
 
 	unsigned int tenure = 5, n_iterations = 150;
 	TabuSearch algorithm = TabuSearch(tenure, n_iterations);
+	ProblemRepresentation solution;
 	AudioInfo audio_sample, smoothed_input;
 	audio_props = AudioProps();
+	LightsInfo lights_config;
+
 	double avg_freq=0.0, avg_tempo=0.0, avg_loud=0.0, avg_max_loud=0.0;
 	double cur_freq, cur_tempo, cur_loud;
 	bool got_freq, got_tempo, got_loud;
@@ -398,6 +407,7 @@ void OptiAlgo::start_algo()
 	double loud_hist[HISTORY_BUF_SIZE];
 	double max_loud_hist[MAX_LOUD_HIST_BUF_SIZE];
 	int tempo_hist_it=0, loud_hist_it=0, max_loud_hist_it=0;
+
 	stringstream out_str;
 	char * err_str;
 
@@ -438,7 +448,7 @@ void OptiAlgo::start_algo()
 			if (got_tempo) avg_tempo /= HISTORY_BUF_SIZE;
 			if (got_loud) avg_loud /= HISTORY_BUF_SIZE;
 
-			if (got_loud && abs(cur_loud - avg_max_loud) >= BEAT_THRESH)
+			if (got_loud && avg_loud > 0.0 && abs(cur_loud - avg_loud) >= BEAT_THRESH)
 			{
 				max_loud_hist[max_loud_hist_it] = cur_loud;
 				max_loud_hist_it = (max_loud_hist_it + 1) % MAX_LOUD_HIST_BUF_SIZE;
@@ -490,7 +500,7 @@ void OptiAlgo::start_algo()
 			//lights_config = (nudges >= NUDGES_TO_CHANGE) ? solution.representation : lights_config; // wrong logic :/
 
 			// Send solution to output controller
-			lights_config.strobing_speed = 0; // TODO: remove this hack!!
+			lights_config.strobing_speed = 0; // TODO: remove this
 			out_str << "Sending to output [";
 			out_str << lights_config.red_intensity << ",";
 			out_str << lights_config.blue_intensity << ",";
