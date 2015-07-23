@@ -9,8 +9,8 @@
 // Copyright:     Copyright 2002 Craig Stuart Sapp
 //
 
-#include "SoundFileWrite.h"
-#include "soundfilehelpers.h"
+#include "..\include\SoundFileWrite.h"
+#include "..\include\soundfilehelpers.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -21,7 +21,7 @@
 #else
    #include <iostream.h>
 #endif
-
+#define VISUAL
 
 
 //////////////////////////////
@@ -144,6 +144,12 @@ void SoundFileWrite::writeSample16Bit(short sample) {
 
 //////////////////////////////
 //
+// SoundFileWrite::writeSample24Bit -- Write the 24Bit Value
+//
+
+
+//////////////////////////////
+//
 // SoundFileWrite::writeSampleDouble -- convert to a 16-bit value and
 //    write to file.
 //
@@ -168,7 +174,7 @@ void SoundFileWrite::writeSampleDouble(double sample) {
 void SoundFileWrite::determineWritingFunction(void) {
    switch (sndHeader.getOutputType()) {
       case TYPE_SND:                           // bigendian samples
-         endianType = SIG_BIG_ENDIAN;
+         endianType = SIG_LITTLE_ENDIAN;
          switch (sndHeader.getNextFormat()) {
             case SND_FORMAT_MULAW_8:
                writeSample = soundWriteSample8M_B;
@@ -198,7 +204,7 @@ void SoundFileWrite::determineWritingFunction(void) {
          }
          break;
       case TYPE_WAV_PCM:                      // little endian samples
-         endianType = SIG_LITTLE_ENDIAN;
+         endianType = SIG_BIG_ENDIAN;
          switch (sndHeader.getNextFormat()) {
             case SND_FORMAT_MULAW_8:
                writeSample = soundWriteSample8M_L;
@@ -210,7 +216,7 @@ void SoundFileWrite::determineWritingFunction(void) {
                writeSample = soundWriteSample16L_L;
                break;
             case SND_FORMAT_LINEAR_24:
-               writeSample = soundWriteSample24L_L;
+				writeSample = soundWriteSample24L_L;
                break;
             case SND_FORMAT_LINEAR_32:
                writeSample = soundWriteSample32L_L;

@@ -299,8 +299,8 @@ void SoundHeader::modifyFormat(const char* filename) {
          outputType = TYPE_WAV;
          break;
       case FORMAT_WAV_LINEAR_16:
-         NeXT_DataFormat = SND_FORMAT_LINEAR_16;
-         bitsPerSample = 16;
+         NeXT_DataFormat = SND_FORMAT_LINEAR_24;
+         bitsPerSample = 24;
          outputType = TYPE_WAV;
          break;
       case FORMAT_WAV_LINEAR_24:
@@ -604,18 +604,18 @@ FileIO& operator<<(FileIO& output, SoundHeader& header) {
          output.writeLittleEndian((ulong)(36 + header.getBitsPerSample()
             / 8.0  * header.getChannels() * header.getSamples()));
          output.writeLittleEndian((ulong)0x57415645);      // "WAVE"
-         output.writeLittleEndian((ulong)0x666d7420);      // "fmt "
+		 output.writeLittleEndian((ulong)0x666d7420);      // "fmt "
          output.writeBigEndian((ulong)16);           // fmt subchunk size
-         output.writeBigEndian((ushort)1);           // PCM format
-         output.writeBigEndian((ushort)header.getChannels()); // channels
-         output.writeBigEndian((ulong)header.getSrate());  // sampling rate
-         output.writeLittleEndian(
+		 output.writeBigEndian((ushort)1);           // PCM format
+		 output.writeBigEndian((ushort)header.getChannels()); // channels
+		 output.writeBigEndian((ulong)header.getSrate());  // sampling rate
+         output.writeBigEndian(
             (ulong)(header.getSrate()* header.getChannels() * 
             header.getBitsPerSample() / 8));  // byte rate
-         output.writeLittleEndian((ushort) (header.getBlockAlign()));
+         output.writeBigEndian((ushort) (header.getBlockAlign()));
          output.writeBigEndian((ushort)header.getBitsPerSample());
-         output.writeBigEndian((ulong)0x64617461);   // "data"
-         output.writeBigEndian((ulong)(header.getSamples() * 
+		 output.writeLittleEndian((ulong)0x64617461);   // "data"
+		 output.writeBigEndian((ulong)(header.getSamples() *
             header.getChannels() * header.getBitsPerSample()/8));
          break;
       default:
@@ -703,7 +703,7 @@ int SoundHeader::getFormat(const char* string) {
    } else if (strcmp(extension, "aud") == 0) {
       return FORMAT_SND_DOUBLE;
    } else if (strcmp(extension, "wav2") == 0) {
-      return FORMAT_WAV_LINEAR_16;
+      return FORMAT_WAV_LINEAR_24;
    } else if (strcmp(extension, "wav") == 0) {
       return FORMAT_WAV_LINEAR_16;
    } else if (strcmp(extension, "wav1") == 0) {
@@ -1019,7 +1019,7 @@ void SoundHeader::processInWavFormat(const char *filename) {
 
 
    // read the Subchunk2Size, calculate the number of samples:
-   sndfile.readBigEndian(tempLong);
+   sndfile.readLittleEndian(tempLong);
    samples = tempLong / (bitsPerSample/8) / channels;
 
    sndfile.close();

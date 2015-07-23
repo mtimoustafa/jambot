@@ -42,8 +42,7 @@ class SoundFileWrite {
 
 
       void         determineWritingFunction (void);
-      void         (*writeSample)           (FileIO& outFile, double aSample);
-
+	  void			(*writeSample)           (FileIO& outFile, double aSample);
 };
 
 

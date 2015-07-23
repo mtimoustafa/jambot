@@ -17,15 +17,16 @@
 //                endian format.
 //
 
-#include "sigConfiguration.h"
+#include "..\include\sigConfiguration.h"
 
-#include "FileIO.h"
+#include "..\include\FileIO.h"
 
 #ifndef OLDCPP
    using namespace std;
    #include <iostream>
 #endif
 
+#define VISUAL
 
 
 //////////////////////////////
@@ -301,7 +302,12 @@ void FileIO::readNotMachineEndian(char& aNumber) {
 }
 
 void FileIO::readNotMachineEndian(uchar& aNumber) {
+
    this->read((char*)&aNumber, sizeof(aNumber));
+   bool thang2 = this->good();
+   bool thang3 = this->fail();
+   bool thang4 = this->bad();
+   bool thang5 = this->eof();
    aNumber = flipBytes(aNumber);
 }
 

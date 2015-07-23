@@ -9,7 +9,7 @@
 // Copyright:     Copyright 2002 Craig Stuart Sapp
 //
 
-#include "soundfilehelpers.h"
+#include "..\include\soundfilehelpers.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -111,11 +111,11 @@ long SampleToLong(double aSample) {
 
    // prevent wrap around:
    if (aSample >= 1.0) {
-      output = (long)0x80000000;
+	   output = (long)2147483648;
    } else if (aSample <= -1.0) {
-      output = (long)0x7fffffff;
+	   output = (long)-2147483647;
    } else {
-      output = (long)(aSample * 0x7fffffff + 0.5);
+	   output = (long)(aSample * (long)0x80000000);
    }
 
    return output;
@@ -206,19 +206,20 @@ void soundWriteSample16L_L(FileIO& outFile, double aSample) {
 void soundWriteSample24L_B(FileIO& outFile, double aSample) {
    static long output;
    output = SampleToLong(aSample);
-   outFile.writeBigEndian((uchar)(output >> 12));
+   outFile.writeBigEndian((uchar)(output >> 16));
    outFile.writeBigEndian((uchar)(output >>  8));
-   outFile.writeBigEndian((uchar)(output >>  4));
+   outFile.writeBigEndian((uchar)(output));
 }
 
 
 void soundWriteSample24L_L(FileIO& outFile, double aSample) {
    static long output;
    output = SampleToLong(aSample);
-   outFile.writeBigEndian((uchar)(output >>  4));
+   outFile.writeBigEndian((uchar)(output));
    outFile.writeBigEndian((uchar)(output >>  8));
-   outFile.writeBigEndian((uchar)(output >> 12));
+   outFile.writeBigEndian((uchar)(output >> 16));
 }
+
 
 
 

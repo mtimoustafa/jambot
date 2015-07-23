@@ -17,8 +17,8 @@
 
 int optionListCompare(const void* a, const void* b);
 
-#include "Options.h"
-#include "Options_private.h"
+#include "..\include\Options.h"
+#include "..\include\Options_private.h"
 
 #include <stdlib.h>
 #include <string.h>

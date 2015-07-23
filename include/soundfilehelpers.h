@@ -29,7 +29,7 @@ void  soundWriteSample64F_B     (FileIO& outFile, double aSample);
 void  soundWriteSample8M_L      (FileIO& outFile, double aSample);
 void  soundWriteSample8L_L      (FileIO& outFile, double aSample);
 void  soundWriteSample16L_L     (FileIO& outFile, double aSample);
-void  soundWriteSample24L_L     (FileIO& outFile, double aSample);
+void  soundWriteSample24L_L		(FileIO& outFile, double aSample);
 void  soundWriteSample32L_L     (FileIO& outFile, double aSample);
 void  soundWriteSample32F_L     (FileIO& outFile, double aSample);
 void  soundWriteSample64F_L     (FileIO& outFile, double aSample);

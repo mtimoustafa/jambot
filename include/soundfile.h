@@ -11,6 +11,8 @@
 #ifndef _SOUNDFILE_H_INCLUDED
 #define _SOUNDFILE_H_INCLUDED
 
+#define VISUAL
+
 #include "Options.h"
 #include "SoundFileRead.h"
 #include "SoundFileWrite.h"

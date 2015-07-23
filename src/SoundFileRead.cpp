@@ -10,7 +10,7 @@
 // Syntax:        C++ 
 //
 
-#include "SoundFileRead.h"
+#include "..\include\SoundFileRead.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -22,7 +22,7 @@
    #include <iostream.h>
 #endif
 
-
+#define VISUAL
 //////////////////////////////
 //
 // SoundFileRead::SoundFileRead --
@@ -100,7 +100,7 @@ int SoundFileRead::getNextSample16Bit(int channel) {
 //
 
 int SoundFileRead::getCurrentSample24Bit(int channel) {
-   return (int)((long)0x800000 * getCurrentSampleDouble(channel)); 
+   return (int)((long)0x80000000 * getCurrentSampleDouble(channel)); 
 }
 
 
@@ -166,7 +166,6 @@ int SoundFileRead::getCurrentSampleIndex(void) {
 
 void SoundFileRead::incrementSample(void) {
    curIndex++;
-
    if (curIndex > endIndex && loopingQ) {
       gotoSample(begIndex);
       return;
@@ -636,7 +635,7 @@ double soundReadSample24L_L(FileIO& soundfile) {
    if (temp[0] & 0x80) {
       sample = sample | 0xff000000;
    }
-   return (double)sample / (long)0x800000;
+   return (double)sample / (long)0x80000000;
 }
 
 

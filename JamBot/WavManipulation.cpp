@@ -12,7 +12,6 @@
 #include <vector>
 #include <cmath>
 #include <iostream>
-#include <deque>
 
 
 //#ifndef OLDCPP
@@ -26,7 +25,7 @@ using namespace std;
 WavManipulation::WavManipulation(){
 	durations = vector<short>();
 	filenames = vector<string>();
-	realTimeBuffer = deque<float*>();
+	realTimeBuffer = vector<float>();
 	durationCounter = 0;
 	directoryPath = "";
 }
@@ -69,8 +68,8 @@ int getNum(string name){
 	}
 	return num;
 }
-void WavManipulation::realTimePush(float* buffer){
-	realTimeBuffer.push_back(buffer);
+void WavManipulation::inputData(vector<float> buffer){
+	realTimeBuffer = buffer;
 }
 ///////////////////////////////////////////
 ///	wavComparison: Compares a wav file with realtime input
@@ -79,14 +78,14 @@ void WavManipulation::realTimePush(float* buffer){
 ///		   string - directoryPath - the directory path name
 /// Output: char*
 
-Helpers::SongStructure WavManipulation::wavComparison(float* realTimeBuffer) {
+Helpers::SongStructure WavManipulation::wavComparison(vector<float> data) {
 
 	unsigned short i, j, channel;
-	int error_counter = 0;
-	short threshold = 100;
+	int error_counter = 1000;
+	short threshold = 0.0009;
 	Helpers::SongElement element = Helpers::NIL;
 	int num = 0;
-	short sample = 0;
+	float sample = 0;
 
 	for (j = 0; j < filenames.size(); j++){
 		short k = 0;
@@ -98,8 +97,8 @@ Helpers::SongStructure WavManipulation::wavComparison(float* realTimeBuffer) {
 				break;
 			}
 			for (channel = 0; channel < insound1.getChannels(); channel++) {
-				sample = insound1.getCurrentSampleDouble(channel);
-				sample = sample - realTimeBuffer[k + (channel*2)];
+				sample = (float)insound1.getCurrentSampleDouble(channel);
+				sample = sample - realTimeBuffer[k + (channel)];
 				if (abs(sample) > threshold){
 					error_counter--;
 				}
@@ -107,7 +106,7 @@ Helpers::SongStructure WavManipulation::wavComparison(float* realTimeBuffer) {
 					error_counter++;
 				}
 			}
-			k += 4;
+			k += 2;
 			insound1.incrementSample();
 		}
 		if (error_counter > 0){
@@ -157,7 +156,7 @@ void WavManipulation::snipAudio(vector<string> names, vector<short> startTimes, 
 
 void WavManipulation::comparisonPolling(){
 	//Queue pull
-	float* indata = 0; // data->recordedBuffer.begin();
+	vector<float> indata; // data->recordedBuffer.begin();
 	std::deque<Helpers::SongStructure>  structurequeue;
 	//
 	while (true){
@@ -168,8 +167,8 @@ void WavManipulation::comparisonPolling(){
 			durationCounter--;
 		}
 		else{
+			indata = realTimeBuffer;
 			Helpers::SongStructure section = wavComparison(indata);
-			realTimeBuffer.pop_front();
 			structurequeue.push_back(section); //This needs to be adjusted to push to mohammed's queue
 		}
 	}
