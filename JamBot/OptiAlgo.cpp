@@ -33,16 +33,19 @@ OptiAlgo::AudioProps::AudioProps()
 	overall_intens = make_pair(new_modifiers_set(OV_INT_MODS), 0.5);
 }
 
-map<string, pair<double, double>> OptiAlgo::AudioProps::new_modifiers_set(const double * mods)
+map<string, double> OptiAlgo::AudioProps::new_modifiers_set(const double * mods)
 {
-	map<string, pair<double, double>> modifiers;
-	modifiers.insert(make_pair("r", make_pair(mods[0],mods[1])));
-	modifiers.insert(make_pair("g", make_pair(mods[2], mods[3])));
-	modifiers.insert(make_pair("b", make_pair(mods[4], mods[5])));
-	modifiers.insert(make_pair("w", make_pair(mods[6], mods[7]))); // saturation
-	modifiers.insert(make_pair("dim", make_pair(mods[8], mods[9]))); // dimness
-	modifiers.insert(make_pair("straff", make_pair(mods[10], mods[11]))); // strobe affinity
-	modifiers.insert(make_pair("strstr", make_pair(mods[12], mods[13]))); // strobe strength
+	map<string, double> modifiers;
+	modifiers.insert(make_pair("r", mods[0]));
+	modifiers.insert(make_pair("R", mods[1]));
+	modifiers.insert(make_pair("g", mods[2]));
+	modifiers.insert(make_pair("G", mods[3]));
+	modifiers.insert(make_pair("b", mods[4]));
+	modifiers.insert(make_pair("B", mods[5]));
+	modifiers.insert(make_pair("w", mods[6]));
+	modifiers.insert(make_pair("W", mods[7]));
+	modifiers.insert(make_pair("dim", mods[8]));
+	modifiers.insert(make_pair("DIM", mods[9]));
 	return modifiers;
 }
 
@@ -54,10 +57,55 @@ void OptiAlgo::AudioProps::adjust_weights(AudioInfo input, double max_loud)
 	input.get_loudness(loud);
 
 	// NT: set freq conc weight
-	freq_conc.second = 0.0;
-	overall_tempo.second = 0.5 * (loud / LOUD_UB) * (1 + tempo / TEMPO_UB); // NT: add freq to this weight
-	beatiness.second = (max_loud - loud)/(LOUD_UB - loud); // NT: add freq to this weight
-	overall_tempo.second = (tempo / TEMPO_UB);
+	freq_conc_add_and_avg(0.0);
+	overall_tempo_add_and_avg( 0.5 * (loud / LOUD_UB) * (1 + tempo / TEMPO_UB) ); // NT: add freq to this weight
+	beatiness_add_and_avg( ((loud / max_loud) <= 0.4) ? (1 - 0.8*(loud / max_loud)) : (0.8 - 2*0.8*((loud / max_loud) - 0.5)) ); // NT: add freq to this weight
+	overall_tempo_add_and_avg( (tempo / TEMPO_UB) );
+}
+
+double OptiAlgo::AudioProps::freq_conc_add_and_avg(double val)
+{
+	double avg = 0.0;
+	freq_conc_hist.push_front(val);
+	if (freq_conc_hist.size() > WEIGHTS_HIST_BUF_SIZE) freq_conc_hist.pop_back();
+	for each (double val in freq_conc_hist)
+		avg += val;
+	avg /= (double)freq_conc_hist.size();
+	freq_conc.second = avg;
+	return avg;
+}
+double OptiAlgo::AudioProps::overall_tempo_add_and_avg(double val)
+{
+	double avg = 0.0;
+	overall_tempo_hist.push_front(val);
+	if (overall_tempo_hist.size() > WEIGHTS_HIST_BUF_SIZE) overall_tempo_hist.pop_back();
+	for each (double val in overall_tempo_hist)
+		avg += val;
+	avg /= (double)overall_tempo_hist.size();
+	overall_tempo.second = avg;
+	return avg;
+}
+double OptiAlgo::AudioProps::beatiness_add_and_avg(double val)
+{
+	double avg = 0.0;
+	beatiness_hist.push_front(val);
+	if (beatiness_hist.size() > WEIGHTS_HIST_BUF_SIZE) beatiness_hist.pop_back();
+	for each (double val in beatiness_hist)
+		avg += val;
+	avg /= (double)beatiness_hist.size();
+	beatiness.second = avg;
+	return avg;
+}
+double OptiAlgo::AudioProps::overall_intens_add_and_avg(double val)
+{
+	double avg = 0.0;
+	overall_intens_hist.push_front(val);
+	if (overall_intens_hist.size() > WEIGHTS_HIST_BUF_SIZE) overall_intens_hist.pop_back();
+	for each (double val in overall_intens_hist)
+		avg += val;
+	avg /= (double)overall_intens_hist.size();
+	overall_intens.second = avg;
+	return avg;
 }
 
 #pragma endregion
@@ -67,14 +115,13 @@ void OptiAlgo::AudioProps::adjust_weights(AudioInfo input, double max_loud)
 
 OptiAlgo::ProblemRepresentation::ProblemRepresentation()
 {
-	// Start with a random candidate solution
 	representation = LightsInfo();
 	rep_value = 0;
 }
-OptiAlgo::ProblemRepresentation::ProblemRepresentation(AudioProps properties)
+OptiAlgo::ProblemRepresentation::ProblemRepresentation(AudioProps properties, bool centered)
 {
 	// Start with a random candidate solution
-	representation = LightsInfo();
+	representation = LightsInfo(centered);
 	rep_value = objective_function(representation, properties);
 }
 
@@ -82,41 +129,52 @@ double OptiAlgo::ProblemRepresentation::objective_function(LightsInfo cand_sol, 
 {
 	// Applies objective function to current solution
 	double obf_freq_conc, obf_overall_tempo, obf_beatiness, obf_overall_intens;
-	double weight, r, g, b, w, dim, straff, strstr;
-	double r_big, g_big, b_big;
+	double weight, r, R, g, G, b, B, w, W, dim, DIM;
 
 	obf_freq_conc = 0.0; // NT: add freq conc portion of objective function
 
-	weight = props.overall_tempo.second;
-	r = props.overall_tempo.first["r"].first;
-	r_big = props.overall_tempo.first["r"].second;
-	b = props.overall_tempo.first["b"].first;
-	b_big = props.overall_tempo.first["b"].second;
-	g = props.overall_tempo.first["g"].first;
-	g_big = props.overall_tempo.first["g"].second;
-	b = props.overall_tempo.first["b"].second;
-	w = props.overall_tempo.first["w"].second;
-	obf_overall_tempo = 1 / (abs(b_big + (b - b_big)*weight - (double)cand_sol.blue_intensity) + 1) +
-		1 / (abs(weight*r + (double)cand_sol.red_intensity) + 1) +
-		1 / (abs(weight*g + (double)cand_sol.green_intensity) + 1) +
-		1 / (abs(weight*w + (double)cand_sol.white_intensity) + 1); // NT: add strobing stuff
+	//weight = props.overall_tempo.second;
+	//r = props.overall_tempo.first["r"];
+	//R = props.overall_tempo.first["R"];
+	//g = props.overall_tempo.first["g"];
+	//G = props.overall_tempo.first["G"];
+	//b = props.overall_tempo.first["b"];
+	//B = props.overall_tempo.first["B"];
+	//w = props.overall_tempo.first["w"];
+	//W = props.overall_tempo.first["W"];
+	//obf_overall_tempo = 1 / (abs(B + (b - B)*weight - (double)cand_sol.blue_intensity) + 1) +
+	//	1 / (abs(r + (R - r)*weight - (double)cand_sol.red_intensity) + 1) +
+	//	1 / (abs(g + (G - g)*weight - (double)cand_sol.green_intensity) + 1) +
+	//	1 / (abs(w + (W - w)*weight - (double)cand_sol.white_intensity) + 1); // NT: add strobing stuff
+	obf_overall_tempo = 0.0;
 
 	weight = props.beatiness.second;
-	r = props.beatiness.first["r"].first;
-	r_big = props.beatiness.first["r"].second;
-	g = props.beatiness.first["g"].first;
-	g_big = props.beatiness.first["g"].second;
-	b = props.beatiness.first["b"].second;
-	dim = props.beatiness.first["dim"].second;
-	obf_beatiness = 1 / (abs(g_big + (g - g_big)*weight - (double)cand_sol.green_intensity) + 1) +
-		1 / (abs(r_big + (r - r_big)*weight - (double)cand_sol.red_intensity) + 1) +
-		1 / (abs(weight*b + (double)cand_sol.blue_intensity) + 1) +
-		1 / (abs(weight*dim + (double)cand_sol.dimness) + 1); // NT: add strobing stuff
+	r = props.beatiness.first["r"];
+	R = props.beatiness.first["R"];
+	g = props.beatiness.first["g"];
+	G = props.beatiness.first["G"];
+	b = props.beatiness.first["b"];
+	B = props.beatiness.first["B"];
+	w = props.beatiness.first["w"];
+	W = props.beatiness.first["W"];
+	dim = props.beatiness.first["dim"];
+	DIM = props.beatiness.first["DIM"];
+	obf_beatiness = 1 / (abs(G + (g - G)*weight - (double)cand_sol.green_intensity) + 1) +
+		1 / (abs(r + (R - r)*weight - (double)cand_sol.red_intensity) + 1) +
+		1 / (abs(B + (b - B)*weight - (double)cand_sol.blue_intensity) + 1) +
+		1 / (abs(W + (w - W)*weight - (double)cand_sol.white_intensity) + 1) +
+		1 / (abs(dim + (DIM - dim)*weight - (double)cand_sol.dimness) + 1); // NT: add strobing stuff
+	obf_beatiness = 0.0;
 
 	weight = props.overall_intens.second;
-	g = props.overall_intens.first["g"].first;
-	w = props.overall_intens.first["w"].first;
-	dim = props.beatiness.first["dim"].second;
+	r = props.overall_intens.first["r"];
+	R = props.overall_intens.first["R"];
+	g = props.overall_intens.first["g"];
+	G = props.overall_intens.first["G"];
+	b = props.overall_intens.first["b"];
+	B = props.overall_intens.first["B"];
+	w = props.overall_intens.first["w"];
+	W = props.overall_intens.first["W"];
 	obf_overall_intens = 1 / (abs(weight*g + (double)cand_sol.green_intensity) + 1) +
 		1 / (abs(weight*w + (double)cand_sol.white_intensity) + 1) +
 		1 / (abs(weight*dim + (double)cand_sol.dimness) + 1); // NT: add strobing stuff
@@ -168,7 +226,6 @@ OptiAlgo::TabuSearch::TabuSearch(int tenure = 3, int n_iterations = 1000)
 // Helper function
 bool OptiAlgo::TabuSearch::pairCompare(const pair<LightsInfo, double>& firstElem, const pair<LightsInfo, double>& secondElem) {
 	return firstElem.second > secondElem.second;
-
 }
 
 OptiAlgo::ProblemRepresentation OptiAlgo::TabuSearch::search(ProblemRepresentation problem, AudioProps audio_props)
@@ -286,7 +343,7 @@ map<string, double> OptiAlgo::execute_algorithm(TabuSearch algo, int n_iteration
 	sum_time = 0.0;
 	for (int i = 0; i < n_iterations; i++)
 	{
-		problem = ProblemRepresentation(audio_props);
+		problem = ProblemRepresentation(audio_props, false);
 		begin = clock();
 		problem = algo.search(problem, audio_props);
 		end = clock();
@@ -344,6 +401,7 @@ void OptiAlgo::test_lights()
 {
 	LightsInfo lights_config;
 	int strobe = 0;
+	int w = 0;
 	char * err_str;
 
 	while (!terminate)
@@ -353,7 +411,7 @@ void OptiAlgo::test_lights()
 			lights_config.red_intensity = 255;
 			lights_config.blue_intensity = 0;
 			lights_config.green_intensity = 0;
-			lights_config.white_intensity = 100;
+			lights_config.white_intensity = w;
 			lights_config.strobing_speed = strobe;
 			lights_config.dimness = 255;
 			DMXOutput::updateLightsOutputQueue(lights_config);
@@ -361,7 +419,7 @@ void OptiAlgo::test_lights()
 			lights_config.red_intensity = 0;
 			lights_config.blue_intensity = 0;
 			lights_config.green_intensity = 255;
-			lights_config.white_intensity = 100;
+			lights_config.white_intensity = w;
 			lights_config.strobing_speed = strobe;
 			lights_config.dimness = 255;
 			DMXOutput::updateLightsOutputQueue(lights_config);
@@ -369,11 +427,12 @@ void OptiAlgo::test_lights()
 			lights_config.red_intensity = 0;
 			lights_config.blue_intensity = 255;
 			lights_config.green_intensity = 0;
-			lights_config.white_intensity = 100;
+			lights_config.white_intensity = w;
 			lights_config.strobing_speed = strobe;
 			lights_config.dimness = 255;
 			DMXOutput::updateLightsOutputQueue(lights_config);
 			//strobe = (strobe + 100) % 200;
+			w += 10;
 			Sleep(200);
 		}
 		catch (exception e)
@@ -393,20 +452,23 @@ void OptiAlgo::start_algo()
 	//unsigned int nudges = 0, silences = 0;
 	//bool listen_for_silence = false;
 
-	unsigned int tenure = 5, n_iterations = 10;
+	unsigned int tenure = TENURE_START, n_iterations = 10;
 	TabuSearch algorithm = TabuSearch(tenure, n_iterations);
-	ProblemRepresentation solution;
+	ProblemRepresentation cur_sol;
 	AudioInfo audio_sample, smoothed_input;
 	audio_props = AudioProps();
-	LightsInfo lights_config;
+	int tenure_cooldown = 0;
 
 	double avg_freq=0.0, avg_tempo=0.0, avg_loud=0.0, avg_max_loud=0.0;
 	double cur_freq, cur_tempo, cur_loud;
 	bool got_freq, got_tempo, got_loud;
-	double tempo_hist[HISTORY_BUF_SIZE];
-	double loud_hist[HISTORY_BUF_SIZE];
-	double max_loud_hist[MAX_LOUD_HIST_BUF_SIZE];
-	int tempo_hist_it=0, loud_hist_it=0, max_loud_hist_it=0;
+
+	deque<double> tempo_hist = deque<double>();
+	deque<double> loud_hist = deque<double>();
+	deque<double> max_loud_hist = deque<double>();
+
+	deque<LightsInfo> out_hist = deque<LightsInfo>();
+	LightsInfo avg_out = LightsInfo(true);
 
 	stringstream out_str;
 	char * err_str;
@@ -420,6 +482,8 @@ void OptiAlgo::start_algo()
 				if (terminate) { return; }
 			}
 
+			out_str.str("");
+
 			// Grab sample
 			audio_sample = audio_buffer.front();
 			got_freq = audio_sample.get_frequency(cur_freq);
@@ -427,90 +491,99 @@ void OptiAlgo::start_algo()
 			got_loud = audio_sample.get_loudness(cur_loud);
 			audio_buffer.pop();
 
-			// Update averages & history
-			if (got_tempo)
-			{
-				tempo_hist[tempo_hist_it] = cur_tempo;
-				tempo_hist_it = (tempo_hist_it + 1) % HISTORY_BUF_SIZE;
-				avg_tempo = 0.0;
-			}
-			if (got_loud)
-			{
-				loud_hist[loud_hist_it] = cur_loud;
-				loud_hist_it = (loud_hist_it + 1) % HISTORY_BUF_SIZE;
-				avg_loud = 0.0;
-			}
-			for (int i = 0; i < HISTORY_BUF_SIZE; i++)
-			{
-				if (got_tempo) avg_tempo += tempo_hist[i];
-				if (got_loud) avg_loud += loud_hist[i];
-			}
-			if (got_tempo) avg_tempo /= HISTORY_BUF_SIZE;
-			if (got_loud) avg_loud /= HISTORY_BUF_SIZE;
+			out_str << "NULL" << ",";
+			if (got_tempo) out_str << cur_tempo << ","; else out_str << "NULL" << ",";
+			if (got_loud) out_str << cur_loud; else out_str << "NULL";
 
-			if (got_loud && avg_loud > 0.0 && abs(cur_loud - avg_loud) >= BEAT_THRESH)
-			{
-				max_loud_hist[max_loud_hist_it] = cur_loud;
-				max_loud_hist_it = (max_loud_hist_it + 1) % MAX_LOUD_HIST_BUF_SIZE;
-			}
-
-			// TODO: detect and accommodate change
-
-			// Check for silence
+			// NT: Check for silence
 			//if (listen_for_silence)
 			//{
 			//	if (audio_sample.get_loudness(current_loudness) && current_loudness <= SILENCE_THRESH) silences++;
 			//	else silences -= silences > 2 ? 2 : 0;
 			//}
 
+			// Update averages & history
+			if (got_tempo)
+			{
+				tempo_hist.push_front(cur_tempo);
+				if (tempo_hist.size() > HISTORY_BUF_SIZE) tempo_hist.pop_back();
+				avg_tempo = 0.0;
+				for each (double val in tempo_hist)
+					avg_tempo += val;
+				avg_tempo /= tempo_hist.size();
+			}
+			if (got_loud)
+			{
+				if (avg_loud > 0.0 && cur_loud - avg_loud >= BEAT_THRESH)
+				{
+					max_loud_hist.push_front(cur_loud);
+					if (max_loud_hist.size() > MAX_LOUD_HIST_BUF_SIZE) max_loud_hist.pop_back();
+					avg_max_loud = 0.0;
+					for each (double val in max_loud_hist)
+						avg_max_loud += val;
+					avg_max_loud /= max_loud_hist.size();
+				}
+				else
+				{
+					loud_hist.push_front(cur_loud);
+					if (loud_hist.size() > HISTORY_BUF_SIZE) loud_hist.pop_back();
+					avg_loud = 0.0;
+					for each (double val in loud_hist)
+						avg_loud += val;
+					avg_loud /= loud_hist.size();
+				}
+			}
+			if (avg_max_loud < avg_loud) avg_max_loud = avg_loud;
+
+			out_str << " => ";
+			out_str << avg_freq << "," << avg_tempo << "," << avg_loud << "," << avg_max_loud;
+
+			// TODO: detect and accommodate change
 
 			// Adjust property weights
 			smoothed_input = AudioInfo(NULL, &avg_loud, &avg_tempo);
 			audio_props.adjust_weights(smoothed_input, avg_max_loud);
 
-			// Use properties to find varying, near-optimal lights configuration
-			solution = algorithm.search(solution, audio_props);
+			audio_props.freq_conc.second = 0.0;
+			audio_props.beatiness.second = 0.0;
+			audio_props.overall_tempo.second = 0.0;
+			audio_props.overall_intens.second = 1.0;
 
-			// Make output consistent
-			lights_config = solution.representation;
-			// TODO: Fix this
-			//temp_history = sample_history;
-			//nudges = 0;
-			//while (!temp_history.empty())
-			//{
-			//	hist_sol = temp_history.front();
-			//	temp_history.pop();
-			//	if (!temp_history.empty())
-			//	{
-			//		if (hist_sol.representation.differences(temp_history.front().representation) >= DIFFS_FOR_CHANGE)
-			//		{
-			//			break;
-			//		}
-			//		else
-			//		{
-			//			nudges++;
-			//		}
-			//	}
-			//	else
-			//	{
-			//		nudges = 0;
-			//		break;
-			//	}
-			//}
-			//lights_config = (nudges >= NUDGES_TO_CHANGE) ? solution.representation : lights_config; // wrong logic :/
+			out_str << " => ";
+			out_str << audio_props.beatiness.second << ","
+					<< audio_props.overall_tempo.second << ","
+					<< audio_props.overall_intens.second;
+
+			// Use properties to find varying, near-optimal lights configuration
+			cur_sol.representation = avg_out;
+			cur_sol = algorithm.search(cur_sol, audio_props);
+
+			out_str << " => ";
+			out_str << "[" << cur_sol.representation.red_intensity << ","
+				<< cur_sol.representation.green_intensity << ","
+				<< cur_sol.representation.blue_intensity << ","
+				<< cur_sol.representation.white_intensity << ","
+				<< cur_sol.representation.dimness << ","
+				<< cur_sol.representation.strobing_speed << "]";
+
+			// Average output
+			out_hist.push_front(cur_sol.representation);
+			if (out_hist.size() > OUT_HIST_BUF_SIZE) out_hist.pop_back();
+			avg_out = LightsInfo::average_and_smooth(out_hist);
 
 			// Send solution to output controller
-			lights_config.strobing_speed = 0; // TODO: remove this
-			out_str << "Sending to output [";
-			out_str << lights_config.red_intensity << ",";
-			out_str << lights_config.blue_intensity << ",";
-			out_str << lights_config.green_intensity << ",";
-			out_str << lights_config.white_intensity << ",";
-			out_str << lights_config.dimness << ",";
-			out_str << lights_config.strobing_speed << "]\n";
+			avg_out.strobing_speed = 0; // TODO: remove this
+
+			out_str << " => ";
+			out_str << "[" << avg_out.red_intensity << "," << avg_out.green_intensity << "," << avg_out.blue_intensity << ","
+				<< avg_out.white_intensity << "," << avg_out.dimness << "," << avg_out.strobing_speed << "]\n";
 			Helpers::print_debug(out_str.str().c_str());
-			out_str.str("");	//Clear string
-			DMXOutput::updateLightsOutputQueue(lights_config);
+
+			DMXOutput::updateLightsOutputQueue(avg_out);
+
+			// Cool down tenure
+			tenure_cooldown = (tenure_cooldown + 1) % TENURE_COOLDOWN;
+			if (tenure > 0 && tenure_cooldown == 0) tenure--;
 
 		}
 		catch (exception e)

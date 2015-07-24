@@ -22,15 +22,25 @@ class OptiAlgo
 {
 	class AudioProps
 	{
+		deque<double> freq_conc_hist = deque<double>();
+		deque<double> overall_tempo_hist = deque<double>();
+		deque<double> beatiness_hist = deque<double>();
+		deque<double> overall_intens_hist = deque<double>();
+
 	public:
-		pair<map<string, pair<double, double>>, double> freq_conc;
-		pair<map<string, pair<double, double>>, double> overall_tempo;
-		pair<map<string, pair<double, double>>, double> beatiness;
-		pair<map<string, pair<double, double>>, double> overall_intens;
+		pair<map<string, double>, double> freq_conc;
+		pair<map<string, double>, double> overall_tempo;
+		pair<map<string, double>, double> beatiness;
+		pair<map<string, double>, double> overall_intens;
 
 		AudioProps();
-		map<string, pair<double, double>> new_modifiers_set(const double * mods);
+		map<string, double> new_modifiers_set(const double * mods);
 		void adjust_weights(AudioInfo input, double max_loud);
+
+		double freq_conc_add_and_avg(double val);
+		double overall_tempo_add_and_avg(double val);
+		double beatiness_add_and_avg(double val);
+		double overall_intens_add_and_avg(double val);
 	};
 
 	class ProblemRepresentation
@@ -42,7 +52,7 @@ class OptiAlgo
 		double tune_lb = TUNE_LB;
 
 		ProblemRepresentation();
-		ProblemRepresentation(AudioProps properties);
+		ProblemRepresentation(AudioProps properties, bool centered);
 
 		double objective_function(LightsInfo cand_sol, AudioProps properties);
 

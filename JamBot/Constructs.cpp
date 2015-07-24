@@ -148,6 +148,38 @@ void AudioInfo::set_tempo(double freq)
 
 #pragma region LightsInfo // For info interfacing between algorithm and output
 
+LightsInfo::LightsInfo()
+{
+	red_intensity = 0;
+	green_intensity = 0;
+	blue_intensity = 0;
+	white_intensity = 0;
+	dimness = 0;
+	strobing_speed = 0;
+}
+
+LightsInfo::LightsInfo(bool centered)
+{
+	if (centered)
+	{
+		red_intensity = (int)(R_UB - R_LB) / 2;
+		green_intensity = (int)(G_UB - G_LB) / 2;
+		blue_intensity = (int)(B_UB - B_LB) / 2;
+		white_intensity = (int)(W_UB - W_LB) / 2;
+		dimness = (int)(DIM_UB - DIM_LB) / 2;
+		strobing_speed = 0; // TODO: set strobing correctly
+	}
+	else
+	{
+		red_intensity = 0;
+		green_intensity = 0;
+		blue_intensity = 0;
+		white_intensity = 0;
+		dimness = 0;
+		strobing_speed = 0;
+	}
+}
+
 // MUST PASS ARRAY OF SIZE 513
 unsigned char * LightsInfo::convert_to_output(unsigned char lightsOutput[])
 {
@@ -172,6 +204,39 @@ bool LightsInfo::operator == (const LightsInfo& b) const
 		abs((int)white_intensity - (int)b.white_intensity) <= LI_EQUAL_THRESH &&
 		abs((int)strobing_speed - (int)b.strobing_speed) <= LI_EQUAL_THRESH &&
 		abs((int)dimness - (int)b.dimness) <= LI_EQUAL_THRESH;;
+}
+
+LightsInfo LightsInfo::average_and_smooth(deque<LightsInfo> outputs)
+{
+	LightsInfo avg = LightsInfo(false);
+	int size = outputs.size();
+	if (size == 0) return avg;
+
+	// Average values
+	for each (LightsInfo out in outputs)
+	{
+		avg.red_intensity += out.red_intensity;
+		avg.green_intensity += out.green_intensity;
+		avg.blue_intensity += out.blue_intensity;
+		avg.white_intensity += out.white_intensity;
+		avg.dimness += out.dimness;
+		avg.strobing_speed += out.strobing_speed;
+	}
+	avg.red_intensity /= size;
+	avg.green_intensity /= size;
+	avg.blue_intensity /= size;
+	avg.white_intensity /= size;
+	avg.dimness /= size;
+	avg.strobing_speed /= size;
+
+	// Smooth final result
+	if (avg.red_intensity < TOO_SMALL_SMOOTH_THRESH) avg.red_intensity = 0;
+	if (avg.green_intensity < TOO_SMALL_SMOOTH_THRESH) avg.green_intensity = 0;
+	if (avg.blue_intensity < TOO_SMALL_SMOOTH_THRESH) avg.blue_intensity = 0;
+	if (avg.white_intensity < TOO_SMALL_SMOOTH_THRESH) avg.white_intensity = 0;
+	if (avg.dimness < TOO_SMALL_SMOOTH_THRESH) avg.dimness = 0;
+
+	return avg;
 }
 
 #pragma endregion

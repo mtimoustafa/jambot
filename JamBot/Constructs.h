@@ -1,6 +1,10 @@
 #ifndef CONSTRUCTS_INCLUDE
 #define CONSTRUCTS_INCLUDE
 
+#include <deque>
+
+using namespace std;
+
 class AudioInfo
 {
 	double * _frequency;
@@ -31,9 +35,14 @@ class LightsInfo
 public:
 	int red_intensity, blue_intensity, green_intensity, white_intensity;
 	int strobing_speed, dimness;
-	unsigned char * convert_to_output(unsigned char lightsOutput[]);
+
+	LightsInfo();
+	LightsInfo(bool centered);
 
 	bool operator == (const LightsInfo& b) const;
+
+	unsigned char * convert_to_output(unsigned char lightsOutput[]);
+	static LightsInfo average_and_smooth(deque<LightsInfo> outputs);
 };
 
 #endif
