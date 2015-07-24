@@ -2,6 +2,7 @@
 #include <vector>
 #include <deque>
 #include "Helpers.h"
+#include "soundfile.h"
 
 using namespace std;
 
@@ -12,15 +13,15 @@ private:
 	vector<string> filenames;
 	int durationCounter;
 	string directoryPath;
-	vector<float> realTimeBuffer;
+	static vector<float> realTimeBuffer;
 
 public: 
 	WavManipulation();
 	~WavManipulation();
-	Helpers::SongStructure wavComparison(vector<float>);
+	Helpers::SongStructure wavComparison();
 	void snipAudio(vector<string>, vector<short>, vector<short>, string, string);
 	void comparisonPolling();
 	void startSnip();
 	void realTimePush(vector<float>);
-	void inputData(vector<float>);
+	static void inputData(vector<float>);
 };

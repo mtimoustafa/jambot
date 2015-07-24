@@ -225,19 +225,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				CloseAllThreads();
 				ExitProcess(3);
 			}
-			//hThreadArray[WAVGEN_THREAD_ARR_ID] = CreateThread(
-			//	NULL,
-			//	0,
-			//	WavGenThread,
-			//	NULL,
-			//	0,
-			//	&dwThreadArray[WAVGEN_THREAD_ARR_ID]);
-			//if (hThreadArray[WAVGEN_THREAD_ARR_ID] == NULL)
-			//{
-			//	ErrorHandler(TEXT("CreateThread"));
-			//	CloseAllThreads();
-			//	ExitProcess(3);
-			//}
+			hThreadArray[WAVGEN_THREAD_ARR_ID] = CreateThread(
+				NULL,
+				0,
+				WavGenThread,
+				NULL,
+				0,
+				&dwThreadArray[WAVGEN_THREAD_ARR_ID]);
+			if (hThreadArray[WAVGEN_THREAD_ARR_ID] == NULL)
+			{
+				ErrorHandler(TEXT("CreateThread"));
+				CloseAllThreads();
+				ExitProcess(3);
+			}
 			hThreadArray[AUDIOINPUT_THREAD_ARR_ID] = CreateThread(
 				NULL,
 				0,

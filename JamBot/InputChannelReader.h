@@ -1,22 +1,16 @@
 #include "stdafx.h"
 #include "portaudio.h"
-#include <queue>
+#include "Constants.h"
+#include "soundfile.h"
+#include <vector>
 
-#define SAMPLE_RATE  (22050)
-#define FRAMES_PER_BUFFER (4410)	//200ms of audio per buffer
-#define NUM_CHANNELS    (1)
-#define IS_STEREO		(0)
-#define DITHER_FLAG     (0)
-#define SAMPLE_SILENCE  (0)
-#define PRINTF_S_FORMAT "%d"
+#define IS_STEREO		(1)
 
-typedef struct
+struct paData
 {
-	float*					recordedSamples;
-	std::queue<float*>		recordedBuffer;
-	int						bufferedSamples;
-}
-paData;
+	int					numBuffers;
+	std::vector<float>	recordedSamples;
+};
 
 class InputChannelReader
 {
@@ -29,6 +23,7 @@ public:
 
 private:
 	bool stopStream;
+	SoundHeader outHeader;
 
 	// This routine will be called by the PortAudio engine when audio is needed.
 	// It may be called at interrupt level on some machines so don't do anything

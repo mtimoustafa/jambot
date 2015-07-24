@@ -1,6 +1,12 @@
 #ifndef CONSTANTS_INCLUDE
 #define CONSTANTS_INCLUDE
 
+// InputChannelReader Parameters
+const int SAMPLE_RATE = 22050;
+const int FRAMES_PER_BUFFER = 4410;	//200ms of audio per buffer
+const int NUM_CHANNELS = 1;
+const int NUM_SAMPLES = FRAMES_PER_BUFFER * NUM_CHANNELS * 2;
+
 // AudioInfo parameter bounds
 const double FREQ_UB = 20000.0;
 const double FREQ_LB = 0.0;

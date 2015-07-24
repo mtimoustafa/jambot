@@ -41,15 +41,19 @@
 #include "InputChannelReader.h"
 #include "portaudio.h"
 #include "OptiAlgo.h"
+#include "WavManipulation.h"
 #include "Constants.h"
 #include "Constructs.h"
+#include "soundfile.h"
 #include "write_wav.cpp"
 #include "MiniBpm.cpp"
 #include <string>
-#include <queue>
+#include <vector>
 
 MiniBPM tempo = MiniBPM((float)SAMPLE_RATE);
 AudioInfo audioSamples = AudioInfo();
+SoundHeader header = SoundHeader();
+SoundHeader outHeader = SoundHeader();
 
 InputChannelReader::InputChannelReader() 
 {
@@ -66,10 +70,10 @@ int InputChannelReader::recordCallback(const void *inputBuffer, void *outputBuff
 	PaStreamCallbackFlags statusFlags,
 	void *userData)
 {
+	std::vector<float> recordedSamples(NUM_SAMPLES, 0.0);
+	std::vector<float>::iterator it = recordedSamples.begin();
 	paData *data = (paData *)userData;
 	const short *rptr = (const short*)inputBuffer;
-	float *wptr = data->recordedSamples;
-	int numSamples = FRAMES_PER_BUFFER * NUM_CHANNELS * 2;
 
 	// Prevent unused variable warnings.
 	(void)outputBuffer;
@@ -83,8 +87,8 @@ int InputChannelReader::recordCallback(const void *inputBuffer, void *outputBuff
 		{
 			for (int j = 0; j < NUM_CHANNELS; j++)
 			{
-				*wptr++ = (float)SAMPLE_SILENCE;  //left
-				*wptr++ = (float)SAMPLE_SILENCE;  //right
+				// Skip two channels
+				it += 2;
 			}
 		}
 	}
@@ -94,22 +98,21 @@ int InputChannelReader::recordCallback(const void *inputBuffer, void *outputBuff
 		{
 			for (int j = 0; j < NUM_CHANNELS; j++)
 			{
-				if (IS_STEREO)	//left
+				if (IS_STEREO)	//Left
 				{
-					*wptr++ = (float)*rptr++;
+					*it++ = (float)*rptr++;
 				}
 				else
 				{
-					*wptr++ = (float)*rptr;
+					*it++ = (float)*rptr;
 				}
-				*wptr++ = (float)*rptr++;	//right
+				*it++ = (float)*rptr++;	//Right
 			}
 		}
 	}
 
 	// Save Buffer
-	data->recordedBuffer.push(data->recordedSamples);
-	data->recordedSamples = new float[numSamples];	//Reaollocate recorded samples
+	data->recordedSamples = recordedSamples;
 
 	return 0;
 }
@@ -119,31 +122,38 @@ void InputChannelReader::analyseBuffer(paData *data)
 {
 	float val = 0.0;
 	double average = 0.0;
-	int numSamples = FRAMES_PER_BUFFER * NUM_CHANNELS * 2;
+	short fileSamples;
 
 	// Measure average peak amplitude
-	for (int i = 0; i < numSamples; i++)
+	for (int i = 0; i < NUM_SAMPLES; i++)
 	{
-		val = data->recordedBuffer.back()[i];
+		val = data->recordedSamples[i];
 		if (val < 0) val = -val;
 		average += val;
 	}
-	average = average / (double)numSamples;
+	average = average / (double)NUM_SAMPLES;
 	audioSamples.set_loudness(average);
 
 	Helpers::print_debug(("Average sample loudness (dB): " + to_string(average) + "\n").c_str());
 
 	// Measure average tempo every 1.5s
-	tempo.process(const_cast<float*>(data->recordedBuffer.back()), numSamples);
+	tempo.process(const_cast<float*>(&data->recordedSamples[0]), NUM_SAMPLES);
 
-	if ((data->recordedBuffer.size() % 15) == 0)
+	if ((data->numBuffers % 15) == 0)
 	{
 		audioSamples.set_tempo(tempo.estimateTempo());
 		Helpers::print_debug(("Average sample tempo (bpm): " + to_string(tempo.estimateTempo()) + "\n\n").c_str());
 		tempo.reset();
 	}
 
-	OptiAlgo::receive_audio_input_sample(audioSamples);
+	OptiAlgo::receive_audio_input_sample(audioSamples);	//Send to OptiAlgo
+	WavManipulation::inputData(data->recordedSamples);	//Send to WavManipulation
+
+	data->recordedSamples.clear();	//Empty recordedSamples
+
+	//TODO: Add file writting capabilities
+	//TODO: Add Multiple channel support
+	//TODO: Add frequency analyzer
 }
 
 void InputChannelReader::stop()
@@ -162,25 +172,12 @@ int InputChannelReader::main(void)
 	PaStream*           stream;
 	PaError             err = paNoError;
 	paData				data;
-	int                 i, j = 0;
-	int                 numSamples;
-	int					totalSamples;
-	int                 numBytes;
-	float*				streamBuffers;
+	int                 k = 0;
 
 	tempo.setBPMRange(TEMPO_LB, TEMPO_UB);	//Set up tempo ranges
 	tempo.setBeatsPerBar(2);	//Set up 2 beats per bar
 
-	numSamples = FRAMES_PER_BUFFER * NUM_CHANNELS * 2;
-	numBytes = numSamples * sizeof(float);
-	data.recordedSamples = (float *)malloc(numBytes); //From now on, recordedSamples is initialised. 
-	data.bufferedSamples = 0;
-	if (data.recordedSamples == NULL)
-	{
-		Helpers::print_debug("Could not allocate record array.\n");
-		goto done;
-	}
-	for (i = 0; i<numSamples; i++) data.recordedSamples[i] = 0.0;
+	data.numBuffers = 0;
 
 	err = Pa_Initialize();
 	if (err != paNoError) goto done;
@@ -208,63 +205,25 @@ int InputChannelReader::main(void)
 
 	err = Pa_StartStream(stream);
 	if (err != paNoError) goto done;
-	Helpers::print_debug("\n=== Now recording! Please speak into the microphone. ===\n");
+	Helpers::print_debug("\n============= Now recording! =============\n");
 
 	while (!stopStream)
 	{
 		// Analyse Buffer when new Buffer available
-		if (data.bufferedSamples != data.recordedBuffer.size())
+		if (!data.recordedSamples.empty())
 		{
 			analyseBuffer(&data);
-			data.bufferedSamples++;
+			data.numBuffers++;
 		}
 	}
 
 	err = Pa_CloseStream(stream);
 	if (err != paNoError) goto done;
 
-	totalSamples = numSamples * data.recordedBuffer.size();
-	streamBuffers = (float *)malloc(totalSamples*sizeof(float));
-
-	// Load all Buffer samples
-	while (!data.recordedBuffer.empty())
-	{
-		for (i = 0; i < numSamples; i++)
-		{
-			streamBuffers[j] = data.recordedBuffer.front()[i];
-			j++;
-		}
-		data.recordedBuffer.pop();
-	}
-
-	// Write recorded data to a file. 
-	WAV_Writer *writer = new WAV_Writer();
-	long openFile, writeFile;
-	openFile = Audio_WAV_OpenWriter(writer, "Output.wav", SAMPLE_RATE, 2);
-	if (openFile < 0)
-	{
-		Helpers::print_debug("Could not open file.\n");
-	}
-	else
-	{
-		writeFile = Audio_WAV_WriteShorts(writer, streamBuffers, totalSamples);
-		if (writeFile < 0)
-		{
-			Helpers::print_debug("Could not write file.\n");
-		}
-		else
-		{
-			Helpers::print_debug(("Wrote " + to_string(writer->dataSize) + " bytes of data to 'Output.wav'.\n").c_str());
-		}
-	}
-	Audio_WAV_CloseWriter(writer);
-
-	free(streamBuffers);
-
 done:
 	Pa_Terminate();
-	if (data.recordedSamples)
-		free(data.recordedSamples);
+	data.recordedSamples.clear();
+
 	if (err != paNoError)
 	{
 		Helpers::print_debug("ERROR: Terminated InputChannelReader module");

@@ -5,6 +5,7 @@
 #include "soundfile.h"
 #include "WavManipulation.h"
 #include "Helpers.h"
+#include "Constants.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string>
@@ -22,10 +23,11 @@
 //#endif
 using namespace std;
 
+vector<float> WavManipulation::realTimeBuffer = vector<float>();
+
 WavManipulation::WavManipulation(){
 	durations = vector<short>();
 	filenames = vector<string>();
-	realTimeBuffer = vector<float>();
 	durationCounter = 0;
 	directoryPath = "";
 }
@@ -50,13 +52,14 @@ Helpers::SongElement getElement(string name){
 		retElement = Helpers::CHORUS;
 	}
 	if (temp == "Bridge" || temp == "bridge" || temp == "BRIDGE"){
-		retElement = Helpers::INTRO;
+		retElement = Helpers::BRIDGE;
 	}
 	if (temp == "Outro" || temp == "outro" || temp == "OUTRO"){
 		retElement = Helpers::OUTRO;
 	}
 	return retElement;
 }
+
 int getNum(string name){
 	string temp = name.substr(name.length() - 5, 1);
 	int num = 0;
@@ -68,21 +71,22 @@ int getNum(string name){
 	}
 	return num;
 }
+
 void WavManipulation::inputData(vector<float> buffer){
 	realTimeBuffer = buffer;
 }
+
 ///////////////////////////////////////////
 ///	wavComparison: Compares a wav file with realtime input
 ///					Runs until it finds a match or hits the end of the files
 /// Input: short realTimeBuffer[] - the buffered values of the real time input
 ///		   string - directoryPath - the directory path name
 /// Output: char*
-
-Helpers::SongStructure WavManipulation::wavComparison(vector<float> data) {
+Helpers::SongStructure WavManipulation::wavComparison() {
 
 	unsigned short i, j, channel;
 	int error_counter = 1000;
-	short threshold = 0.0009;
+	double threshold = 0.0009;
 	Helpers::SongElement element = Helpers::NIL;
 	int num = 0;
 	float sample = 0;
@@ -156,7 +160,7 @@ void WavManipulation::snipAudio(vector<string> names, vector<short> startTimes, 
 
 void WavManipulation::comparisonPolling(){
 	//Queue pull
-	vector<float> indata; // data->recordedBuffer.begin();
+	vector<float> indata;
 	std::deque<Helpers::SongStructure>  structurequeue;
 	//
 	while (true){
@@ -167,17 +171,16 @@ void WavManipulation::comparisonPolling(){
 			durationCounter--;
 		}
 		else{
-			indata = realTimeBuffer;
-			Helpers::SongStructure section = wavComparison(indata);
+			Helpers::SongStructure section = wavComparison();
 			structurequeue.push_back(section); //This needs to be adjusted to push to mohammed's queue
 		}
 	}
 }
 
 void WavManipulation::startSnip(){
-	string filename = "crunchy_bass_swag.flv";
-	string filepath = "C:\\Users\\emerson\\Documents\\School\\FYDP\\jambot\\JamBot\\";
-	vector<string> names = {"Intro","Chorus1","Verse1", "Outro"};
+	string filename = "crunchy_bass_swag.flv.wav";
+	string filepath = "../";
+	vector<string> names = {"Intro", "Chorus1", "Verse1", "Outro"};
 	vector<short> durations = {1,1,1,1};
 	vector<short> startTimes = {1,3,5,7};
 	snipAudio(names, startTimes, durations, filepath, filename);
