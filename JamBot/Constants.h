@@ -29,26 +29,23 @@ const double DIM_LB = 0.0;
 
 #pragma region Optimization Algorithm parameters
 const unsigned int AUDIO_BUF_SIZE = 256;
-const unsigned int HISTORY_BUF_SIZE = 5;
-const unsigned int MAX_LOUD_HIST_BUF_SIZE = 5;
-const unsigned int WEIGHTS_HIST_BUF_SIZE = 5;
-const unsigned int OUT_HIST_BUF_SIZE = 5;
+const unsigned int HISTORY_BUF_SIZE = 10;
+const unsigned int MAX_LOUD_HIST_BUF_SIZE = 10;
+const unsigned int WEIGHTS_HIST_BUF_SIZE = 1;
+const unsigned int OUT_HIST_BUF_SIZE = 20;
 const unsigned int NUDGES_TO_CHANGE = 3;
 const unsigned int SILENCES_TO_STOP = 10 * 5;
 const unsigned int DIFFS_FOR_CHANGE = 4;
 
-const int TOO_SMALL_SMOOTH_THRESH = 10;
+const int TOO_SMALL_SMOOTH_THRESH = 20;
 
-const int TENURE_START = 8;
-const int TENURE_COOLDOWN = 3;
+const int TENURE_START = 6;
+const int TENURE_COOLDOWN = 2;
 
 const double BEAT_THRESH = 1000.0;
-const double SILENCE_THRESH = 10.0;
+const double SILENCE_THRESH = 400.0;
 
-const double FREQ_MODS[10] = { 0.0, 255.0, 0.0, 255.0, 0.0, 255.0, 0.0, 100.0, 90.0, 255.0 };
-const double OV_TEMPO_MODS[10] = { 0.0, 255.0, 0.0, 255.0, 0.0, 255.0, 0.0, 100.0, 90.0, 255.0 };
-const double BEATI_MODS[10] = { 0.0, 255.0, 0.0, 100.0, 0.0, 100.0, 0.0, 20.0, 150.0, 255.0 };
-const double OV_INT_MODS[10] = { 0.0, 255.0, 0.0, 255.0, 0.0, 255.0, 0.0, 100.0, 90.0, 255.0 };
+const double MODIFIERS[10] = { 0.0, 255.0, 0.0, 255.0, 0.0, 255.0, 0.0, 0.0, 0.0, 255.0 };
 
 const double TUNE_UB = 10.0;
 const double TUNE_LB = -10.0;

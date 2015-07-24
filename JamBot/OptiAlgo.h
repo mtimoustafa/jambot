@@ -32,6 +32,7 @@ class OptiAlgo
 		pair<map<string, double>, double> overall_tempo;
 		pair<map<string, double>, double> beatiness;
 		pair<map<string, double>, double> overall_intens;
+		double silence = 1;
 
 		AudioProps();
 		map<string, double> new_modifiers_set(const double * mods);
@@ -54,9 +55,13 @@ class OptiAlgo
 		ProblemRepresentation();
 		ProblemRepresentation(AudioProps properties, bool centered);
 
-		double objective_function(LightsInfo cand_sol, AudioProps properties);
+		double objective_function(LightsInfo cand_sol, AudioProps props);
+		double obf_overall_tempo(LightsInfo cand_sol, AudioProps props);
+		double obf_beatiness(LightsInfo cand_sol, AudioProps props);
+		double obf_overall_intens(LightsInfo cand_sol, AudioProps props);
+		double obf_silence(LightsInfo cand_sol, AudioProps props);
 
-		LightsInfo tune(LightsInfo tuned_rep);
+		int tune(int value);
 	};
 
 	class TabuSearch

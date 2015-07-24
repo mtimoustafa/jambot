@@ -164,9 +164,9 @@ LightsInfo::LightsInfo(bool centered)
 	{
 		red_intensity = (int)(R_UB - R_LB) / 2;
 		green_intensity = (int)(G_UB - G_LB) / 2;
-		blue_intensity = (int)(B_UB - B_LB) / 2;
-		white_intensity = (int)(W_UB - W_LB) / 2;
-		dimness = (int)(DIM_UB - DIM_LB) / 2;
+		blue_intensity = 0; //(int)(B_UB - B_LB) / 2;
+		white_intensity = 0;
+		dimness = 0; // (int)(DIM_UB - DIM_LB) / 2;
 		strobing_speed = 0; // TODO: set strobing correctly
 	}
 	else
@@ -234,7 +234,6 @@ LightsInfo LightsInfo::average_and_smooth(deque<LightsInfo> outputs)
 	if (avg.green_intensity < TOO_SMALL_SMOOTH_THRESH) avg.green_intensity = 0;
 	if (avg.blue_intensity < TOO_SMALL_SMOOTH_THRESH) avg.blue_intensity = 0;
 	if (avg.white_intensity < TOO_SMALL_SMOOTH_THRESH) avg.white_intensity = 0;
-	if (avg.dimness < TOO_SMALL_SMOOTH_THRESH) avg.dimness = 0;
 
 	return avg;
 }

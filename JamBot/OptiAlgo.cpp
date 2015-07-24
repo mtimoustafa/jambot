@@ -27,10 +27,10 @@ using namespace std;
 
 OptiAlgo::AudioProps::AudioProps()
 {
-	freq_conc = make_pair(new_modifiers_set(FREQ_MODS), 0.5);
-	overall_tempo = make_pair(new_modifiers_set(OV_TEMPO_MODS), 0.5);
-	beatiness = make_pair(new_modifiers_set(BEATI_MODS), 0.5);
-	overall_intens = make_pair(new_modifiers_set(OV_INT_MODS), 0.5);
+	freq_conc = make_pair(new_modifiers_set(MODIFIERS), 0.5);
+	overall_tempo = make_pair(new_modifiers_set(MODIFIERS), 0.5);
+	beatiness = make_pair(new_modifiers_set(MODIFIERS), 0.5);
+	overall_intens = make_pair(new_modifiers_set(MODIFIERS), 0.5);
 }
 
 map<string, double> OptiAlgo::AudioProps::new_modifiers_set(const double * mods)
@@ -56,11 +56,25 @@ void OptiAlgo::AudioProps::adjust_weights(AudioInfo input, double max_loud)
 	input.get_tempo(tempo);
 	input.get_loudness(loud);
 
+	double freq_conc_thresh = 0.0;
+	double overall_intens_thresh = 2500.0;
+	double beatiness_thresh = 1.2;
+	double overall_tempo_thresh = 100.0;
+
 	// NT: set freq conc weight
-	freq_conc_add_and_avg(0.0);
-	overall_tempo_add_and_avg( 0.5 * (loud / LOUD_UB) * (1 + tempo / TEMPO_UB) ); // NT: add freq to this weight
-	beatiness_add_and_avg( ((loud / max_loud) <= 0.4) ? (1 - 0.8*(loud / max_loud)) : (0.8 - 2*0.8*((loud / max_loud) - 0.5)) ); // NT: add freq to this weight
-	overall_tempo_add_and_avg( (tempo / TEMPO_UB) );
+	freq_conc.second = 0.0;
+	overall_intens_add_and_avg((loud) > overall_intens_thresh);
+	// overall_intens_add_and_avg( 0.5 * (loud / LOUD_UB) * (1 + tempo / TEMPO_UB) ); // NT: add freq to this weight
+	beatiness_add_and_avg(max_loud/loud >= beatiness_thresh); // NT: add freq to this weight
+	//beatiness_add_and_avg( ((loud / max_loud) <= 0.4) ? (1 - 0.8*(loud / max_loud)) : (0.8 - 2*0.8*((loud / max_loud) - 0.5)) ); // NT: add freq to this weight
+	if (tempo < 80.0)
+		tempo = 0;
+	else if (tempo > 120.0)
+		tempo = 1;
+	else
+		tempo = tempo / 40.0 - 2.0;
+	overall_tempo_add_and_avg(tempo);
+	silence = (loud < SILENCE_THRESH);
 }
 
 double OptiAlgo::AudioProps::freq_conc_add_and_avg(double val)
@@ -127,89 +141,54 @@ OptiAlgo::ProblemRepresentation::ProblemRepresentation(AudioProps properties, bo
 
 double OptiAlgo::ProblemRepresentation::objective_function(LightsInfo cand_sol, AudioProps props)
 {
-	// Applies objective function to current solution
-	double obf_freq_conc, obf_overall_tempo, obf_beatiness, obf_overall_intens;
-	double weight, r, R, g, G, b, B, w, W, dim, DIM;
+	double rep_value = 0;
+	rep_value += obf_overall_tempo(representation, props);
+	rep_value += obf_beatiness(representation, props);
+	rep_value += obf_overall_intens(representation, props);
+	rep_value += obf_silence(representation, props);
+	return rep_value;
+}
+double OptiAlgo::ProblemRepresentation::obf_overall_tempo(LightsInfo cand_sol, AudioProps props)
+{
+	double weight, b, B, dim, DIM;
+	b = MODIFIERS[4]; B = MODIFIERS[5];
+	dim = MODIFIERS[8]; DIM = MODIFIERS[9];
 
-	obf_freq_conc = 0.0; // NT: add freq conc portion of objective function
-
-	//weight = props.overall_tempo.second;
-	//r = props.overall_tempo.first["r"];
-	//R = props.overall_tempo.first["R"];
-	//g = props.overall_tempo.first["g"];
-	//G = props.overall_tempo.first["G"];
-	//b = props.overall_tempo.first["b"];
-	//B = props.overall_tempo.first["B"];
-	//w = props.overall_tempo.first["w"];
-	//W = props.overall_tempo.first["W"];
-	//obf_overall_tempo = 1 / (abs(B + (b - B)*weight - (double)cand_sol.blue_intensity) + 1) +
-	//	1 / (abs(r + (R - r)*weight - (double)cand_sol.red_intensity) + 1) +
-	//	1 / (abs(g + (G - g)*weight - (double)cand_sol.green_intensity) + 1) +
-	//	1 / (abs(w + (W - w)*weight - (double)cand_sol.white_intensity) + 1); // NT: add strobing stuff
-	obf_overall_tempo = 0.0;
+	weight = props.overall_tempo.second;
+	return 1 / (abs(B + (b - B)*weight - (double)cand_sol.blue_intensity) + 1);
+}
+double OptiAlgo::ProblemRepresentation::obf_beatiness(LightsInfo cand_sol, AudioProps props)
+{
+	double weight, r, R, dim, DIM;
+	r = MODIFIERS[0]; R = MODIFIERS[1];
+	dim = MODIFIERS[8]; DIM = MODIFIERS[9];
 
 	weight = props.beatiness.second;
-	r = props.beatiness.first["r"];
-	R = props.beatiness.first["R"];
-	g = props.beatiness.first["g"];
-	G = props.beatiness.first["G"];
-	b = props.beatiness.first["b"];
-	B = props.beatiness.first["B"];
-	w = props.beatiness.first["w"];
-	W = props.beatiness.first["W"];
-	dim = props.beatiness.first["dim"];
-	DIM = props.beatiness.first["DIM"];
-	obf_beatiness = 1 / (abs(G + (g - G)*weight - (double)cand_sol.green_intensity) + 1) +
-		1 / (abs(r + (R - r)*weight - (double)cand_sol.red_intensity) + 1) +
-		1 / (abs(B + (b - B)*weight - (double)cand_sol.blue_intensity) + 1) +
-		1 / (abs(W + (w - W)*weight - (double)cand_sol.white_intensity) + 1) +
-		1 / (abs(dim + (DIM - dim)*weight - (double)cand_sol.dimness) + 1); // NT: add strobing stuff
-	obf_beatiness = 0.0;
+	return 1 / (abs(r + (R - r)*weight - (double)cand_sol.red_intensity) + 1);
+}
+double OptiAlgo::ProblemRepresentation::obf_overall_intens(LightsInfo cand_sol, AudioProps props)
+{
+	double weight, g, G, dim, DIM;
+	g = MODIFIERS[2]; G = MODIFIERS[3];
+	dim = MODIFIERS[8]; DIM = MODIFIERS[9];
 
 	weight = props.overall_intens.second;
-	r = props.overall_intens.first["r"];
-	R = props.overall_intens.first["R"];
-	g = props.overall_intens.first["g"];
-	G = props.overall_intens.first["G"];
-	b = props.overall_intens.first["b"];
-	B = props.overall_intens.first["B"];
-	w = props.overall_intens.first["w"];
-	W = props.overall_intens.first["W"];
-	obf_overall_intens = 1 / (abs(weight*g + (double)cand_sol.green_intensity) + 1) +
-		1 / (abs(weight*w + (double)cand_sol.white_intensity) + 1) +
-		1 / (abs(weight*dim + (double)cand_sol.dimness) + 1); // NT: add strobing stuff
+	return 1 / (abs(g + (G - g)*weight - (double)cand_sol.green_intensity) + 1);
+}
+double OptiAlgo::ProblemRepresentation::obf_silence(LightsInfo cand_sol, AudioProps props)
+{
+	double dim, DIM, obf_silence;
+	dim = MODIFIERS[8]; DIM = MODIFIERS[9];
 
-	return obf_freq_conc + obf_overall_tempo + obf_beatiness + obf_overall_intens;
+	return abs(dim + (DIM - dim)*props.silence - (double)cand_sol.dimness);
 }
 
-LightsInfo OptiAlgo::ProblemRepresentation::tune(LightsInfo tuned_rep)
+int OptiAlgo::ProblemRepresentation::tune(int value)
 {
-	// Randomly alter variables
-	//LightsInfo tuned_rep = LightsInfo();
-	tuned_rep.red_intensity += (int)Helpers::fRand(tune_lb, tune_ub);
-	if (tuned_rep.red_intensity > (int)R_UB) tuned_rep.red_intensity = (int)R_UB;
-	if (tuned_rep.red_intensity < (int)R_LB) tuned_rep.red_intensity = (int)R_LB;
-
-	tuned_rep.blue_intensity += (int)Helpers::fRand(tune_lb, tune_ub);
-	if (tuned_rep.blue_intensity > (int)B_UB) tuned_rep.blue_intensity = (int)B_UB;
-	if (tuned_rep.blue_intensity < (int)B_LB) tuned_rep.blue_intensity = (int)B_LB;
-
-	tuned_rep.green_intensity += (int)Helpers::fRand(tune_lb, tune_ub);
-	if (tuned_rep.green_intensity > (int)G_UB) tuned_rep.green_intensity = (int)G_UB;
-	if (tuned_rep.green_intensity < (int)G_LB) tuned_rep.green_intensity = (int)G_LB;
-
-	tuned_rep.white_intensity += (int)Helpers::fRand(tune_lb, tune_ub);
-	if (tuned_rep.white_intensity > (int)W_UB) tuned_rep.white_intensity = (int)W_UB;
-	if (tuned_rep.white_intensity < (int)W_LB) tuned_rep.white_intensity = (int)W_LB;
-
-	// tuned_rep.strobing_speed += (int)Helpers::fRand(tune_lb, tune_ub);
-	tuned_rep.strobing_speed = 0; // NT: add this in
-
-	tuned_rep.dimness += (int)Helpers::fRand(tune_lb, tune_ub);
-	if (tuned_rep.dimness > (int)DIM_UB) tuned_rep.dimness = (int)DIM_UB;
-	if (tuned_rep.dimness < (int)DIM_LB) tuned_rep.dimness = (int)DIM_LB;
-
-	return tuned_rep;
+	value += (int)Helpers::fRand(tune_lb, tune_ub);
+	if (value > (int)R_UB) value = (int)R_UB;
+	if (value < (int)R_LB) value = (int)R_LB;
+	return value;
 }
 
 #pragma endregion
@@ -231,7 +210,7 @@ bool OptiAlgo::TabuSearch::pairCompare(const pair<LightsInfo, double>& firstElem
 OptiAlgo::ProblemRepresentation OptiAlgo::TabuSearch::search(ProblemRepresentation problem, AudioProps audio_props)
 {
 	// Initialize structures
-	vector<pair<LightsInfo, double>> neighbours;
+	vector<pair<LightsInfo, double>> nbrs_r, nbrs_g, nbrs_b, nbrs_dim;
 	vector<pair<LightsInfo, int>> tabuStructure;
 	vector<pair<LightsInfo, int>>::const_iterator it;
 
@@ -240,51 +219,124 @@ OptiAlgo::ProblemRepresentation OptiAlgo::TabuSearch::search(ProblemRepresentati
 	bool solutionChanged;
 	vector<pair<LightsInfo, int>> new_structure;
 
-	// debug values - TODO: remove these
-	bool res;
-	LightsInfo dbg;
-	vector<pair<LightsInfo, double>> dbgn;
-
 	// Search for optimal solution!
 	for (int i = 0; i < n_iterations; i++)
 	{
 		// Generate neighbours
-		neighbours = vector<pair<LightsInfo, double>>();
+		nbrs_r = vector<pair<LightsInfo, double>>();
+		nbrs_g = vector<pair<LightsInfo, double>>();
+		nbrs_b = vector<pair<LightsInfo, double>>();
+		nbrs_dim = vector<pair<LightsInfo, double>>();
+
 		for (int j = 0; j < 5; j++)
 		{
-			temp_neighbour = problem.tune(problem.representation);
-			neighbours.push_back(make_pair(temp_neighbour, (problem.objective_function(temp_neighbour, audio_props) - problem.objective_function(problem.representation, audio_props))));
+			temp_neighbour.red_intensity = problem.tune(problem.representation.red_intensity);
+			nbrs_r.push_back(make_pair(temp_neighbour, (problem.obf_beatiness(temp_neighbour, audio_props) - problem.obf_beatiness(problem.representation, audio_props))));
+			temp_neighbour.blue_intensity = problem.tune(problem.representation.blue_intensity);
+			nbrs_b.push_back(make_pair(temp_neighbour, (problem.obf_overall_tempo(temp_neighbour, audio_props) - problem.obf_overall_tempo(problem.representation, audio_props))));
+			temp_neighbour.green_intensity = problem.tune(problem.representation.green_intensity);
+			nbrs_g.push_back(make_pair(temp_neighbour, (problem.obf_overall_intens(temp_neighbour, audio_props) - problem.obf_overall_intens(problem.representation, audio_props))));
+			temp_neighbour.dimness = problem.tune(problem.representation.dimness);
+			nbrs_dim.push_back(make_pair(temp_neighbour, (problem.obf_silence(temp_neighbour, audio_props) - problem.obf_silence(problem.representation, audio_props))));
 		}
-		sort(neighbours.begin(), neighbours.end(), TabuSearch::pairCompare);
-		dbgn = neighbours;
+		sort(nbrs_r.begin(), nbrs_r.end(), TabuSearch::pairCompare);
+		sort(nbrs_g.begin(), nbrs_g.end(), TabuSearch::pairCompare);
+		sort(nbrs_b.begin(), nbrs_b.end(), TabuSearch::pairCompare);
+		sort(nbrs_dim.begin(), nbrs_dim.end(), TabuSearch::pairCompare);
 
 		// Choose new candidate solution
 		solutionChanged = false;
-		while (neighbours.size() > 0)
+		while (nbrs_r.size() > 0)
 		{
-			candidate = neighbours.front();
-			neighbours.erase(neighbours.begin());
+			candidate = nbrs_r.front();
+			nbrs_r.erase(nbrs_r.begin());
 
 			// If not tabu or if aspiration criteria allows it
-			it = find_if(tabuStructure.begin(), tabuStructure.end(), [&candidate, &res, &dbg](const pair<LightsInfo, double> &x) {
-				dbg = x.first;
-				res = x.first == candidate.first;
-				return x.first == candidate.first; });
-				if (it == tabuStructure.end() || (it->second <= 1 && !neighbours.empty() && candidate.second >= neighbours.front().second * 2))
+			it = find_if(tabuStructure.begin(), tabuStructure.end(), [&candidate](const pair<LightsInfo, double> &x) { return x.first == candidate.first; });
+
+			if (it == tabuStructure.end()) //|| (it->second <= 1 && !nbrs_r.empty() && candidate.second >= nbrs_r.front().second * 3))
+			{
+				// Use neighbouring solution
+				problem.representation.red_intensity = candidate.first.red_intensity;
+
+				if (it != tabuStructure.end())
 				{
-					// Use neighbouring solution
-					problem.representation = candidate.first;
-					problem.rep_value += candidate.second;
-
-					if (it != tabuStructure.end())
-					{
-						tabuStructure.erase(it);
-					}
-					tabuStructure.push_back(make_pair(problem.representation, TENURE + 1));
-
-					solutionChanged = true;
-					break;
+					tabuStructure.erase(it);
 				}
+				tabuStructure.push_back(make_pair(problem.representation, TENURE + 1));
+
+				solutionChanged = true;
+				break;
+			}
+		}
+		while (nbrs_dim.size() > 0)
+		{
+			candidate = nbrs_dim.front();
+			nbrs_dim.erase(nbrs_dim.begin());
+
+			// If not tabu or if aspiration criteria allows it
+			it = find_if(tabuStructure.begin(), tabuStructure.end(), [&candidate](const pair<LightsInfo, double> &x) { return x.first == candidate.first; });
+
+			if (it == tabuStructure.end()) //|| (it->second <= 1 && !nbrs_dim.empty() && candidate.second >= nbrs_dim.front().second * 3))
+			{
+				// Use neighbouring solution
+				problem.representation.dimness = candidate.first.dimness;
+
+				if (it != tabuStructure.end())
+				{
+					tabuStructure.erase(it);
+				}
+				tabuStructure.push_back(make_pair(problem.representation, TENURE + 1));
+
+				solutionChanged = true;
+				break;
+			}
+		}
+		while (nbrs_g.size() > 0)
+		{
+			candidate = nbrs_g.front();
+			nbrs_g.erase(nbrs_g.begin());
+
+			// If not tabu or if aspiration criteria allows it
+			it = find_if(tabuStructure.begin(), tabuStructure.end(), [&candidate](const pair<LightsInfo, double> &x) { return x.first == candidate.first; });
+
+			if (it == tabuStructure.end()) //|| (it->second <= 1 && !nbrs_g.empty() && candidate.second >= nbrs_g.front().second * 3))
+			{
+				// Use neighbouring solution
+				problem.representation.green_intensity = candidate.first.green_intensity;
+
+				if (it != tabuStructure.end())
+				{
+					tabuStructure.erase(it);
+				}
+				tabuStructure.push_back(make_pair(problem.representation, TENURE + 1));
+
+				solutionChanged = true;
+				break;
+			}
+		}
+		while (nbrs_b.size() > 0)
+		{
+			candidate = nbrs_b.front();
+			nbrs_b.erase(nbrs_b.begin());
+
+			// If not tabu or if aspiration criteria allows it
+			it = find_if(tabuStructure.begin(), tabuStructure.end(), [&candidate](const pair<LightsInfo, double> &x) { return x.first == candidate.first; });
+
+			if (it == tabuStructure.end()) //|| (it->second <= 1 && !nbrs_b.empty() && candidate.second >= nbrs_b.front().second * 3))
+			{
+				// Use neighbouring solution
+				problem.representation.blue_intensity = candidate.first.blue_intensity;
+
+				if (it != tabuStructure.end())
+				{
+					tabuStructure.erase(it);
+				}
+				tabuStructure.push_back(make_pair(problem.representation, TENURE + 1));
+
+				solutionChanged = true;
+				break;
+			}
 		}
 		if (!solutionChanged)
 		{
@@ -457,6 +509,7 @@ void OptiAlgo::start_algo()
 	ProblemRepresentation cur_sol;
 	AudioInfo audio_sample, smoothed_input;
 	audio_props = AudioProps();
+	AudioProps prev_props;
 	int tenure_cooldown = 0;
 
 	double avg_freq=0.0, avg_tempo=0.0, avg_loud=0.0, avg_max_loud=0.0;
@@ -491,72 +544,82 @@ void OptiAlgo::start_algo()
 			got_loud = audio_sample.get_loudness(cur_loud);
 			audio_buffer.pop();
 
-			out_str << "NULL" << ",";
-			if (got_tempo) out_str << cur_tempo << ","; else out_str << "NULL" << ",";
-			if (got_loud) out_str << cur_loud; else out_str << "NULL";
-
-			// NT: Check for silence
-			//if (listen_for_silence)
-			//{
-			//	if (audio_sample.get_loudness(current_loudness) && current_loudness <= SILENCE_THRESH) silences++;
-			//	else silences -= silences > 2 ? 2 : 0;
-			//}
-
 			// Update averages & history
-			if (got_tempo)
+			if (audio_props.silence)
 			{
-				tempo_hist.push_front(cur_tempo);
-				if (tempo_hist.size() > HISTORY_BUF_SIZE) tempo_hist.pop_back();
-				avg_tempo = 0.0;
-				for each (double val in tempo_hist)
-					avg_tempo += val;
-				avg_tempo /= tempo_hist.size();
+				avg_tempo = cur_tempo;
+				avg_loud = cur_loud;
+				avg_max_loud = cur_loud;
 			}
-			if (got_loud)
+			else
 			{
-				if (avg_loud > 0.0 && cur_loud - avg_loud >= BEAT_THRESH)
+				if (got_tempo)
 				{
-					max_loud_hist.push_front(cur_loud);
-					if (max_loud_hist.size() > MAX_LOUD_HIST_BUF_SIZE) max_loud_hist.pop_back();
-					avg_max_loud = 0.0;
-					for each (double val in max_loud_hist)
-						avg_max_loud += val;
-					avg_max_loud /= max_loud_hist.size();
+					tempo_hist.push_front(cur_tempo);
+					if (tempo_hist.size() > HISTORY_BUF_SIZE) tempo_hist.pop_back();
+					avg_tempo = 0.0;
+					for each (double val in tempo_hist)
+						avg_tempo += val;
+					avg_tempo /= tempo_hist.size();
 				}
-				else
+				if (got_loud)
 				{
-					loud_hist.push_front(cur_loud);
-					if (loud_hist.size() > HISTORY_BUF_SIZE) loud_hist.pop_back();
-					avg_loud = 0.0;
-					for each (double val in loud_hist)
-						avg_loud += val;
-					avg_loud /= loud_hist.size();
+					if (avg_loud > 0.0 && cur_loud - avg_loud >= BEAT_THRESH)
+					{
+						max_loud_hist.push_front(cur_loud);
+						if (max_loud_hist.size() > MAX_LOUD_HIST_BUF_SIZE) max_loud_hist.pop_back();
+						avg_max_loud = 0.0;
+						for each (double val in max_loud_hist)
+							avg_max_loud += val;
+						avg_max_loud /= max_loud_hist.size();
+					}
+					else
+					{
+						loud_hist.push_front(cur_loud);
+						if (loud_hist.size() > HISTORY_BUF_SIZE) loud_hist.pop_back();
+						avg_loud = 0.0;
+						for each (double val in loud_hist)
+							avg_loud += val;
+						avg_loud /= loud_hist.size();
+					}
 				}
+				if (avg_max_loud < avg_loud) avg_max_loud = avg_loud;
 			}
-			if (avg_max_loud < avg_loud) avg_max_loud = avg_loud;
-
-			out_str << " => ";
-			out_str << avg_freq << "," << avg_tempo << "," << avg_loud << "," << avg_max_loud;
-
-			// TODO: detect and accommodate change
 
 			// Adjust property weights
 			smoothed_input = AudioInfo(NULL, &avg_loud, &avg_tempo);
+			prev_props = audio_props;
 			audio_props.adjust_weights(smoothed_input, avg_max_loud);
+			if (prev_props.silence != audio_props.silence)
+			{
+				if (audio_props.silence)
+				{
+					tempo_hist = deque<double>();
+					loud_hist = deque<double>();
+					max_loud_hist = deque<double>();
+					out_hist = deque<LightsInfo>();
+				}
+				else
+				{
+					tenure = TENURE_START;
+					tenure_cooldown = TENURE_COOLDOWN;
+				}
+			}
+			audio_props.beatiness.second = 0;
+			audio_props.overall_intens.second = 0;
 
-			audio_props.freq_conc.second = 0.0;
-			audio_props.beatiness.second = 0.0;
-			audio_props.overall_tempo.second = 0.0;
-			audio_props.overall_intens.second = 1.0;
+			out_str << avg_freq << "," << avg_tempo << "," << avg_loud << "," << avg_max_loud;
 
 			out_str << " => ";
 			out_str << audio_props.beatiness.second << ","
-					<< audio_props.overall_tempo.second << ","
-					<< audio_props.overall_intens.second;
+				<< audio_props.overall_tempo.second << ","
+				<< audio_props.overall_intens.second << ","
+				<< audio_props.silence;
 
 			// Use properties to find varying, near-optimal lights configuration
 			cur_sol.representation = avg_out;
 			cur_sol = algorithm.search(cur_sol, audio_props);
+			cur_sol.representation.white_intensity = 0;
 
 			out_str << " => ";
 			out_str << "[" << cur_sol.representation.red_intensity << ","
@@ -583,7 +646,7 @@ void OptiAlgo::start_algo()
 
 			// Cool down tenure
 			tenure_cooldown = (tenure_cooldown + 1) % TENURE_COOLDOWN;
-			if (tenure > 0 && tenure_cooldown == 0) tenure--;
+			if (tenure > 3 && tenure_cooldown == 0) tenure--;
 
 		}
 		catch (exception e)
