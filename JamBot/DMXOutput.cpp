@@ -43,7 +43,7 @@ void DMXOutput::close()
 {
 	status = FT_Purge(handle, PURGE_TX);
 	status = FT_Purge(handle, PURGE_RX);
-	status = FT_Close(&handle);
+	status = FT_Close(handle);
 	if (status != FT_OK)
 	{
 		Helpers::print_debug("DMX device not closed properly\n");
@@ -64,6 +64,11 @@ void DMXOutput::init()
 	status = FT_ClrRts(handle);
 	status = FT_Purge(handle, PURGE_TX);
 	status = FT_Purge(handle, PURGE_RX);
+
+	if (status != FT_OK)
+	{
+		Helpers::print_debug("ERROR: DMXOutput: init unsucessful (did not receive FT_OK)");
+	}
 
 	bytesWritten = write(handle, turnOffLightsPacket, packet_size);
 }
@@ -137,6 +142,7 @@ int DMXOutput::start_listening()
 			}
 		}
 		write(handle, turnOffLightsPacket, packet_size);
+		close();
 	}
 	return 0;
 }
