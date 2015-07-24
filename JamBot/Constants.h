@@ -30,7 +30,7 @@ const double DIM_LB = 0.0;
 #pragma region Optimization Algorithm parameters
 const unsigned int AUDIO_BUF_SIZE = 256;
 const unsigned int HISTORY_BUF_SIZE = 10;
-const unsigned int MAX_LOUD_HIST_BUF_SIZE = 10;
+const unsigned int MAX_LOUD_HIST_BUF_SIZE = 4;
 const unsigned int WEIGHTS_HIST_BUF_SIZE = 1;
 const unsigned int OUT_HIST_BUF_SIZE = 20;
 const unsigned int NUDGES_TO_CHANGE = 3;
@@ -38,6 +38,7 @@ const unsigned int SILENCES_TO_STOP = 10 * 5;
 const unsigned int DIFFS_FOR_CHANGE = 4;
 
 const int TOO_SMALL_SMOOTH_THRESH = 20;
+const int CHANGE_TO_MAX_LOUD_THRESH = 500.0;
 
 const int TENURE_START = 6;
 const int TENURE_COOLDOWN = 2;

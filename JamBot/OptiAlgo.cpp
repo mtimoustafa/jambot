@@ -52,29 +52,39 @@ map<string, double> OptiAlgo::AudioProps::new_modifiers_set(const double * mods)
 void OptiAlgo::AudioProps::adjust_weights(AudioInfo input, double max_loud)
 {
 	double freq, tempo, loud;
+	double overall_intens, overall_tempo, beatiness;
 	input.get_frequency(freq);
 	input.get_tempo(tempo);
 	input.get_loudness(loud);
 
-	double freq_conc_thresh = 0.0;
-	double overall_intens_thresh = 2500.0;
-	double beatiness_thresh = 1.2;
-	double overall_tempo_thresh = 100.0;
-
 	// NT: set freq conc weight
 	freq_conc.second = 0.0;
-	overall_intens_add_and_avg((loud) > overall_intens_thresh);
-	// overall_intens_add_and_avg( 0.5 * (loud / LOUD_UB) * (1 + tempo / TEMPO_UB) ); // NT: add freq to this weight
-	beatiness_add_and_avg(max_loud/loud >= beatiness_thresh); // NT: add freq to this weight
-	//beatiness_add_and_avg( ((loud / max_loud) <= 0.4) ? (1 - 0.8*(loud / max_loud)) : (0.8 - 2*0.8*((loud / max_loud) - 0.5)) ); // NT: add freq to this weight
-	if (tempo < 80.0)
-		tempo = 0;
-	else if (tempo > 120.0)
-		tempo = 1;
-	else
-		tempo = tempo / 40.0 - 2.0;
-	overall_tempo_add_and_avg(tempo);
+
 	silence = (loud < SILENCE_THRESH);
+
+	if (loud > 5000.0)
+		overall_intens = 1;
+	else if (loud < 3000.0)
+		overall_intens = 0;
+	else
+		overall_intens = loud / 2000.0 - 1.5;
+	overall_intens_add_and_avg(overall_intens);
+
+	if (max_loud / loud > 2.2)
+		beatiness = 1;
+	else if (max_loud / loud < 1.3)
+		beatiness = 0;
+	else
+		beatiness = (max_loud/loud) / (2.2-1.3) - 1.3/(2.2-1.3);
+	beatiness_add_and_avg(beatiness); // NT: add freq to this weight
+
+	if (tempo < 90.0)
+		overall_tempo = 0;
+	else if (tempo > 120.0)
+		overall_tempo = 1;
+	else
+		overall_tempo = tempo / 30.0 - 3.0;
+	overall_tempo_add_and_avg(overall_tempo);
 }
 
 double OptiAlgo::AudioProps::freq_conc_add_and_avg(double val)
@@ -512,13 +522,14 @@ void OptiAlgo::start_algo()
 	AudioProps prev_props;
 	int tenure_cooldown = 0;
 
-	double avg_freq=0.0, avg_tempo=0.0, avg_loud=0.0, avg_max_loud=0.0;
+	double avg_freq=0.0, avg_tempo=0.0, avg_loud=0.0, avg_max_loud=0.0, avg_loud_with_max=0.0;
 	double cur_freq, cur_tempo, cur_loud;
 	bool got_freq, got_tempo, got_loud;
 
 	deque<double> tempo_hist = deque<double>();
 	deque<double> loud_hist = deque<double>();
 	deque<double> max_loud_hist = deque<double>();
+	deque<double> loud_hist_with_max = deque<double>();
 
 	deque<LightsInfo> out_hist = deque<LightsInfo>();
 	LightsInfo avg_out = LightsInfo(true);
@@ -582,6 +593,18 @@ void OptiAlgo::start_algo()
 							avg_loud += val;
 						avg_loud /= loud_hist.size();
 					}
+
+					loud_hist_with_max.push_front(cur_loud);
+					if (loud_hist_with_max.size() > HISTORY_BUF_SIZE) loud_hist_with_max.pop_back();
+					avg_loud_with_max = 0.0;
+					for each (double val in loud_hist_with_max)
+						avg_loud_with_max += val;
+					avg_loud_with_max /= loud_hist_with_max.size();
+
+					if (abs(avg_loud_with_max - avg_max_loud) >= CHANGE_TO_MAX_LOUD_THRESH)
+					{
+						avg_loud = avg_loud_with_max;
+					}
 				}
 				if (avg_max_loud < avg_loud) avg_max_loud = avg_loud;
 			}
@@ -597,6 +620,7 @@ void OptiAlgo::start_algo()
 					tempo_hist = deque<double>();
 					loud_hist = deque<double>();
 					max_loud_hist = deque<double>();
+					loud_hist_with_max = deque<double>();
 					out_hist = deque<LightsInfo>();
 				}
 				else
@@ -605,8 +629,6 @@ void OptiAlgo::start_algo()
 					tenure_cooldown = TENURE_COOLDOWN;
 				}
 			}
-			audio_props.beatiness.second = 0;
-			audio_props.overall_intens.second = 0;
 
 			out_str << avg_freq << "," << avg_tempo << "," << avg_loud << "," << avg_max_loud;
 
