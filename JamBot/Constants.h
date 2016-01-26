@@ -6,6 +6,8 @@ const int SAMPLE_RATE = 22050;
 const int FRAMES_PER_BUFFER = 4410;	//200ms of audio per buffer
 const int NUM_CHANNELS = 1;
 const int NUM_SAMPLES = FRAMES_PER_BUFFER * NUM_CHANNELS * 2;
+const int FFT_SIZE = 4096;
+const int OUTPUT_SIZE = (int)(FFT_SIZE / 2) + 1;
 
 // AudioInfo parameter bounds
 const double FREQ_UB = 20000.0;

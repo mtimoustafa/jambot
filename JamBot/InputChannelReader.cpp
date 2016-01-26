@@ -47,9 +47,14 @@
 #include "soundfile.h"
 #include "write_wav.cpp"
 #include "MiniBpm.cpp"
+#include "fftw3.h"
 #include <string>
 #include <vector>
+#include <math.h>
 
+float *in;
+fftwf_complex *out;
+fftwf_plan frequencyPlan;
 MiniBPM tempo = MiniBPM((float)SAMPLE_RATE);
 AudioInfo audioSamples = AudioInfo();
 SoundHeader header = SoundHeader();
@@ -117,28 +122,58 @@ int InputChannelReader::recordCallback(const void *inputBuffer, void *outputBuff
 	return 0;
 }
 
+// This routine will be called whenever the Hanning function is needed
+float InputChannelReader::hannFunction(int n)
+{
+	double inner = (2 * M_PI * n) / (FFT_SIZE - 1);
+	return (float)(0.5 * (1.0 - cos(inner)));
+}
+
 // This routine will be called whenever a Buffer has finished recording
 void InputChannelReader::analyseBuffer(paData *data)
 {
 	float val = 0.0;
+	float magnitude;
+	float maxDensity = 0.0;
+	float frequency;
+	int maxIndex;
 	double average = 0.0;
 	short fileSamples;
 
 	// Measure average peak amplitude
 	for (int i = 0; i < NUM_SAMPLES; i++)
 	{
+		// Use every-other sample
+		if (i < FFT_SIZE && i % 2 == 0)
+		{
+			in[i] = data->recordedSamples[i] * hannFunction(i);
+		}
 		val = data->recordedSamples[i];
 		if (val < 0) val = -val;
 		average += val;
 	}
 	average = average / (double)NUM_SAMPLES;
 	audioSamples.set_loudness(average);
-
 	Helpers::print_debug(("Average sample loudness (dB): " + to_string(average) + "\n").c_str());
+
+	// Get frequency of wave
+	fftwf_execute(frequencyPlan);
+
+	for (int i = 0; i < OUTPUT_SIZE; i++)
+	{
+		magnitude = (float)sqrt(pow(out[i][0], 2) + pow(out[i][1], 2));
+		if (magnitude > maxDensity)
+		{
+			maxDensity = magnitude;
+			maxIndex = i;
+		}
+	}
+	frequency = maxIndex * SAMPLE_RATE / OUTPUT_SIZE;
+	audioSamples.set_frequency((float)frequency);
+	Helpers::print_debug(("Average frequency (Hz): " + to_string(frequency) + "\n").c_str());
 
 	// Measure average tempo every 1.5s
 	tempo.process(const_cast<float*>(&data->recordedSamples[0]), NUM_SAMPLES);
-
 	if ((data->numBuffers % 15) == 0)
 	{
 		audioSamples.set_tempo(tempo.estimateTempo());
@@ -151,7 +186,7 @@ void InputChannelReader::analyseBuffer(paData *data)
 
 	data->recordedSamples.clear();	//Empty recordedSamples
 
-	//TODO: Add file writting capabilities
+	//TODO: Add file writing capabilities
 	//TODO: Add Multiple channel support
 	//TODO: Add frequency analyzer
 }
@@ -178,6 +213,11 @@ int InputChannelReader::main(void)
 	tempo.setBeatsPerBar(2);	//Set up 2 beats per bar
 
 	data.numBuffers = 0;
+
+	// Initialize FFTW plan
+	in = (float*)fftwf_malloc(sizeof(float) * FFT_SIZE);
+	out = (fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex) * OUTPUT_SIZE);
+	frequencyPlan = fftwf_plan_dft_r2c_1d(FFT_SIZE, in, out, FFTW_ESTIMATE);
 
 	err = Pa_Initialize();
 	if (err != paNoError) goto done;
@@ -223,6 +263,9 @@ int InputChannelReader::main(void)
 done:
 	Pa_Terminate();
 	data.recordedSamples.clear();
+	fftwf_destroy_plan(frequencyPlan);
+	fftwf_free(in); 
+	fftwf_free(out);
 
 	if (err != paNoError)
 	{

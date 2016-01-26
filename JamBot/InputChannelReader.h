@@ -34,6 +34,9 @@ private:
 		PaStreamCallbackFlags statusFlags,
 		void *userData);
 
+	// This routine will be called whenever the Hanning function is needed
+	static float hannFunction(int n);
+
 	// This routine will be called whenever a Buffer has finished recording
 	static void analyseBuffer(paData *data);
 
