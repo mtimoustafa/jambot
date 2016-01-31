@@ -134,11 +134,17 @@ void InputChannelReader::analyseBuffer(paData *data)
 {
 	float val = 0.0;
 	float magnitude;
-	float maxDensity = 0.0;
-	float frequency;
-	int maxIndex;
+	float maxDensity[NUM_PEAKS];
+	float frequency[NUM_PEAKS];
+	int maxIndex[NUM_PEAKS];
 	double average = 0.0;
 	short fileSamples;
+
+	// Initialize maximum spectrum peaks to zeroes
+	for (int i = 0; i < NUM_PEAKS; i++)
+	{
+		maxDensity[i] = 0.0;
+	}
 
 	// Measure average peak amplitude
 	for (int i = 0; i < NUM_SAMPLES; i++)
@@ -162,15 +168,23 @@ void InputChannelReader::analyseBuffer(paData *data)
 	for (int i = 0; i < OUTPUT_SIZE; i++)
 	{
 		magnitude = (float)sqrt(pow(out[i][0], 2) + pow(out[i][1], 2));
-		if (magnitude > maxDensity)
+
+		for (int i = 0; i < NUM_PEAKS; i++)
 		{
-			maxDensity = magnitude;
-			maxIndex = i;
+			if (magnitude > maxDensity[i])
+			{
+				maxDensity[i] = magnitude;
+				maxIndex[i] = i;
+			}
 		}
 	}
-	frequency = maxIndex * SAMPLE_RATE / OUTPUT_SIZE;
-	audioSamples.set_frequency((float)frequency);
-	Helpers::print_debug(("Average frequency (Hz): " + to_string(frequency) + "\n").c_str());
+
+	for (int i = 0; i < NUM_PEAKS; i++)
+	{
+		frequency[i] = maxIndex[i] * SAMPLE_RATE / OUTPUT_SIZE;
+		Helpers::print_debug(("Frequency peak " + to_string(i + 1) + " (Hz): " + to_string(frequency[1]) + "\n").c_str());
+	}
+	audioSamples.set_frequency((float)frequency[0]);
 
 	// Measure average tempo every 1.5s
 	tempo.process(const_cast<float*>(&data->recordedSamples[0]), NUM_SAMPLES);

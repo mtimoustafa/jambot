@@ -8,6 +8,7 @@ const int NUM_CHANNELS = 1;
 const int NUM_SAMPLES = FRAMES_PER_BUFFER * NUM_CHANNELS * 2;
 const int FFT_SIZE = 4096;
 const int OUTPUT_SIZE = (int)(FFT_SIZE / 2) + 1;
+const int NUM_PEAKS = 3;
 
 // AudioInfo parameter bounds
 const double FREQ_UB = 20000.0;
