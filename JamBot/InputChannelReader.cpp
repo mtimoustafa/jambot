@@ -165,7 +165,7 @@ void InputChannelReader::analyseBuffer(paData *data)
 	// Get frequency of wave
 	fftwf_execute(frequencyPlan);
 
-	for (int i = 0; i < OUTPUT_SIZE; i++)
+	for (int i = 0; i < 1200; i++)	//Fix to get whole OUTPUT_SIZE range checked
 	{
 		magnitude = (float)sqrt(pow(out[i][0], 2) + pow(out[i][1], 2));
 
@@ -183,7 +183,7 @@ void InputChannelReader::analyseBuffer(paData *data)
 	for (int i = 0; i < NUM_PEAKS; i++)
 	{
 		frequency[i] = maxIndex[i] * SAMPLE_RATE / OUTPUT_SIZE;
-		Helpers::print_debug(("Frequency peak " + to_string(i + 1) + " (Hz): " + to_string(frequency[1]) + "\n").c_str());
+		Helpers::print_debug(("Frequency peak " + to_string(i + 1) + " (Hz): " + to_string(frequency[i]) + "\n").c_str());
 	}
 	audioSamples.set_frequency((float)frequency[0]);
 
