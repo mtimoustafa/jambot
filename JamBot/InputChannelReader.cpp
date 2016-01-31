@@ -169,12 +169,13 @@ void InputChannelReader::analyseBuffer(paData *data)
 	{
 		magnitude = (float)sqrt(pow(out[i][0], 2) + pow(out[i][1], 2));
 
-		for (int i = 0; i < NUM_PEAKS; i++)
+		for (int j = 0; j < NUM_PEAKS; j++)
 		{
-			if (magnitude > maxDensity[i])
+			if (magnitude > maxDensity[j])
 			{
-				maxDensity[i] = magnitude;
-				maxIndex[i] = i;
+				maxDensity[j] = magnitude;
+				maxIndex[j] = i;
+				break;
 			}
 		}
 	}
