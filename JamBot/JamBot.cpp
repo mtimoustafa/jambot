@@ -9,6 +9,7 @@
 #include "WavManipulation.h"
 #include "Helpers.h"
 #include "strsafe.h"
+#include <gtk-2.0\gtk\gtk.h>
 
 #define MAX_LOADSTRING 100
 
@@ -50,6 +51,97 @@ void CloseThread(int id);
 void CloseAllThreads();
 void ErrorHandler(LPTSTR lpszFunction);
 
+static void hello(GtkWidget *widget, gpointer data)
+{
+	g_print("Hello World\n");
+}
+
+static gboolean delete_event(GtkWidget *widget, GdkEvent *event, gpointer data)
+{
+	/* If you return FALSE in the "delete-event" signal handler,
+	* GTK will emit the "destroy" signal. Returning TRUE means
+	* you don't want the window to be destroyed.
+	* This is useful for popping up 'are you sure you want to quit?'
+	* type dialogs. */
+
+	g_print("delete event occurred\n");
+
+	/* Change TRUE to FALSE and the main window will be destroyed with
+	* a "delete-event". */
+
+	return TRUE;
+}
+
+/* Another callback */
+static void destroy(GtkWidget *widget,
+	gpointer   data)
+{
+	gtk_main_quit();
+}
+
+int gtkStart(int argc, char* argv[])
+{
+	GtkWidget *window;
+	GtkWidget *songInputBox;
+	GtkWidget *songControlBox;
+	GtkWidget *button;
+	GtkWidget *playButton;
+	GtkWidget *pauseButton;
+	GtkWidget *stopButton;
+	GtkWidget *progressBar;
+
+	gtk_init(&argc, &argv);
+
+	/*=========================== Window ===========================*/
+	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	g_signal_connect(window, "delete-event",G_CALLBACK(delete_event), NULL);
+	g_signal_connect(window, "destroy",G_CALLBACK(destroy), NULL);
+
+	gtk_container_set_border_width(GTK_CONTAINER(window), 100);
+
+	/*=========================== Button boxes ===========================*/
+	songControlBox = gtk_hbox_new(true, 0);
+
+
+
+	/*=========================== Button ===========================*/
+	/*button = gtk_button_new_with_label("Hello World");
+	g_signal_connect(button, "clicked", G_CALLBACK(hello), NULL);
+	g_signal_connect_swapped(button, "clicked", G_CALLBACK(gtk_widget_destroy), window);
+	gtk_box_pack_start(GTK_BOX(songControlBox), button, false, false, 0);
+	gtk_widget_show(button);*/
+	
+	GtkWidget *playArrow;
+	playArrow = gtk_arrow_new(GTK_ARROW_RIGHT, GTK_SHADOW_NONE);
+
+	playButton = gtk_button_new();
+	gtk_container_add(GTK_CONTAINER(playButton), playArrow);
+	gtk_box_pack_start(GTK_BOX(songControlBox), playButton, false, false, 5);
+	gtk_widget_show(playArrow);
+	gtk_widget_show(playButton);
+
+	playButton = gtk_button_new_with_label("Pause");
+	gtk_box_pack_start(GTK_BOX(songControlBox), playButton, false, false, 5);
+	gtk_widget_show(playButton);
+
+	playButton = gtk_button_new_with_label("Stop");
+	gtk_box_pack_start(GTK_BOX(songControlBox), playButton, false, false, 5);
+	gtk_widget_show(playButton);
+
+	/*=========================== Progress bar ===========================*/
+	progressBar = gtk_progress_bar_new();
+	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progressBar), 0.5);
+
+	/*=========================== the rest ===========================*/
+	gtk_container_add(GTK_CONTAINER(window), songControlBox);
+	gtk_container_add(GTK_CONTAINER(window), progressBar);
+
+	gtk_widget_show_all(window);
+	gtk_main();
+
+	return 0;
+}
+
 int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
                      _In_ LPTSTR    lpCmdLine,
@@ -61,9 +153,9 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
  	// TODO: Place code here.
 	MSG msg;
 	HACCEL hAccelTable;
-
+	gtkStart(0, NULL);
 	// Initialize global strings
-	LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
+	/*LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
 	LoadString(hInstance, IDC_JAMBOT, szWindowClass, MAX_LOADSTRING);
 	MyRegisterClass(hInstance);
 
@@ -85,7 +177,8 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 		}
 	}
 
-	return (int) msg.wParam;
+	return (int) msg.wParam;*/
+	return 0;
 }
 
 
