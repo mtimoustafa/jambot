@@ -184,7 +184,7 @@ void InputChannelReader::analyseBuffer(paData *data)
 	for (int i = 0; i < NUM_PEAKS; i++)
 	{
 		frequency[i] = maxIndex[i] * SAMPLE_RATE / OUTPUT_SIZE;
-		Helpers::print_debug(("Frequency peak " + to_string(i + 1) + " (Hz): " + to_string(frequency[1]) + "\n").c_str());
+		Helpers::print_debug(("Frequency peak " + to_string(i + 1) + " (Hz): " + to_string(frequency[i]) + "\n").c_str());
 	}
 	//To Here
 	audioSamples.set_frequency((float)frequency[0]);
