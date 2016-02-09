@@ -40,8 +40,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\include\;$(RemoteDebuggerWorkingDirectory)</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(SolutionDir)\libs\</LibraryPath>
+    <IncludePath>$(GTKDIR)\include;$(GTKDIR)\lib\glib-2.0\include;$(GTKDIR)\lib\gtk-2.0\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\include\;$(RemoteDebuggerWorkingDirectory);$(GTKDIR)\bin</IncludePath>
+    <LibraryPath>$(GTKDIR)\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(SolutionDir)\libs\</LibraryPath>
     <SourcePath>D:\Workspace\Jambot\src;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -54,12 +54,15 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <AdditionalOptions>-mms-bitfields -IC:/gtk/include/gtk-2.0 -IC:/gtk/lib/gtk-2.0/include -IC:/gtk/include/atk-1.0 -IC:/gtk/include/cairo -IC:/gtk/include/gdk-pixbuf-2.0 -IC:/gtk/include/pango-1.0 -IC:/gtk/include/glib-2.0 -IC:/gtk/lib/glib-2.0/include -IC:/gtk/include -IC:/gtk/include/freetype2 -IC:/gtk/include/libpng14  
+ %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>D:\Workspace\Jambot\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>portaudio_x86.lib;%(AdditionalDependencies);libsoundfile.a;ftd2xx.lib;libfftw3-3.lib;libfftw3f-3.lib;libfftw3l-3.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>D:\Workspace\Jambot\libs;C:\gtk;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>portaudio_x86.lib;%(AdditionalDependencies);libsoundfile.a;ftd2xx.lib;libfftw3-3.lib;libfftw3f-3.lib;libfftw3l-3.lib;gdk-win32-2.0.lib;gtk-win32-2.0.lib</AdditionalDependencies>
+      <AdditionalOptions>/libpath:C:/gtk/lib gtk-win32-2.0.lib gdk-win32-2.0.lib atk-1.0.lib gio-2.0.lib pangowin32-1.0.lib gdi32.lib pangocairo-1.0.lib gdk_pixbuf-2.0.lib pango-1.0.lib cairo.lib gobject-2.0.lib gmodule-2.0.lib gthread-2.0.lib glib-2.0.lib intl.lib %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
