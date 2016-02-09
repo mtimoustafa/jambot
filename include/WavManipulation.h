@@ -27,22 +27,22 @@ private:
 	vector<short> durations;
 	vector<string> filenames;
 	vector<SecAnlys> analysis;
+	bool terminate;
 	int durationCounter;
 	string directoryPath;
 	static vector<float> realTimeBuffer;
 	static vector<SecAnlys> freqList;
-	static float frequency;
 	float hannFunction(int);
 	float freqtonote(float);
 	float notetofreq(float);
 	float threshold(float);
 	bool checkrepeats(string);
 
+
 public:
 	WavManipulation();
 	~WavManipulation();
 	Helpers::SongStructure wavComparison();
-	static bool compare;
 	void snipAudio(vector<string>, vector<short>, vector<short>, string, string);
 	void setFrequency(float);
 	void freqAnalysis();
@@ -55,4 +55,8 @@ public:
 	static void inputData(vector<float>);
 	float freqAnalysis(vector<float>);
 	void startanalysis();
+	void start();
+	void stop();
+	bool pushFrequency(float);
+	bool readFrequency();
 };
