@@ -134,7 +134,6 @@ static void fileBrowse(GtkWidget *button, gpointer window) {
 			GtkTextBuffer *buffer;
 			buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textEntry));
 			gtk_text_buffer_set_text(buffer, text.c_str(), -1);
-
 		}
 	}
 	else {
@@ -200,7 +199,7 @@ static void startJamming(GtkWidget *button) {
 }
 
 static void startEmerson(GtkWidget *button) {
-
+	wavmanipulation.startanalysis();
 }
 
 static gboolean delete_event(GtkWidget *widget, GdkEvent *event, gpointer data)
@@ -322,7 +321,7 @@ int gtkStart(int argc, char* argv[])
 
 	emersonButton = gtk_button_new_with_label("Emerson Button");
 	gtk_box_pack_start(GTK_BOX(jambox), emersonButton, false, false, 5);
-	g_signal_connect(GTK_OBJECT(emersonButton), "clicked", G_CALLBACK(emersonButton), window);
+	g_signal_connect(GTK_OBJECT(emersonButton), "clicked", G_CALLBACK(startEmerson), window);
 
 	/*=========================== File Browser ===========================*/
 	/*fileBrowser = gtk_file_chooser_dialog_new("File selection", GTK_WINDOW(window), GTK_FILE_CHOOSER_ACTION_OPEN, GTK_STOCK_OK,
