@@ -59,6 +59,7 @@ MiniBPM tempo = MiniBPM((float)SAMPLE_RATE);
 AudioInfo audioSamples = AudioInfo();
 SoundHeader header = SoundHeader();
 SoundHeader outHeader = SoundHeader();
+WavManipulation wav = WavManipulation();
 
 InputChannelReader::InputChannelReader() 
 {
@@ -283,7 +284,6 @@ done:
 	fftwf_destroy_plan(frequencyPlan);
 	fftwf_free(in); 
 	fftwf_free(out);
-
 	if (err != paNoError)
 	{
 		Helpers::print_debug("ERROR: Terminated InputChannelReader module");
