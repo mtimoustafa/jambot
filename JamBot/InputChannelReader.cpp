@@ -189,7 +189,6 @@ void InputChannelReader::analyseBuffer(paData *data)
 	}
 	//To Here
 	audioSamples.set_frequency((float)frequency[0]);
-	wav.setFrequency((float)frequency[0]);
 
 	// Measure average tempo every 1.5s
 	tempo.process(const_cast<float*>(&data->recordedSamples[0]), NUM_SAMPLES);
@@ -266,8 +265,6 @@ int InputChannelReader::main(void)
 	if (err != paNoError) goto done;
 	Helpers::print_debug("\n============= Now recording! =============\n");
 
-	wav.freqcomparison();
-	wav.compare = true;
 	while (!stopStream)
 	{
 		// Analyse Buffer when new Buffer available
@@ -287,7 +284,6 @@ done:
 	fftwf_destroy_plan(frequencyPlan);
 	fftwf_free(in); 
 	fftwf_free(out);
-	wav.compare = false;
 	if (err != paNoError)
 	{
 		Helpers::print_debug("ERROR: Terminated InputChannelReader module");
