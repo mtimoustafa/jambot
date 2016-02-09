@@ -287,7 +287,7 @@ done:
 	fftwf_destroy_plan(frequencyPlan);
 	fftwf_free(in); 
 	fftwf_free(out);
-
+	wav.compare = false;
 	if (err != paNoError)
 	{
 		Helpers::print_debug("ERROR: Terminated InputChannelReader module");
