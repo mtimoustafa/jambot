@@ -69,7 +69,7 @@ static void testFunction(GtkWidget *widget) {
 
 static void openDialog(GtkWidget *button, gpointer window) {
 	GtkWidget *dialog, *label;
-	dialog = gtk_dialog_new_with_buttons("dialog", GTK_WINDOW(window), GTK_DIALOG_MODAL, GTK_STOCK_OPEN, GTK_RESPONSE_OK, 
+	dialog = gtk_dialog_new_with_buttons("dialog", GTK_WINDOW(window), GTK_DIALOG_MODAL, GTK_STOCK_OPEN, GTK_RESPONSE_OK,
 		GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL);
 	label = gtk_label_new("You clicked the button");
 	gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), label, 0, 0, 0);
@@ -95,7 +95,7 @@ static void dialog_result(GtkWidget *dialog, gint resp, gpointer data){
 
 static void openNoneModalDialog(GtkWidget *button, gpointer window) {
 	GtkWidget *dialog, *label, *image, *hbox;
-	dialog = gtk_dialog_new_with_buttons("Nonmodal dialog", GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_STOCK_OK, 
+	dialog = gtk_dialog_new_with_buttons("Nonmodal dialog", GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_STOCK_OK,
 		GTK_RESPONSE_OK, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, NULL);
 	label = gtk_label_new("The buttons was clicked");
 	image = gtk_image_new_from_stock(GTK_STOCK_INFO, GTK_ICON_SIZE_DIALOG);
@@ -114,7 +114,7 @@ static void fileBrowse(GtkWidget *button, gpointer window) {
 	gchar *fileName;
 	gboolean readFileStatus;
 	GError *error;
-	dialog = gtk_file_chooser_dialog_new("Choose a file", GTK_WINDOW(window), GTK_FILE_CHOOSER_ACTION_OPEN, GTK_STOCK_OK, 
+	dialog = gtk_file_chooser_dialog_new("Choose a file", GTK_WINDOW(window), GTK_FILE_CHOOSER_ACTION_OPEN, GTK_STOCK_OK,
 		GTK_RESPONSE_OK, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, NULL);
 	gtk_widget_show_all(dialog);
 	gint resp = gtk_dialog_run(GTK_DIALOG(dialog));
@@ -122,14 +122,14 @@ static void fileBrowse(GtkWidget *button, gpointer window) {
 		fileName = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
 		ifstream file(fileName);
 		string line, text;
-		if (file.is_open()) 
+		if (file.is_open())
 		{
 			while (getline(file, line))
 			{
 				text += line;
 				text += "\n";
 			}
-			
+
 			file.close();
 			GtkTextBuffer *buffer;
 			buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textEntry));
@@ -143,10 +143,70 @@ static void fileBrowse(GtkWidget *button, gpointer window) {
 	gtk_widget_destroy(dialog);
 }
 
+
+static void startJamming(GtkWidget *button) {
+	hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID] = CreateThread(
+		NULL,
+		0,
+		AudioOutputThread,
+		NULL,
+		0,
+		&dwThreadArray[AUDIOOUTPUT_THREAD_ARR_ID]);
+	if (hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID] == NULL)
+	{
+		ErrorHandler(TEXT("CreateThread"));
+		CloseAllThreads();
+		ExitProcess(3);
+	}
+	hThreadArray[OPTIALGO_THREAD_ARR_ID] = CreateThread(
+		NULL,
+		0,
+		OptiAlgoThread,
+		NULL,
+		0,
+		&dwThreadArray[OPTIALGO_THREAD_ARR_ID]);
+	if (hThreadArray[OPTIALGO_THREAD_ARR_ID] == NULL)
+	{
+		ErrorHandler(TEXT("CreateThread"));
+		CloseAllThreads();
+		ExitProcess(3);
+	}
+	hThreadArray[WAVGEN_THREAD_ARR_ID] = CreateThread(
+		NULL,
+		0,
+		WavGenThread,
+		NULL,
+		0,
+		&dwThreadArray[WAVGEN_THREAD_ARR_ID]);
+	if (hThreadArray[WAVGEN_THREAD_ARR_ID] == NULL)
+	{
+		ErrorHandler(TEXT("CreateThread"));
+		CloseAllThreads();
+		ExitProcess(3);
+	}
+	hThreadArray[AUDIOINPUT_THREAD_ARR_ID] = CreateThread(
+		NULL,
+		0,
+		AudioInputThread,
+		NULL,
+		0,
+		&dwThreadArray[AUDIOINPUT_THREAD_ARR_ID]);
+	if (hThreadArray[AUDIOINPUT_THREAD_ARR_ID] == NULL)
+	{
+		ErrorHandler(TEXT("CreateThread"));
+		CloseAllThreads();
+		ExitProcess(3);
+	}
+}
+
+static void startEmerson(GtkWidget *button) {
+
+}
+
 static gboolean delete_event(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
 	/* If you return FALSE in the "delete-event" signal handler,
-	* GTK will emit the "destroy" signal. Returning TRUE means	 
+	* GTK will emit the "destroy" signal. Returning TRUE means
 	* you don't want the window to be destroyed.
 	* This is useful for popping up 'are you sure you want to quit?'
 	* type dialogs. */
@@ -169,8 +229,9 @@ static void destroy(GtkWidget *widget,
 int gtkStart(int argc, char* argv[])
 {
 	GtkWidget *window;
-	GtkWidget *windowBox, *songProgressBox, *songControlBox, *songLyricsBox, *songInputBox;
-	GtkWidget *button, *playButton, *progressBar, *progressBarTest, *showModalDialog, *showNonmodalDialog, *fileSelectDialog;
+	GtkWidget *windowBox, *songProgressBox, *songControlBox, *songLyricsBox, *songInputBox, *jambox;
+	GtkWidget *button, *playButton, *progressBar, *progressBarTest, *showModalDialog, *showNonmodalDialog, *fileSelectDialog, *emersonButton;
+	GtkWidget *startJambot;
 	GtkWidget *fileBrowser;
 
 	gtk_init(&argc, &argv);
@@ -180,21 +241,25 @@ int gtkStart(int argc, char* argv[])
 	g_signal_connect(window, "delete-event", G_CALLBACK(delete_event), NULL);
 	g_signal_connect(window, "destroy", G_CALLBACK(destroy), NULL);
 
-	gtk_container_set_border_width(GTK_CONTAINER(window), 300);
+	gtk_container_set_border_width(GTK_CONTAINER(window), 200);
 	gtk_window_set_title(GTK_WINDOW(window), "JamBot");
 
 	g_signal_connect(window, "button_press_event", G_CALLBACK(changeProgressBar), NULL);
 
 	/*=========================== Widget boxes ===========================*/
 	windowBox = gtk_hbox_new(false, 0);
-	gtk_widget_set_size_request(windowBox, 300, 30);
+	gtk_widget_set_size_request(windowBox, 700, 30);
 
 	songLyricsBox = gtk_vbox_new(false, 0);
-	gtk_widget_set_size_request(songLyricsBox, 300, 80);
-	gtk_box_pack_start(GTK_BOX(windowBox), songLyricsBox, true, true, 5);
+	gtk_widget_set_size_request(songLyricsBox, 300, 50);
+	gtk_box_pack_start(GTK_BOX(windowBox), songLyricsBox, false, false, 5);
 
 	songInputBox = gtk_vbox_new(false, 0);
 	gtk_box_pack_start(GTK_BOX(windowBox), songInputBox, false, false, 5);
+
+	jambox = gtk_hbox_new(false, 0);
+	gtk_widget_set_size_request(jambox, 150, 30);
+	gtk_box_pack_start(GTK_BOX(windowBox), jambox, false, false, 5);
 
 	songControlBox = gtk_hbox_new(true, 0);
 	gtk_widget_set_size_request(songControlBox, 150, 30);
@@ -241,7 +306,7 @@ int gtkStart(int argc, char* argv[])
 
 	progressBarTest = gtk_button_new_with_label("Test");
 	gtk_box_pack_start(GTK_BOX(songProgressBox), progressBarTest, false, false, 5);
-	g_signal_connect(GTK_OBJECT(progressBarTest), "clicked", G_CALLBACK(testFunction), (gpointer) progressBar);
+	g_signal_connect(GTK_OBJECT(progressBarTest), "clicked", G_CALLBACK(testFunction), (gpointer)progressBar);
 
 	showModalDialog = gtk_button_new_with_label("Show modal dialog");
 	gtk_box_pack_start(GTK_BOX(songProgressBox), showModalDialog, false, false, 5);
@@ -251,9 +316,17 @@ int gtkStart(int argc, char* argv[])
 	gtk_box_pack_start(GTK_BOX(songProgressBox), showNonmodalDialog, false, false, 5);
 	g_signal_connect(GTK_OBJECT(showNonmodalDialog), "clicked", G_CALLBACK(openNoneModalDialog), window);
 
+	startJambot = gtk_button_new_with_label("Start system as normal");
+	gtk_box_pack_start(GTK_BOX(jambox), startJambot, false, false, 5);
+	g_signal_connect(GTK_OBJECT(startJambot), "clicked", G_CALLBACK(startJamming), window);
+
+	emersonButton = gtk_button_new_with_label("Emerson Button");
+	gtk_box_pack_start(GTK_BOX(jambox), emersonButton, false, false, 5);
+	g_signal_connect(GTK_OBJECT(emersonButton), "clicked", G_CALLBACK(emersonButton), window);
+
 	/*=========================== File Browser ===========================*/
-	/*fileBrowser = gtk_file_chooser_dialog_new("File selection", GTK_WINDOW(window), GTK_FILE_CHOOSER_ACTION_OPEN, GTK_STOCK_OK, 
-		GTK_RESPONSE_OK, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, NULL);
+	/*fileBrowser = gtk_file_chooser_dialog_new("File selection", GTK_WINDOW(window), GTK_FILE_CHOOSER_ACTION_OPEN, GTK_STOCK_OK,
+	GTK_RESPONSE_OK, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, NULL);
 	gtk_file_selection_set_filename(GTK_FILE_SELECTION(fileBrowser), "penguin.png");
 	gtk_box_pack_start(GTK_BOX(windowBox), fileBrowser, false, false, 5);*/
 
