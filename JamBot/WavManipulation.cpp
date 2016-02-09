@@ -261,7 +261,7 @@ bool WavManipulation::checkrepeats(string name){
 float WavManipulation::freqtonote(float in){
 	return 12 * log2f(in / 440) + 49;
 }
-float WavManipulation::notetofreq(float in){
+float WavManipulation::notetofreq(int in){
 	return pow(2, ((in - 49) / 12)) * 440;
 }
 float WavManipulation::threshold(float in){
