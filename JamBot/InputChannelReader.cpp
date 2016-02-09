@@ -59,6 +59,7 @@ MiniBPM tempo = MiniBPM((float)SAMPLE_RATE);
 AudioInfo audioSamples = AudioInfo();
 SoundHeader header = SoundHeader();
 SoundHeader outHeader = SoundHeader();
+WavManipulation wav = WavManipulation();
 
 InputChannelReader::InputChannelReader() 
 {
@@ -188,6 +189,7 @@ void InputChannelReader::analyseBuffer(paData *data)
 	}
 	//To Here
 	audioSamples.set_frequency((float)frequency[0]);
+	wav.setFrequency((float)frequency[0]);
 
 	// Measure average tempo every 1.5s
 	tempo.process(const_cast<float*>(&data->recordedSamples[0]), NUM_SAMPLES);
@@ -264,6 +266,8 @@ int InputChannelReader::main(void)
 	if (err != paNoError) goto done;
 	Helpers::print_debug("\n============= Now recording! =============\n");
 
+	wav.freqcomparison();
+	wav.compare = true;
 	while (!stopStream)
 	{
 		// Analyse Buffer when new Buffer available

@@ -34,7 +34,7 @@ using namespace std;
 
 vector<float> WavManipulation::realTimeBuffer = vector<float>();
 vector<SecAnlys> WavManipulation::freqList = vector<SecAnlys>();
-float WavManipulation::inputFrequency = 0.0;
+float WavManipulation::frequency;
 bool WavManipulation::compare = true;
 
 SongSection::SongSection(string n, double t){
@@ -154,7 +154,6 @@ Helpers::SongStructure WavManipulation::wavComparison() {
 ///		   vector: durationTimes - The length (in seconds) of each section
 ///		   filepath - The path of the file being cut
 /// Output: VOID
-
 void WavManipulation::snipAudio(vector<string> names, vector<short> startTimes, vector<short> durationTimes, string filePath, string filename){
 
 	SoundFileRead insound((filePath + filename).c_str());
@@ -183,7 +182,6 @@ void WavManipulation::snipAudio(vector<string> names, vector<short> startTimes, 
 
 	}
 }
-
 void WavManipulation::comparisonPolling(){
 	//Queue pull
 	vector<float> indata;
@@ -210,6 +208,26 @@ void WavManipulation::startSnip(){
 	vector<short> startTimes = { 1, 3, 5, 7 };
 	snipAudio(names, startTimes, durations, filepath, filename);
 }
+
+void WavManipulation::setFrequency(float in){
+	if (frequency == NULL) frequency = 0.0;
+	if (in > FREQ_UB)
+		frequency = FREQ_UB;
+	else if (in < FREQ_LB)
+		frequency = FREQ_LB;
+	else
+		frequency = in;
+}
+void WavManipulation::startanalysis(){
+	vector<SongSection> secs = vector<SongSection>();
+	secs.push_back(SongSection("Chorus", 0.0));
+	secs.push_back(SongSection("Verse1", 2.0));
+	secs.push_back(SongSection("Chorus", 4.0));
+	secs.push_back(SongSection("Verse2", 6.0));
+	dataStore("song1", secs);
+	freqSnip("C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\", "crunchy_bass_swag.flv.wav", "song1");
+}
+
 void WavManipulation::dataStore(string filename, vector<SongSection> sections){
 	ofstream song;
 	ostringstream s;
@@ -304,12 +322,12 @@ void WavManipulation::freqcomparison(){
 	while (compare){// BRANDON: Here you can stop the comparison when the song ends
 		ticks = 0;
 		while (j < 3){
-			if (inputFrequency != inFreq){ //here check if there is data tobe read, check with brandon about possibilities
+			if (frequency != inFreq){ //here check if there is data to be read
 				if (point == 0){
 					for (int i = 0; i < freqList.size(); i++){
 						freq = freqList[i].pitch[j];
 						t = threshold(freq);
-						if (abs(freq - inputFrequency) < t){
+						if (abs(freq - frequency) < t){
 							part = i;
 							point++;
 							break;
@@ -318,7 +336,7 @@ void WavManipulation::freqcomparison(){
 				}
 				freq = freqList[part].pitch[j];
 				t = threshold(freq);
-				if (abs(freq - inputFrequency) < t){
+				if (abs(freq - frequency) < t){
 					point++;
 					j++;
 				}
@@ -333,6 +351,7 @@ void WavManipulation::freqcomparison(){
 			num = getNum(freqList[part].name);
 			//push this to queue for Mohamed Helpers::SongStructure(element, num);
 			duration = freqList[part].duration;
+			Helpers::print_debug(freqList[part].name.c_str());
 		}
 		while (ticks < duration){
 			ticks++;
@@ -377,10 +396,7 @@ void WavManipulation::freqSnip(string filePath, string filename, string csvname)
 			n = stopSample - startSample; //number of samples
 			insound.gotoSample(startSample);
 			for (int j = 0; j < n; j++){
-				for (int k = 0; k < header.getChannels(); k++) { //for each channel of each sample
-					//write the sample from original to current file
-					snippet.push_back((float)insound.getCurrentSampleDouble(k));
-				}
+				snippet.push_back((float)insound.getCurrentSampleDouble(0));
 				insound.incrementSample();
 			}
 			freq = freqAnalysis(snippet);
@@ -390,7 +406,7 @@ void WavManipulation::freqSnip(string filePath, string filename, string csvname)
 
 		SecAnlys section = SecAnlys(names[i], list, ceil((times[i] - times[i + 1])/0.2));
 		if (checkrepeats(names[i])){
-
+			Helpers::print_debug(names[i].c_str());
 			freqList.push_back(section);
 		}
 	}

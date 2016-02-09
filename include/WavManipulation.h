@@ -31,7 +31,7 @@ private:
 	string directoryPath;
 	static vector<float> realTimeBuffer;
 	static vector<SecAnlys> freqList;
-	static float inputFrequency;
+	static float frequency;
 	float hannFunction(int);
 	float freqtonote(float);
 	float notetofreq(float);
@@ -44,6 +44,7 @@ public:
 	Helpers::SongStructure wavComparison();
 	static bool compare;
 	void snipAudio(vector<string>, vector<short>, vector<short>, string, string);
+	void setFrequency(float);
 	void freqAnalysis();
 	void comparisonPolling();
 	void startSnip();
@@ -53,4 +54,5 @@ public:
 	void freqcomparison();
 	static void inputData(vector<float>);
 	float freqAnalysis(vector<float>);
+	void startanalysis();
 };
