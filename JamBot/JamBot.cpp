@@ -9,7 +9,7 @@
 #include "WavManipulation.h"
 #include "Helpers.h"
 #include "strsafe.h"
-#include <gtk-2.0\gtk\gtk.h>
+#include "../include/gtk/gtk.h"
 #include <iostream>
 #include <fstream>
 #include <string>
