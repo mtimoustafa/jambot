@@ -169,7 +169,7 @@ static void destroy(GtkWidget *widget,
 int gtkStart(int argc, char* argv[])
 {
 	GtkWidget *window;
-	GtkWidget *windowBox, *songProgressBox, *songControlBox, *songLyricsBox;
+	GtkWidget *windowBox, *songProgressBox, *songControlBox, *songLyricsBox, *songInputBox;
 	GtkWidget *button, *playButton, *progressBar, *progressBarTest, *showModalDialog, *showNonmodalDialog, *fileSelectDialog;
 	GtkWidget *fileBrowser;
 
@@ -186,20 +186,23 @@ int gtkStart(int argc, char* argv[])
 	g_signal_connect(window, "button_press_event", G_CALLBACK(changeProgressBar), NULL);
 
 	/*=========================== Widget boxes ===========================*/
-	windowBox = gtk_vbox_new(false, 0);
-	gtk_widget_set_size_request(windowBox, 150, 30);
+	windowBox = gtk_hbox_new(false, 0);
+	gtk_widget_set_size_request(windowBox, 300, 30);
+
+	songLyricsBox = gtk_vbox_new(false, 0);
+	gtk_widget_set_size_request(songLyricsBox, 300, 80);
+	gtk_box_pack_start(GTK_BOX(windowBox), songLyricsBox, true, true, 5);
+
+	songInputBox = gtk_vbox_new(false, 0);
+	gtk_box_pack_start(GTK_BOX(windowBox), songInputBox, false, false, 5);
 
 	songControlBox = gtk_hbox_new(true, 0);
 	gtk_widget_set_size_request(songControlBox, 150, 30);
-	gtk_box_pack_start(GTK_BOX(windowBox), songControlBox, false, false, 5);
+	gtk_box_pack_start(GTK_BOX(songInputBox), songControlBox, false, false, 5);
 
 	songProgressBox = gtk_hbox_new(false, 0);
 	gtk_widget_set_size_request(songProgressBox, 100, 30);
-	gtk_box_pack_start(GTK_BOX(windowBox), songProgressBox, false, false, 5);
-
-	songLyricsBox = gtk_hbox_new(false, 0);
-	gtk_widget_set_size_request(songLyricsBox, 150, 80);
-	gtk_box_pack_start(GTK_BOX(windowBox), songLyricsBox, false, false, 5);
+	gtk_box_pack_start(GTK_BOX(songInputBox), songProgressBox, false, false, 5);
 
 	/*=========================== Progress bar ===========================*/
 	progressBar = gtk_progress_bar_new();
@@ -233,7 +236,7 @@ int gtkStart(int argc, char* argv[])
 	gtk_widget_show(playButton);
 
 	fileSelectDialog = gtk_button_new_with_label("File Select");
-	gtk_box_pack_start(GTK_BOX(songProgressBox), fileSelectDialog, false, false, 5);
+	gtk_box_pack_start(GTK_BOX(songLyricsBox), fileSelectDialog, false, false, 5);
 	g_signal_connect(GTK_OBJECT(fileSelectDialog), "clicked", G_CALLBACK(fileBrowse), window);
 
 	progressBarTest = gtk_button_new_with_label("Test");
