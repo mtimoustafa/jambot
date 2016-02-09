@@ -68,47 +68,6 @@ static void testFunction(GtkWidget *widget) {
 	g_signal_emit_by_name(window, "button_press_event");
 }
 
-static void openDialog(GtkWidget *button, gpointer window) {
-	GtkWidget *dialog, *label;
-	dialog = gtk_dialog_new_with_buttons("dialog", GTK_WINDOW(window), GTK_DIALOG_MODAL, GTK_STOCK_OPEN, GTK_RESPONSE_OK,
-		GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL);
-	label = gtk_label_new("You clicked the button");
-	gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), label, 0, 0, 0);
-	gtk_widget_show_all(dialog);
-	gint response = gtk_dialog_run(GTK_DIALOG(dialog));
-	if (response == GTK_RESPONSE_OK){
-		g_print("The OK is pressed");
-	}
-	else {
-		g_print("The cancel was pressed");
-	}
-	gtk_widget_destroy(dialog);
-}
-
-static void dialog_result(GtkWidget *dialog, gint resp, gpointer data){
-	if (resp == GTK_RESPONSE_OK) {
-		g_print("OK\n");
-	}
-	else {
-		gtk_widget_destroy(dialog);
-	}
-}
-
-static void openNoneModalDialog(GtkWidget *button, gpointer window) {
-	GtkWidget *dialog, *label, *image, *hbox;
-	dialog = gtk_dialog_new_with_buttons("Nonmodal dialog", GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_STOCK_OK,
-		GTK_RESPONSE_OK, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, NULL);
-	label = gtk_label_new("The buttons was clicked");
-	image = gtk_image_new_from_stock(GTK_STOCK_INFO, GTK_ICON_SIZE_DIALOG);
-
-	hbox = gtk_hbox_new(0, 0);
-	gtk_box_pack_start(GTK_BOX(hbox), image, 0, 0, 0);
-	gtk_box_pack_start(GTK_BOX(hbox), label, 0, 0, 0);
-	gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), hbox, 0, 0, 0);
-	gtk_widget_show_all(dialog);
-	g_signal_connect(dialog, "response", G_CALLBACK(dialog_result), NULL);
-}
-
 static void fileBrowse(GtkWidget *button, gpointer window) {
 	GtkWidget *dialog;
 	gchar *fileName;
@@ -206,13 +165,14 @@ static gboolean delete_event(GtkWidget *widget, GdkEvent *event, gpointer data)
 	* you don't want the window to be destroyed.
 	* This is useful for popping up 'are you sure you want to quit?'
 	* type dialogs. */
-
+	CloseAllThreads();
+	
 	g_print("delete event occurred\n");
 
 	/* Change TRUE to FALSE and the main window will be destroyed with
 	* a "delete-event". */
 
-	return TRUE;
+	return false;
 }
 
 /* Another callback */
@@ -226,7 +186,7 @@ static void destroy(GtkWidget *widget,
 int gtkStart(int argc, char* argv[])
 {
 	GtkWidget *window;
-	GtkWidget *windowBox, *songProgressBox, *songControlBox, *songLyricsBox, *songInputBox, *jambox;
+	GtkWidget *windowBox, *songProgressBox, *songControlBox, *songLyricsBox, *songInputBox, *jambox, *windowBox2;
 	GtkWidget *playButton, *progressBar, *progressBarTest, *showModalDialog, *showNonmodalDialog, *fileSelectDialog, *emersonButton;
 	GtkWidget *startJambot;
 
@@ -237,28 +197,39 @@ int gtkStart(int argc, char* argv[])
 	g_signal_connect(window, "delete-event", G_CALLBACK(delete_event), NULL);
 	g_signal_connect(window, "destroy", G_CALLBACK(destroy), NULL);
 
-	gtk_container_set_border_width(GTK_CONTAINER(window), 100);
+	gtk_container_set_border_width(GTK_CONTAINER(window), 150);
 	gtk_window_set_title(GTK_WINDOW(window), "JamBot");
 
 	g_signal_connect(window, "button_press_event", G_CALLBACK(changeProgressBar), NULL);
 
 	/*=========================== Widget boxes ===========================*/
+	windowBox2 = gtk_vbox_new(false, 0);
+	//gtk_widget_set_size_request(windowBox2, 200, 30);
+
+	jambox = gtk_hbox_new(false, 0);
+	gtk_box_pack_start(GTK_BOX(windowBox2), jambox, false, false, 5);
+
+	startJambot = gtk_button_new_with_label("Start system as normal");
+	gtk_box_pack_start(GTK_BOX(jambox), startJambot, false, false, 5);
+	g_signal_connect(GTK_OBJECT(startJambot), "clicked", G_CALLBACK(startJamming), window);	
+
+	emersonButton = gtk_button_new_with_label("Emerson Button");
+	gtk_box_pack_start(GTK_BOX(jambox), emersonButton, false, false, 5);
+	g_signal_connect(GTK_OBJECT(emersonButton), "clicked", G_CALLBACK(startEmerson), window);
+
 	windowBox = gtk_hbox_new(false, 0);
-	//gtk_widget_set_size_request(windowBox, 200, 30);
+	gtk_widget_set_size_request(windowBox, 150, 30);
+	gtk_box_pack_start(GTK_BOX(windowBox2), windowBox, false, false, 5);
 
 	songLyricsBox = gtk_vbox_new(false, 0);
-	//gtk_widget_set_size_request(songLyricsBox, 300, 10);
+	gtk_widget_set_size_request(songLyricsBox, 200, 10);
 	gtk_box_pack_start(GTK_BOX(windowBox), songLyricsBox, false, false, 5);
 
 	songInputBox = gtk_vbox_new(false, 0);
 	gtk_box_pack_start(GTK_BOX(windowBox), songInputBox, false, false, 5);
 
-	jambox = gtk_hbox_new(false, 0);
-	//gtk_widget_set_size_request(jambox, 150, 30);
-	gtk_box_pack_start(GTK_BOX(windowBox), jambox, false, false, 5);
-
-	songControlBox = gtk_hbox_new(true, 0);
-	//gtk_widget_set_size_request(songControlBox, 150, 30);
+	songControlBox = gtk_hbox_new(true, 0);	
+	//gtk_widget_set_size_request(songControlBox, 80, 30);
 	gtk_box_pack_start(GTK_BOX(songInputBox), songControlBox, false, false, 5);
 
 	songProgressBox = gtk_hbox_new(false, 0);
@@ -271,7 +242,6 @@ int gtkStart(int argc, char* argv[])
 	gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progressBar), "progress bar");
 	gtk_box_pack_start(GTK_BOX(songProgressBox), progressBar, false, false, 5);
 
-	/*=========================== Button ===========================*/
 	GtkWidget *playArrow;
 	playArrow = gtk_arrow_new(GTK_ARROW_RIGHT, GTK_SHADOW_NONE);
 
@@ -287,6 +257,7 @@ int gtkStart(int argc, char* argv[])
 
 	playButton = gtk_button_new_with_label("Stop");
 	gtk_box_pack_start(GTK_BOX(songControlBox), playButton, false, false, 5);
+	g_signal_connect(GTK_OBJECT(playButton), "clicked", G_CALLBACK(CloseAllThreads), NULL);
 	gtk_widget_show(playButton);
 
 	fileSelectDialog = gtk_button_new_with_label("File Select");
@@ -296,22 +267,6 @@ int gtkStart(int argc, char* argv[])
 	progressBarTest = gtk_button_new_with_label("Test");
 	gtk_box_pack_start(GTK_BOX(songProgressBox), progressBarTest, false, false, 5);
 	g_signal_connect(GTK_OBJECT(progressBarTest), "clicked", G_CALLBACK(testFunction), (gpointer)progressBar);
-
-	showModalDialog = gtk_button_new_with_label("Show modal dialog");
-	gtk_box_pack_start(GTK_BOX(songProgressBox), showModalDialog, false, false, 5);
-	g_signal_connect(GTK_OBJECT(showModalDialog), "clicked", G_CALLBACK(openDialog), window);
-
-	showNonmodalDialog = gtk_button_new_with_label("Show nonmodal dialog");
-	gtk_box_pack_start(GTK_BOX(songProgressBox), showNonmodalDialog, false, false, 5);
-	g_signal_connect(GTK_OBJECT(showNonmodalDialog), "clicked", G_CALLBACK(openNoneModalDialog), window);
-
-	startJambot = gtk_button_new_with_label("Start system as normal");
-	gtk_box_pack_start(GTK_BOX(jambox), startJambot, false, false, 5);
-	g_signal_connect(GTK_OBJECT(startJambot), "clicked", G_CALLBACK(startJamming), window);
-
-	emersonButton = gtk_button_new_with_label("Emerson Button");
-	gtk_box_pack_start(GTK_BOX(jambox), emersonButton, false, false, 5);
-	g_signal_connect(GTK_OBJECT(emersonButton), "clicked", G_CALLBACK(startEmerson), window);
 
 	/*=========================== Text entry ===========================*/
 	textEntry = gtk_text_view_new();
@@ -328,7 +283,7 @@ int gtkStart(int argc, char* argv[])
 	gtk_box_pack_start(GTK_BOX(windowBox), fileBrowser, false, false, 5);*/
 
 	/*=========================== the rest ===========================*/
-	gtk_container_add(GTK_CONTAINER(window), windowBox);
+	gtk_container_add(GTK_CONTAINER(window), windowBox2);
 
 	gtk_widget_show_all(window);
 	gtk_main();
@@ -345,6 +300,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
 	gtkStart(0, NULL);
+	int i = 0;
 	return 0;
 }
 
@@ -358,39 +314,44 @@ void CloseAllThreads()
 {
 	DWORD result;
 
-	Helpers::print_debug("Stopping audio input...\n");
-	inputChannelReader.stop();
-	result = WaitForSingleObject(hThreadArray[AUDIOINPUT_THREAD_ARR_ID], 10000);
-	if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP audio input.\n"); }
-	else if (result == WAIT_FAILED) { ErrorHandler(TEXT("WaitForSingleObject")); }
-	else { Helpers::print_debug("FAILED stopping audio input.\n"); }
+	if (hThreadArray[AUDIOINPUT_THREAD_ARR_ID] != NULL){
+		Helpers::print_debug("Stopping audio input...\n");
+		inputChannelReader.stop();
+		result = WaitForSingleObject(hThreadArray[AUDIOINPUT_THREAD_ARR_ID], 10000);
+		if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP audio input.\n"); }
+		else if (result == WAIT_FAILED) { ErrorHandler(TEXT("WaitForSingleObject")); }
+		else { Helpers::print_debug("FAILED stopping audio input.\n"); }
+	}
 
-	Helpers::print_debug("Stopping optimization algorithm...\n");
-	optiAlgo.stop();
-	result = WaitForSingleObject(hThreadArray[OPTIALGO_THREAD_ARR_ID], 3000);
-	if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP opti algo.\n"); }
-	else if (result == WAIT_FAILED) { ErrorHandler(TEXT("WaitForSingleObject")); }
-	else { Helpers::print_debug("FAILED stopping optimization algorithm.\n"); }
+	if (hThreadArray[OPTIALGO_THREAD_ARR_ID] != NULL){
+		Helpers::print_debug("Stopping optimization algorithm...\n");
+		optiAlgo.stop();
+		result = WaitForSingleObject(hThreadArray[OPTIALGO_THREAD_ARR_ID], 3000);
+		if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP opti algo.\n"); }
+		else if (result == WAIT_FAILED) { ErrorHandler(TEXT("WaitForSingleObject")); }
+		else { Helpers::print_debug("FAILED stopping optimization algorithm.\n"); }
+	}
 
-	//Helpers::print_debug("Stopping wav manip...\n");
-	////wavmanipulation.stop();
-	//result = WaitForSingleObject(hThreadArray[WAVGEN_THREAD_ARR_ID], 500);
-	//if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP wav manip.\n"); }
-	//else if (result == WAIT_FAILED) { ErrorHandler(TEXT("WaitForSingleObject")); }
-	//else { Helpers::print_debug("FAILED stopping wav manip.\n"); }
-
-	Helpers::print_debug("Stopping audio output...\n");
-	lightsTest.stop();
-	result = WaitForSingleObject(hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID], 3000);
-	if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP audio output.\n"); }
+	/*Helpers::print_debug("Stopping wav manip...\n");
+	wavmanipulation.stop();
+	result = WaitForSingleObject(hThreadArray[WAVGEN_THREAD_ARR_ID], 500);
+	if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP wav manip.\n"); }
 	else if (result == WAIT_FAILED) { ErrorHandler(TEXT("WaitForSingleObject")); }
-	else { Helpers::print_debug("FAILED stopping audio output.\n"); }
+	else { Helpers::print_debug("FAILED stopping wav manip.\n"); }*/
+
+	if (hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID] != NULL) {
+		Helpers::print_debug("Stopping audio output...\n");
+		lightsTest.stop();
+		result = WaitForSingleObject(hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID], 3000);
+		if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP audio output.\n"); }
+		else if (result == WAIT_FAILED) { ErrorHandler(TEXT("WaitForSingleObject")); }
+		else { Helpers::print_debug("FAILED stopping audio output.\n"); }
+	}
 }
 
 void ErrorHandler(LPTSTR lpszFunction)
 {
 	// Retrieve the system error message for the last-error code.
-
 	LPVOID lpMsgBuf;
 	LPVOID lpDisplayBuf;
 	DWORD dw = GetLastError();
