@@ -9,7 +9,7 @@
 #include "WavManipulation.h"
 #include "Helpers.h"
 #include "strsafe.h"
-#include "../include/gtk/gtk.h"
+#include "../include/gtk-2.0/gtk/gtk.h"
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -129,7 +129,6 @@ static void fileBrowse(GtkWidget *button, gpointer window) {
 				text += line;
 				text += "\n";
 			}
-
 			file.close();
 			GtkTextBuffer *buffer;
 			buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textEntry));
