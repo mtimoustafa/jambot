@@ -9,7 +9,7 @@
 #include "WavManipulation.h"
 #include "Helpers.h"
 #include "strsafe.h"
-#include "../include/gtk-2.0/gtk/gtk.h"
+#include "gtk/gtk.h"
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -110,10 +110,7 @@ static void openNoneModalDialog(GtkWidget *button, gpointer window) {
 
 static void fileBrowse(GtkWidget *button, gpointer window) {
 	GtkWidget *dialog;
-	gchar *fileBuffer;
 	gchar *fileName;
-	gboolean readFileStatus;
-	GError *error;
 	dialog = gtk_file_chooser_dialog_new("Choose a file", GTK_WINDOW(window), GTK_FILE_CHOOSER_ACTION_OPEN, GTK_STOCK_OK,
 		GTK_RESPONSE_OK, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, NULL);
 	gtk_widget_show_all(dialog);
@@ -221,6 +218,7 @@ static gboolean delete_event(GtkWidget *widget, GdkEvent *event, gpointer data)
 static void destroy(GtkWidget *widget,
 	gpointer   data)
 {
+	CloseAllThreads();
 	gtk_main_quit();
 }
 
@@ -228,9 +226,8 @@ int gtkStart(int argc, char* argv[])
 {
 	GtkWidget *window;
 	GtkWidget *windowBox, *songProgressBox, *songControlBox, *songLyricsBox, *songInputBox, *jambox;
-	GtkWidget *button, *playButton, *progressBar, *progressBarTest, *showModalDialog, *showNonmodalDialog, *fileSelectDialog, *emersonButton;
+	GtkWidget *playButton, *progressBar, *progressBarTest, *showModalDialog, *showNonmodalDialog, *fileSelectDialog, *emersonButton;
 	GtkWidget *startJambot;
-	GtkWidget *fileBrowser;
 
 	gtk_init(&argc, &argv);
 
@@ -345,248 +342,11 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
-	// TODO: Place code here.
-	MSG msg;
-	HACCEL hAccelTable;
 	gtkStart(0, NULL);
-	// Initialize global strings
-	/*LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-	LoadString(hInstance, IDC_JAMBOT, szWindowClass, MAX_LOADSTRING);
-	MyRegisterClass(hInstance);
-
-	// Perform application initialization:
-	if (!InitInstance (hInstance, nCmdShow))
-	{
-	return FALSE;
-	}
-
-	hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_JAMBOT));
-
-	// Main message loop:
-	while (GetMessage(&msg, NULL, 0, 0))
-	{
-	if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
-	{
-	TranslateMessage(&msg);
-	DispatchMessage(&msg);
-	}
-	}
-
-	return (int) msg.wParam;*/
 	return 0;
 }
 
 
-
-//
-//  FUNCTION: MyRegisterClass()
-//
-//  PURPOSE: Registers the window class.
-//
-ATOM MyRegisterClass(HINSTANCE hInstance)
-{
-	WNDCLASSEX wcex;
-
-	wcex.cbSize = sizeof(WNDCLASSEX);
-
-	wcex.style = CS_HREDRAW | CS_VREDRAW;
-	wcex.lpfnWndProc = WndProc;
-	wcex.cbClsExtra = 0;
-	wcex.cbWndExtra = 0;
-	wcex.hInstance = hInstance;
-	wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_JAMBOT));
-	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
-	wcex.lpszMenuName = MAKEINTRESOURCE(IDC_JAMBOT);
-	wcex.lpszClassName = szWindowClass;
-	wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
-
-	return RegisterClassEx(&wcex);
-}
-
-//
-//   FUNCTION: InitInstance(HINSTANCE, int)
-//
-//   PURPOSE: Saves instance handle and creates main window
-//
-//   COMMENTS:
-//
-//        In this function, we save the instance handle in a global variable and
-//        create and display the main program window.
-//
-BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
-{
-	HWND hWnd;
-
-	hInst = hInstance; // Store instance handle in our global variable
-
-	hWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInstance, NULL);
-
-	if (!hWnd)
-	{
-		return FALSE;
-	}
-
-	ShowWindow(hWnd, nCmdShow);
-	UpdateWindow(hWnd);
-
-	return TRUE;
-}
-
-//
-//  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
-//
-//  PURPOSE:  Processes messages for the main window.
-//
-//  WM_COMMAND	- process the application menu
-//  WM_PAINT	- Paint the main window
-//  WM_DESTROY	- post a quit message and return
-//
-//
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	int wmId, wmEvent;
-	PAINTSTRUCT ps;
-	HDC hdc;
-	HWND hWndStartSysButton, hWndStopSysButton;
-
-	switch (message)
-	{
-	case WM_CREATE:
-		// Create buttons
-		hWndStartSysButton = CreateWindowEx(NULL,
-			_T("BUTTON"),
-			_T("Start system"),
-			WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-			10,
-			10,
-			250,
-			24,
-			hWnd,
-			(HMENU)IDC_STARTSYS_BUTTON,
-			GetModuleHandle(NULL),
-			NULL);
-		hWndStopSysButton = CreateWindowEx(NULL,
-			_T("BUTTON"),
-			_T("Stop system"),
-			WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-			10,
-			40,
-			250,
-			24,
-			hWnd,
-			(HMENU)IDC_STOPSYS_BUTTON,
-			GetModuleHandle(NULL),
-			NULL);
-		break;
-	case WM_COMMAND:
-		wmId = LOWORD(wParam);
-		wmEvent = HIWORD(wParam);
-		// Parse the menu selections:
-		switch (wmId)
-		{
-		case IDC_STARTSYS_BUTTON:
-			hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID] = CreateThread(
-				NULL,
-				0,
-				AudioOutputThread,
-				NULL,
-				0,
-				&dwThreadArray[AUDIOOUTPUT_THREAD_ARR_ID]);
-			if (hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID] == NULL)
-			{
-				ErrorHandler(TEXT("CreateThread"));
-				CloseAllThreads();
-				ExitProcess(3);
-			}
-			hThreadArray[OPTIALGO_THREAD_ARR_ID] = CreateThread(
-				NULL,
-				0,
-				OptiAlgoThread,
-				NULL,
-				0,
-				&dwThreadArray[OPTIALGO_THREAD_ARR_ID]);
-			if (hThreadArray[OPTIALGO_THREAD_ARR_ID] == NULL)
-			{
-				ErrorHandler(TEXT("CreateThread"));
-				CloseAllThreads();
-				ExitProcess(3);
-			}
-			hThreadArray[WAVGEN_THREAD_ARR_ID] = CreateThread(
-				NULL,
-				0,
-				WavGenThread,
-				NULL,
-				0,
-				&dwThreadArray[WAVGEN_THREAD_ARR_ID]);
-			if (hThreadArray[WAVGEN_THREAD_ARR_ID] == NULL)
-			{
-				ErrorHandler(TEXT("CreateThread"));
-				CloseAllThreads();
-				ExitProcess(3);
-			}
-			hThreadArray[AUDIOINPUT_THREAD_ARR_ID] = CreateThread(
-				NULL,
-				0,
-				AudioInputThread,
-				NULL,
-				0,
-				&dwThreadArray[AUDIOINPUT_THREAD_ARR_ID]);
-			if (hThreadArray[AUDIOINPUT_THREAD_ARR_ID] == NULL)
-			{
-				ErrorHandler(TEXT("CreateThread"));
-				CloseAllThreads();
-				ExitProcess(3);
-			}
-			break;
-		case IDC_STOPSYS_BUTTON:
-			CloseAllThreads();
-			break;
-		case IDM_ABOUT:
-			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-			break;
-		case IDM_EXIT:
-			DestroyWindow(hWnd);
-			break;
-		default:
-			return DefWindowProc(hWnd, message, wParam, lParam);
-		}
-		break;
-	case WM_PAINT:
-		hdc = BeginPaint(hWnd, &ps);
-		// TODO: Add any drawing code here...
-		EndPaint(hWnd, &ps);
-		break;
-	case WM_DESTROY:
-		CloseAllThreads();
-		PostQuitMessage(0);
-		break;
-	default:
-		return DefWindowProc(hWnd, message, wParam, lParam);
-	}
-	return 0;
-}
-
-// Message handler for about box.
-INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	UNREFERENCED_PARAMETER(lParam);
-	switch (message)
-	{
-	case WM_INITDIALOG:
-		return (INT_PTR)TRUE;
-
-	case WM_COMMAND:
-		if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
-		{
-			EndDialog(hDlg, LOWORD(wParam));
-			return (INT_PTR)TRUE;
-		}
-		break;
-	}
-	return (INT_PTR)FALSE;
-}
 
 void CloseThread(int id)
 {

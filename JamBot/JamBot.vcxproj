@@ -40,7 +40,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(GTKDIR)\include;$(GTKDIR)\lib\glib-2.0\include;$(GTKDIR)\lib\gtk-2.0\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\include\;$(RemoteDebuggerWorkingDirectory);$(GTKDIR)\bin</IncludePath>
+    <IncludePath>$(SolutionDir)\libs\glib-2.0\include;$(SolutionDir)\libs\gtk-2.0\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\include\;$(RemoteDebuggerWorkingDirectory);$(SolutionDir)\bin;$(SolutionDir)\include\gtk-2.0;$(SolutionDir)\include\glib-2.0;$(SolutionDir)\include\cairo;$(SolutionDir)\include\pango-1.0;$(SolutionDir)\include\fontconfig;$(SolutionDir)\include\pixman-1;$(SolutionDir)\include\gio-win32-2.0;$(SolutionDir)\include\gdk-pixbuf-2.0;$(SolutionDir)\include\atk-1.0</IncludePath>
     <LibraryPath>$(GTKDIR)\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(SolutionDir)\libs\</LibraryPath>
     <SourcePath>D:\Workspace\Jambot\src;$(SourcePath)</SourcePath>
   </PropertyGroup>
