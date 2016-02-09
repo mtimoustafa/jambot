@@ -19,6 +19,7 @@
 #include <sstream>
 #include <math.h>
 #include <cmath>
+#include <queue>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -34,8 +35,10 @@ using namespace std;
 
 vector<float> WavManipulation::realTimeBuffer = vector<float>();
 vector<SecAnlys> WavManipulation::freqList = vector<SecAnlys>();
-float WavManipulation::frequency;
-bool WavManipulation::compare = true;
+static queue<float> frequency = queue<float>();
+static queue<string> section = queue<string>();
+static bool checkfrequency;
+
 
 SongSection::SongSection(string n, double t){
 	Name = n;
@@ -53,6 +56,10 @@ SecAnlys::~SecAnlys(){
 WavManipulation::WavManipulation(){
 	durations = vector<short>();
 	filenames = vector<string>();
+	frequency = queue<float>();
+	section = queue<string>();
+	checkfrequency = true;
+	terminate = false;
 	durationCounter = 0;
 	directoryPath = "";
 }
@@ -64,6 +71,7 @@ WavManipulation::~WavManipulation(){
 	durationCounter = 0;
 	directoryPath = "";
 }
+
 
 Helpers::SongElement getElement(string name){
 	string temp = name.substr(0, name.length() - 4);
@@ -209,14 +217,17 @@ void WavManipulation::startSnip(){
 	snipAudio(names, startTimes, durations, filepath, filename);
 }
 
-void WavManipulation::setFrequency(float in){
-	if (frequency == NULL) frequency = 0.0;
-	if (in > FREQ_UB)
-		frequency = FREQ_UB;
-	else if (in < FREQ_LB)
-		frequency = FREQ_LB;
-	else
-		frequency = in;
+void clearqueue(){
+	queue<float> empty;
+	swap(frequency, empty);
+}
+bool WavManipulation::pushFrequency(float in){
+	if (frequency.size() < AUDIO_BUF_SIZE)
+		frequency.push(in);
+	return frequency.size() < AUDIO_BUF_SIZE;
+}
+bool WavManipulation::readFrequency(){
+	return checkfrequency;
 }
 void WavManipulation::startanalysis(){
 	vector<SongSection> secs = vector<SongSection>();
@@ -310,7 +321,6 @@ float WavManipulation::freqAnalysis(vector<float> data){
 void WavManipulation::freqcomparison(){
 	float inFreq = 0.0;
 	float freq = 0.0;
-	vector<float> freqs;
 	float t = 0.0;
 	int point = 0;
 	int part = 0;
@@ -318,16 +328,26 @@ void WavManipulation::freqcomparison(){
 	int j = 0;
 	int ticks = 0;
 	int duration = 0;
+	char * err_str;
 	Helpers::SongElement element = Helpers::NIL;
-	while (compare){// BRANDON: Here you can stop the comparison when the song ends
-		ticks = 0;
-		while (j < 3){
-			if (frequency != inFreq){ //here check if there is data to be read
+	while (!terminate){
+
+		while (ticks < duration){
+			checkfrequency = false;
+			clearqueue();
+			ticks++;
+		}
+		checkfrequency = true;
+		try{
+			while (j < 3){
+				while (frequency.empty()){ if (terminate){ return; } }
+				inFreq = frequency.front();
+				frequency.pop();
 				if (point == 0){
 					for (int i = 0; i < freqList.size(); i++){
 						freq = freqList[i].pitch[j];
 						t = threshold(freq);
-						if (abs(freq - frequency) < t){
+						if (abs(freq - inFreq) < t){
 							part = i;
 							point++;
 							break;
@@ -336,7 +356,7 @@ void WavManipulation::freqcomparison(){
 				}
 				freq = freqList[part].pitch[j];
 				t = threshold(freq);
-				if (abs(freq - frequency) < t){
+				if (abs(freq - inFreq) < t){
 					point++;
 					j++;
 				}
@@ -345,18 +365,26 @@ void WavManipulation::freqcomparison(){
 				}
 				ticks++;
 			}
+			if (point > 1){
+				element = getElement(freqList[part].name);
+				num = getNum(freqList[part].name);
+				//push this to queue for Mohamed Helpers::SongStructure(element, num);
+				duration = freqList[part].duration;
+				Helpers::print_debug(freqList[part].name.c_str());
+				ticks = 0;
+			}
 		}
-		if (point > 1){
-			element = getElement(freqList[part].name);
-			num = getNum(freqList[part].name);
-			//push this to queue for Mohamed Helpers::SongStructure(element, num);
-			duration = freqList[part].duration;
-			Helpers::print_debug(freqList[part].name.c_str());
+		catch (exception e){
+			err_str = "";
+			strcat(err_str, "ERROR: WavManipulation: ");
+			strcat(err_str, e.what());
+			strcat(err_str, "\n");
+			Helpers::print_debug(err_str);
 		}
-		while (ticks < duration){
-			ticks++;
-		}
-	}
+
+	}	
+	if (terminate) Helpers::print_debug("WavManipulation: terminated.\n");
+	else Helpers::print_debug("WavManipulation: stopped.\n");
 }
 
 void WavManipulation::freqSnip(string filePath, string filename, string csvname){
@@ -411,4 +439,11 @@ void WavManipulation::freqSnip(string filePath, string filename, string csvname)
 		}
 	}
 	
+}
+
+void WavManipulation::start(){
+	freqcomparison();
+}
+void WavManipulation::stop(){
+	terminate = true;
 }
