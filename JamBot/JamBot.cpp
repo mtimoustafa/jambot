@@ -14,6 +14,7 @@
 #include <fstream>
 #include <string>
 
+
 #define MAX_LOADSTRING 100
 
 // Objects definition - name + id
@@ -239,32 +240,32 @@ int gtkStart(int argc, char* argv[])
 	g_signal_connect(window, "delete-event", G_CALLBACK(delete_event), NULL);
 	g_signal_connect(window, "destroy", G_CALLBACK(destroy), NULL);
 
-	gtk_container_set_border_width(GTK_CONTAINER(window), 200);
+	gtk_container_set_border_width(GTK_CONTAINER(window), 100);
 	gtk_window_set_title(GTK_WINDOW(window), "JamBot");
 
 	g_signal_connect(window, "button_press_event", G_CALLBACK(changeProgressBar), NULL);
 
 	/*=========================== Widget boxes ===========================*/
 	windowBox = gtk_hbox_new(false, 0);
-	gtk_widget_set_size_request(windowBox, 700, 30);
+	//gtk_widget_set_size_request(windowBox, 200, 30);
 
 	songLyricsBox = gtk_vbox_new(false, 0);
-	gtk_widget_set_size_request(songLyricsBox, 300, 50);
+	//gtk_widget_set_size_request(songLyricsBox, 300, 10);
 	gtk_box_pack_start(GTK_BOX(windowBox), songLyricsBox, false, false, 5);
 
 	songInputBox = gtk_vbox_new(false, 0);
 	gtk_box_pack_start(GTK_BOX(windowBox), songInputBox, false, false, 5);
 
 	jambox = gtk_hbox_new(false, 0);
-	gtk_widget_set_size_request(jambox, 150, 30);
+	//gtk_widget_set_size_request(jambox, 150, 30);
 	gtk_box_pack_start(GTK_BOX(windowBox), jambox, false, false, 5);
 
 	songControlBox = gtk_hbox_new(true, 0);
-	gtk_widget_set_size_request(songControlBox, 150, 30);
+	//gtk_widget_set_size_request(songControlBox, 150, 30);
 	gtk_box_pack_start(GTK_BOX(songInputBox), songControlBox, false, false, 5);
 
 	songProgressBox = gtk_hbox_new(false, 0);
-	gtk_widget_set_size_request(songProgressBox, 100, 30);
+	//gtk_widget_set_size_request(songProgressBox, 100, 30);
 	gtk_box_pack_start(GTK_BOX(songInputBox), songProgressBox, false, false, 5);
 
 	/*=========================== Progress bar ===========================*/
@@ -272,13 +273,6 @@ int gtkStart(int argc, char* argv[])
 	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progressBar), 0.2);
 	gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progressBar), "progress bar");
 	gtk_box_pack_start(GTK_BOX(songProgressBox), progressBar, false, false, 5);
-
-	/*=========================== Text entry ===========================*/
-	textEntry = gtk_text_view_new();
-	GtkTextBuffer *buffer;
-	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textEntry));
-	gtk_text_buffer_set_text(buffer, "Hello this is some text\n hello", -1);
-	gtk_box_pack_start(GTK_BOX(songLyricsBox), textEntry, false, false, 5);
 
 	/*=========================== Button ===========================*/
 	GtkWidget *playArrow;
@@ -321,6 +315,14 @@ int gtkStart(int argc, char* argv[])
 	emersonButton = gtk_button_new_with_label("Emerson Button");
 	gtk_box_pack_start(GTK_BOX(jambox), emersonButton, false, false, 5);
 	g_signal_connect(GTK_OBJECT(emersonButton), "clicked", G_CALLBACK(startEmerson), window);
+
+	/*=========================== Text entry ===========================*/
+	textEntry = gtk_text_view_new();
+	GtkTextBuffer *buffer;
+	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textEntry));
+	gtk_text_buffer_set_text(buffer, "Hello this is some text\n hello", -1);
+	//gtk_text_view_set_border_window_size(GTK_TEXT_VIEW(textEntry), GTK_TEXT_WINDOW_LEFT, 10);
+	gtk_box_pack_start(GTK_BOX(songLyricsBox), textEntry, false, false, 5);
 
 	/*=========================== File Browser ===========================*/
 	/*fileBrowser = gtk_file_chooser_dialog_new("File selection", GTK_WINDOW(window), GTK_FILE_CHOOSER_ACTION_OPEN, GTK_STOCK_OK,
