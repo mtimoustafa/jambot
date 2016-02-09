@@ -10,6 +10,9 @@
 #include "Helpers.h"
 #include "strsafe.h"
 #include <gtk-2.0\gtk\gtk.h>
+#include <iostream>
+#include <fstream>
+#include <string>
 
 #define MAX_LOADSTRING 100
 
@@ -50,16 +53,100 @@ INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 void CloseThread(int id);
 void CloseAllThreads();
 void ErrorHandler(LPTSTR lpszFunction);
+const gchar *textInput;
+GtkWidget *window;
+GtkWidget *textEntry;
 
-static void hello(GtkWidget *widget, gpointer data)
+static void changeProgressBar(GtkWidget *widget, gpointer data)
 {
-	g_print("Hello World\n");
+	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(data), 0.8);
+}
+
+static void testFunction(GtkWidget *widget) {
+	//g_signal_new("pitch-data", G_TYPE_OBJECT, G_SIGNAL_RUN_FIRST, 0, NULL, NULL, NULL, G_TYPE_NONE, 0);
+	g_signal_emit_by_name(window, "button_press_event");
+}
+
+static void openDialog(GtkWidget *button, gpointer window) {
+	GtkWidget *dialog, *label;
+	dialog = gtk_dialog_new_with_buttons("dialog", GTK_WINDOW(window), GTK_DIALOG_MODAL, GTK_STOCK_OPEN, GTK_RESPONSE_OK, 
+		GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL);
+	label = gtk_label_new("You clicked the button");
+	gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), label, 0, 0, 0);
+	gtk_widget_show_all(dialog);
+	gint response = gtk_dialog_run(GTK_DIALOG(dialog));
+	if (response == GTK_RESPONSE_OK){
+		g_print("The OK is pressed");
+	}
+	else {
+		g_print("The cancel was pressed");
+	}
+	gtk_widget_destroy(dialog);
+}
+
+static void dialog_result(GtkWidget *dialog, gint resp, gpointer data){
+	if (resp == GTK_RESPONSE_OK) {
+		g_print("OK\n");
+	}
+	else {
+		gtk_widget_destroy(dialog);
+	}
+}
+
+static void openNoneModalDialog(GtkWidget *button, gpointer window) {
+	GtkWidget *dialog, *label, *image, *hbox;
+	dialog = gtk_dialog_new_with_buttons("Nonmodal dialog", GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_STOCK_OK, 
+		GTK_RESPONSE_OK, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, NULL);
+	label = gtk_label_new("The buttons was clicked");
+	image = gtk_image_new_from_stock(GTK_STOCK_INFO, GTK_ICON_SIZE_DIALOG);
+
+	hbox = gtk_hbox_new(0, 0);
+	gtk_box_pack_start(GTK_BOX(hbox), image, 0, 0, 0);
+	gtk_box_pack_start(GTK_BOX(hbox), label, 0, 0, 0);
+	gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), hbox, 0, 0, 0);
+	gtk_widget_show_all(dialog);
+	g_signal_connect(dialog, "response", G_CALLBACK(dialog_result), NULL);
+}
+
+static void fileBrowse(GtkWidget *button, gpointer window) {
+	GtkWidget *dialog;
+	gchar *fileBuffer;
+	gchar *fileName;
+	gboolean readFileStatus;
+	GError *error;
+	dialog = gtk_file_chooser_dialog_new("Choose a file", GTK_WINDOW(window), GTK_FILE_CHOOSER_ACTION_OPEN, GTK_STOCK_OK, 
+		GTK_RESPONSE_OK, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, NULL);
+	gtk_widget_show_all(dialog);
+	gint resp = gtk_dialog_run(GTK_DIALOG(dialog));
+	if (resp == GTK_RESPONSE_OK) {
+		fileName = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+		ifstream file(fileName);
+		string line, text;
+		if (file.is_open()) 
+		{
+			while (getline(file, line))
+			{
+				text += line;
+				text += "\n";
+			}
+			
+			file.close();
+			GtkTextBuffer *buffer;
+			buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textEntry));
+			gtk_text_buffer_set_text(buffer, text.c_str(), -1);
+
+		}
+	}
+	else {
+		g_print("You Pressed the cancel button");
+	}
+	gtk_widget_destroy(dialog);
 }
 
 static gboolean delete_event(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
 	/* If you return FALSE in the "delete-event" signal handler,
-	* GTK will emit the "destroy" signal. Returning TRUE means
+	* GTK will emit the "destroy" signal. Returning TRUE means	 
 	* you don't want the window to be destroyed.
 	* This is useful for popping up 'are you sure you want to quit?'
 	* type dialogs. */
@@ -82,35 +169,52 @@ static void destroy(GtkWidget *widget,
 int gtkStart(int argc, char* argv[])
 {
 	GtkWidget *window;
-	GtkWidget *songInputBox;
-	GtkWidget *songControlBox;
-	GtkWidget *button;
-	GtkWidget *playButton;
-	GtkWidget *pauseButton;
-	GtkWidget *stopButton;
-	GtkWidget *progressBar;
+	GtkWidget *windowBox, *songProgressBox, *songControlBox, *songLyricsBox;
+	GtkWidget *button, *playButton, *progressBar, *progressBarTest, *showModalDialog, *showNonmodalDialog, *fileSelectDialog;
+	GtkWidget *fileBrowser;
 
 	gtk_init(&argc, &argv);
 
 	/*=========================== Window ===========================*/
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	g_signal_connect(window, "delete-event",G_CALLBACK(delete_event), NULL);
-	g_signal_connect(window, "destroy",G_CALLBACK(destroy), NULL);
+	g_signal_connect(window, "delete-event", G_CALLBACK(delete_event), NULL);
+	g_signal_connect(window, "destroy", G_CALLBACK(destroy), NULL);
 
-	gtk_container_set_border_width(GTK_CONTAINER(window), 100);
+	gtk_container_set_border_width(GTK_CONTAINER(window), 300);
+	gtk_window_set_title(GTK_WINDOW(window), "JamBot");
 
-	/*=========================== Button boxes ===========================*/
+	g_signal_connect(window, "button_press_event", G_CALLBACK(changeProgressBar), NULL);
+
+	/*=========================== Widget boxes ===========================*/
+	windowBox = gtk_vbox_new(false, 0);
+	gtk_widget_set_size_request(windowBox, 150, 30);
+
 	songControlBox = gtk_hbox_new(true, 0);
+	gtk_widget_set_size_request(songControlBox, 150, 30);
+	gtk_box_pack_start(GTK_BOX(windowBox), songControlBox, false, false, 5);
 
+	songProgressBox = gtk_hbox_new(false, 0);
+	gtk_widget_set_size_request(songProgressBox, 100, 30);
+	gtk_box_pack_start(GTK_BOX(windowBox), songProgressBox, false, false, 5);
 
+	songLyricsBox = gtk_hbox_new(false, 0);
+	gtk_widget_set_size_request(songLyricsBox, 150, 80);
+	gtk_box_pack_start(GTK_BOX(windowBox), songLyricsBox, false, false, 5);
+
+	/*=========================== Progress bar ===========================*/
+	progressBar = gtk_progress_bar_new();
+	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progressBar), 0.2);
+	gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progressBar), "progress bar");
+	gtk_box_pack_start(GTK_BOX(songProgressBox), progressBar, false, false, 5);
+
+	/*=========================== Text entry ===========================*/
+	textEntry = gtk_text_view_new();
+	GtkTextBuffer *buffer;
+	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textEntry));
+	gtk_text_buffer_set_text(buffer, "Hello this is some text\n hello", -1);
+	gtk_box_pack_start(GTK_BOX(songLyricsBox), textEntry, false, false, 5);
 
 	/*=========================== Button ===========================*/
-	/*button = gtk_button_new_with_label("Hello World");
-	g_signal_connect(button, "clicked", G_CALLBACK(hello), NULL);
-	g_signal_connect_swapped(button, "clicked", G_CALLBACK(gtk_widget_destroy), window);
-	gtk_box_pack_start(GTK_BOX(songControlBox), button, false, false, 0);
-	gtk_widget_show(button);*/
-	
 	GtkWidget *playArrow;
 	playArrow = gtk_arrow_new(GTK_ARROW_RIGHT, GTK_SHADOW_NONE);
 
@@ -128,13 +232,30 @@ int gtkStart(int argc, char* argv[])
 	gtk_box_pack_start(GTK_BOX(songControlBox), playButton, false, false, 5);
 	gtk_widget_show(playButton);
 
-	/*=========================== Progress bar ===========================*/
-	progressBar = gtk_progress_bar_new();
-	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progressBar), 0.5);
+	fileSelectDialog = gtk_button_new_with_label("File Select");
+	gtk_box_pack_start(GTK_BOX(songProgressBox), fileSelectDialog, false, false, 5);
+	g_signal_connect(GTK_OBJECT(fileSelectDialog), "clicked", G_CALLBACK(fileBrowse), window);
+
+	progressBarTest = gtk_button_new_with_label("Test");
+	gtk_box_pack_start(GTK_BOX(songProgressBox), progressBarTest, false, false, 5);
+	g_signal_connect(GTK_OBJECT(progressBarTest), "clicked", G_CALLBACK(testFunction), (gpointer) progressBar);
+
+	showModalDialog = gtk_button_new_with_label("Show modal dialog");
+	gtk_box_pack_start(GTK_BOX(songProgressBox), showModalDialog, false, false, 5);
+	g_signal_connect(GTK_OBJECT(showModalDialog), "clicked", G_CALLBACK(openDialog), window);
+
+	showNonmodalDialog = gtk_button_new_with_label("Show nonmodal dialog");
+	gtk_box_pack_start(GTK_BOX(songProgressBox), showNonmodalDialog, false, false, 5);
+	g_signal_connect(GTK_OBJECT(showNonmodalDialog), "clicked", G_CALLBACK(openNoneModalDialog), window);
+
+	/*=========================== File Browser ===========================*/
+	/*fileBrowser = gtk_file_chooser_dialog_new("File selection", GTK_WINDOW(window), GTK_FILE_CHOOSER_ACTION_OPEN, GTK_STOCK_OK, 
+		GTK_RESPONSE_OK, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, NULL);
+	gtk_file_selection_set_filename(GTK_FILE_SELECTION(fileBrowser), "penguin.png");
+	gtk_box_pack_start(GTK_BOX(windowBox), fileBrowser, false, false, 5);*/
 
 	/*=========================== the rest ===========================*/
-	gtk_container_add(GTK_CONTAINER(window), songControlBox);
-	gtk_container_add(GTK_CONTAINER(window), progressBar);
+	gtk_container_add(GTK_CONTAINER(window), windowBox);
 
 	gtk_widget_show_all(window);
 	gtk_main();
@@ -143,14 +264,14 @@ int gtkStart(int argc, char* argv[])
 }
 
 int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
-                     _In_opt_ HINSTANCE hPrevInstance,
-                     _In_ LPTSTR    lpCmdLine,
-                     _In_ int       nCmdShow)
+	_In_opt_ HINSTANCE hPrevInstance,
+	_In_ LPTSTR    lpCmdLine,
+	_In_ int       nCmdShow)
 {
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
- 	// TODO: Place code here.
+	// TODO: Place code here.
 	MSG msg;
 	HACCEL hAccelTable;
 	gtkStart(0, NULL);
@@ -162,7 +283,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	// Perform application initialization:
 	if (!InitInstance (hInstance, nCmdShow))
 	{
-		return FALSE;
+	return FALSE;
 	}
 
 	hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_JAMBOT));
@@ -170,11 +291,11 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	// Main message loop:
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
-		if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
-		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		}
+	if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
+	{
+	TranslateMessage(&msg);
+	DispatchMessage(&msg);
+	}
 	}
 
 	return (int) msg.wParam;*/
@@ -194,17 +315,17 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 
 	wcex.cbSize = sizeof(WNDCLASSEX);
 
-	wcex.style			= CS_HREDRAW | CS_VREDRAW;
-	wcex.lpfnWndProc	= WndProc;
-	wcex.cbClsExtra		= 0;
-	wcex.cbWndExtra		= 0;
-	wcex.hInstance		= hInstance;
-	wcex.hIcon			= LoadIcon(hInstance, MAKEINTRESOURCE(IDI_JAMBOT));
-	wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
-	wcex.hbrBackground	= (HBRUSH)(COLOR_WINDOW+1);
-	wcex.lpszMenuName	= MAKEINTRESOURCE(IDC_JAMBOT);
-	wcex.lpszClassName	= szWindowClass;
-	wcex.hIconSm		= LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+	wcex.style = CS_HREDRAW | CS_VREDRAW;
+	wcex.lpfnWndProc = WndProc;
+	wcex.cbClsExtra = 0;
+	wcex.cbWndExtra = 0;
+	wcex.hInstance = hInstance;
+	wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_JAMBOT));
+	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+	wcex.lpszMenuName = MAKEINTRESOURCE(IDC_JAMBOT);
+	wcex.lpszClassName = szWindowClass;
+	wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
 	return RegisterClassEx(&wcex);
 }
@@ -221,22 +342,22 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 //
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
-   HWND hWnd;
+	HWND hWnd;
 
-   hInst = hInstance; // Store instance handle in our global variable
+	hInst = hInstance; // Store instance handle in our global variable
 
-   hWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInstance, NULL);
+	hWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
+		CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInstance, NULL);
 
-   if (!hWnd)
-   {
-      return FALSE;
-   }
+	if (!hWnd)
+	{
+		return FALSE;
+	}
 
-   ShowWindow(hWnd, nCmdShow);
-   UpdateWindow(hWnd);
+	ShowWindow(hWnd, nCmdShow);
+	UpdateWindow(hWnd);
 
-   return TRUE;
+	return TRUE;
 }
 
 //
@@ -286,7 +407,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			NULL);
 		break;
 	case WM_COMMAND:
-		wmId    = LOWORD(wParam);
+		wmId = LOWORD(wParam);
 		wmEvent = HIWORD(wParam);
 		// Parse the menu selections:
 		switch (wmId)
