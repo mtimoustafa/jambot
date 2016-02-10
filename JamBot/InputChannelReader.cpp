@@ -146,7 +146,6 @@ void InputChannelReader::analyseBuffer(paData *data)
 	{
 		maxDensity[i] = 0.0;
 	}
-	//Here
 	// Measure average peak amplitude
 	for (int i = 0; i < NUM_SAMPLES; i++)
 	{
@@ -159,11 +158,9 @@ void InputChannelReader::analyseBuffer(paData *data)
 		if (val < 0) val = -val;
 		average += val;
 	}
-	//to Here
 	average = average / (double)NUM_SAMPLES;
 	audioSamples.set_loudness(average);
 	Helpers::print_debug(("Average sample loudness (dB): " + to_string(average) + "\n").c_str());
-	//Here
 	// Get frequency of wave
 	fftwf_execute(frequencyPlan);
 
@@ -187,8 +184,8 @@ void InputChannelReader::analyseBuffer(paData *data)
 		frequency[i] = maxIndex[i] * SAMPLE_RATE / OUTPUT_SIZE;
 		Helpers::print_debug(("Frequency peak " + to_string(i + 1) + " (Hz): " + to_string(frequency[i]) + "\n").c_str());
 	}
-	//To Here
 	audioSamples.set_frequency((float)frequency[0]);
+
 
 	// Measure average tempo every 1.5s
 	tempo.process(const_cast<float*>(&data->recordedSamples[0]), NUM_SAMPLES);
