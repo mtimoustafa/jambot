@@ -18,6 +18,7 @@ public:
 	string name;
 	vector<float> pitch;
 	int duration;
+	SecAnlys();
 	SecAnlys(string, vector<float>, int);
 	~SecAnlys();
 };
