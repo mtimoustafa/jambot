@@ -77,9 +77,30 @@ static void addNewSection(GtkWidget *widget)
 	gtk_box_pack_start(GTK_BOX(sectionTimeBox), tempEntry, false, false, 5); 
 }
 
-static void displayLyrics(GtkWidget *widget)
+static void displayLyrics(GtkWidget *widget, gpointer window)
 {
+	GtkWidget *dialog, *label, *lyricsEntry;
+	dialog = gtk_dialog_new_with_buttons("Lyrics Display", GTK_WINDOW(window), GTK_DIALOG_MODAL, NULL, NULL,
+		NULL, NULL);
+	
 
+	GtkTextBuffer *buffer;
+	lyricsEntry = gtk_text_view_new();
+	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(lyricsEntry));
+	gtk_text_buffer_set_text(buffer, "Somebody once told me the world is gonna roll me\nI ain't the sharpest tool in the shed\nShe was looking kind of dumb with her finger and her thumb\nIn the shape of an 'L' on her forehead", -1);
+	gtk_text_view_set_border_window_size(GTK_TEXT_VIEW(lyricsEntry), GTK_TEXT_WINDOW_TEXT, 30);
+	gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), lyricsEntry, false, false, 5);
+
+
+	gtk_widget_show_all(dialog);
+	gint response = gtk_dialog_run(GTK_DIALOG(dialog));
+	if (response == GTK_RESPONSE_OK){
+		g_print("The OK is pressed");
+	}
+	else {
+		g_print("The cancel was pressed");
+	}
+	gtk_widget_destroy(dialog);
 }
 
 static void fileBrowse(GtkWidget *button, gpointer window) {
