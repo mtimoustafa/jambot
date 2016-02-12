@@ -43,8 +43,8 @@ private:
 public:
 	WavManipulation();
 	~WavManipulation();
-	Helpers::SongStructure wavComparison();
-	void snipAudio(vector<string>, vector<short>, vector<short>, string, string);
+	void wavComparison();
+	void snipAudio(vector<string>, vector<double>, vector<short>, string, string);
 	void setFrequency(float);
 	void freqAnalysis();
 	void comparisonPolling();

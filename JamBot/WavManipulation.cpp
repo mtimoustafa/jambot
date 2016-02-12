@@ -118,7 +118,7 @@ void WavManipulation::inputData(vector<float> buffer){
 /// Input: short realTimeBuffer[] - the buffered values of the real time input
 ///		   string - directoryPath - the directory path name
 /// Output: char*
-Helpers::SongStructure WavManipulation::wavComparison() {
+void WavManipulation::wavComparison() {
 
 	unsigned short i, j, channel;
 	int error_counter = 1000;
@@ -129,33 +129,36 @@ Helpers::SongStructure WavManipulation::wavComparison() {
 
 	for (j = 0; j < filenames.size(); j++){
 		short k = 0;
-		string readFile = directoryPath + filenames[j];
+		string readFile = "C:\\Users\\emerson\\Documents\\School\\FYDP\\jambot\\JamBot\\" + filenames[j] + ".wav";
 		SoundFileRead  insound1(readFile.c_str());
-		durationCounter = durations[j];
+		SoundFileRead  insound2("C:\\Users\\emerson\\Documents\\School\\FYDP\\jambot\\JamBot\\Verse3.wav");
+		//durationCounter = durations[j];
 		for (i = 0; i < insound1.getSamples(); i++) {
 			if (error_counter == 0){
 				break;
 			}
-			for (channel = 0; channel < insound1.getChannels(); channel++) {
-				sample = (float)insound1.getCurrentSampleDouble(channel);
-				sample = sample - realTimeBuffer[k + (channel)];
+			//for (channel = 0; channel < insound1.getChannels(); channel++) {
+				sample = insound1.getCurrentSampleDouble(0);
+				sample = sample - insound2.getCurrentSampleDouble(0);
 				if (abs(sample) > threshold){
 					error_counter--;
 				}
 				else{
 					error_counter++;
 				}
-			}
+			//}
 			k += 2;
 			insound1.incrementSample();
 		}
 		if (error_counter > 0){
-			element = getElement(filenames[i]);
-			num = getNum(filenames[i]);
-			return Helpers::SongStructure(element, num);
+			//element = getElement(filenames[j]);
+			//num = getNum(filenames[j]);
+			//return Helpers::SongStructure(element, num);
+			//Helpers::print_debug(filenames[j].c_str());
+			//Helpers::print_debug("\n");
 		}
 	}
-	return Helpers::SongStructure(element, 0);
+	//return Helpers::SongStructure(element, 0);
 }
 ///////////////////////////////////////////
 ///	snipAudio: Snips the audio file into sections, all wav files using the names in names vector
@@ -164,7 +167,7 @@ Helpers::SongStructure WavManipulation::wavComparison() {
 ///		   vector: durationTimes - The length (in seconds) of each section
 ///		   filepath - The path of the file being cut
 /// Output: VOID
-void WavManipulation::snipAudio(vector<string> names, vector<short> startTimes, vector<short> durationTimes, string filePath, string filename){
+void WavManipulation::snipAudio(vector<string> names, vector<double> startTimes, vector<short> durationTimes, string filePath, string filename){
 
 	SoundFileRead insound((filePath + filename).c_str());
 	SoundHeader header = insound;
@@ -174,7 +177,7 @@ void WavManipulation::snipAudio(vector<string> names, vector<short> startTimes, 
 	int numSnips = 0;
 
 	for (unsigned int i = 0; i < startTimes.size(); i++){
-		durations.push_back((short)ceil(durationTimes[i] / 0.2));  //store durations as a number of 200ms bursts
+		//durations.push_back((short)ceil(durationTimes[i] / 0.2));  //store durations as a number of 200ms bursts
 		string outName = names[i] + ".wav";
 		filenames.push_back(names[i]); //store file names for the sections
 		SoundFileWrite outsound(outName.c_str(), header);
@@ -205,24 +208,41 @@ void WavManipulation::comparisonPolling(){
 			durationCounter--;
 		}
 		else{
-			Helpers::SongStructure section = wavComparison();
-			structurequeue.push_back(section); //This needs to be adjusted to push to mohammed's queue
+			//Helpers::SongStructure section = wavComparison();
+			//structurequeue.push_back(section); //This needs to be adjusted to push to mohammed's queue
 		}
 	}
 }
 void WavManipulation::startSnip(){
-	string filename = "crunchy_bass_swag.flv.wav";
-	string filepath = "../";
-	vector<string> names = { "Intro", "Chorus1", "Verse1", "Outro" };
+	string filename = "Boston_More_than_a_FeelingVocals_Only.wav";
+	string filepath = "C:\\Users\\emerson\\Downloads\\";
+	vector<string> names = { "Verse1", "Chorus", "Verse2", "Chorus", "Verse3", "Chorus" };
 	vector<short> durations = { 1, 1, 1, 1 };
-	vector<short> startTimes = { 1, 3, 5, 7 };
+	vector<double> startTimes = { 23.0, 55.0, 90.0, 123.08, 187.4, 239.95 };
 	snipAudio(names, startTimes, durations, filepath, filename);
 }
-
 void clearqueue(){
 	queue<float> empty;
 	swap(frequency, empty);
 }
+
+void WavManipulation::startanalysis(){
+	vector<SongSection> secs = vector<SongSection>();
+	time_t startTime;
+	time_t endTime;
+	double exectime;
+	secs.push_back(SongSection("Verse1", 22.0));
+	secs.push_back(SongSection("Chorus", 55.0));
+	secs.push_back(SongSection("Verse2", 90.0));
+	secs.push_back(SongSection("Chorus", 123.2));
+	secs.push_back(SongSection("Verse3", 187.4));
+	secs.push_back(SongSection("Chorus", 239.95));
+	dataStore("song1", secs);
+	freqSnip("C:\\Users\\emerson\\Downloads\\", "Boston_More_than_a_FeelingVocals_Only.wav", "song1");
+}
+/////////////////////////////////////////
+///		Frequency Fingerprint Functions
+
 bool WavManipulation::pushFrequency(float in){
 	if (frequency.size() < AUDIO_BUF_SIZE)
 		frequency.push(in);
@@ -231,16 +251,6 @@ bool WavManipulation::pushFrequency(float in){
 bool WavManipulation::readFrequency(){
 	return checkfrequency;
 }
-void WavManipulation::startanalysis(){
-	vector<SongSection> secs = vector<SongSection>();
-	secs.push_back(SongSection("Verse1", 23.0));
-	secs.push_back(SongSection("Chorus", 54.0));
-	secs.push_back(SongSection("verse2", 89.0));
-	secs.push_back(SongSection("Chorus", 122.0));
-	dataStore("song1", secs);
-	freqSnip("C:\\Users\\emerson\\Downloads\\", "Boston_More_than_a_FeelingVocals_Only.wav", "song1");
-}
-
 void WavManipulation::dataStore(string filename, vector<SongSection> sections){
 	ofstream song;
 	ostringstream s;
@@ -264,16 +274,15 @@ float WavManipulation::freqtonote(float in){
 	return 12 * log2f(in / 440) + 49;
 }
 float WavManipulation::notetofreq(int in){
-	return pow(2, ((in - 49) / 12)) * 440;
+	return pow((double)2, (double)(((double)in - (double)49) / (double)12)) * 440;
 }
 float WavManipulation::threshold(float in){
 	int note = round((double)freqtonote(in));
-	float lower = (in - notetofreq(note - 1)) / 2;
-	float upper = (notetofreq(note + 1) - in) / 2;
+	float lower = abs((in - notetofreq(note - 1)) / 2);
+	float upper = abs((notetofreq(note + 1) - in) / 2);
 	float thresh = (upper + lower);
 	return thresh;
 }
-
 float WavManipulation::hannFunction(int n)
 {
 	double inner = (2 * M_PI * n) / (FFT_SIZE - 1);
@@ -293,7 +302,7 @@ float WavManipulation::freqAnalysis(vector<float> data){
 	in = (float*)fftwf_malloc(sizeof(float)* FFT_SIZE);
 	out = (fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex)* OUTPUT_SIZE);
 	frequencyPlan = fftwf_plan_dft_r2c_1d(FFT_SIZE, in, out, FFTW_ESTIMATE);
-	for (int i = 0; i < 1200; i++)
+	for (int i = 0; i < data.size(); i++)
 	{
 		// Use every-other sample
 		if (i < FFT_SIZE)
@@ -305,7 +314,7 @@ float WavManipulation::freqAnalysis(vector<float> data){
 	// Get frequency of wave
 	fftwf_execute(frequencyPlan);
 
-	for (int i = 0; i < 1200; i++)
+	for (int i = 0; i < 605; i++)
 	{
 		magnitude = (float)sqrt(pow(out[i][0], 2) + pow(out[i][1], 2));
 
@@ -316,9 +325,10 @@ float WavManipulation::freqAnalysis(vector<float> data){
 			}
 	}
 	frequency = maxIndex * SAMPLE_RATE / OUTPUT_SIZE;
+	fftwf_free(in);
+	fftwf_free(out);
 	return frequency;
 }
-
 void WavManipulation::freqcomparison(){
 	float inFreq = 0.0;
 	float freq = 0.0;
@@ -340,7 +350,7 @@ void WavManipulation::freqcomparison(){
 		}
 		checkfrequency = true;
 		try{
-			while (j < 3){
+			while (j < 5){
 				while (frequency.empty()){ if (terminate){ return; } }
 				inFreq = frequency.front();
 				frequency.pop();
@@ -366,13 +376,19 @@ void WavManipulation::freqcomparison(){
 				}
 				ticks++;
 			}
-			if (point > 1){
-				element = getElement(freqList[part].name);
-				num = getNum(freqList[part].name);
-				//push this to queue for Mohamed Helpers::SongStructure(element, num);
-				duration = freqList[part].duration;
+			if (point > 2){
+				//send info to mohamed here, was causing some kind of warning message
+				//element = getElement(freqList[part].name);
+				//num = getNum(freqList[part].name);
+				//push this to queue for best fit algorithm
+				//duration = freqList[part].duration;
 				Helpers::print_debug(freqList[part].name.c_str());
+				Helpers::print_debug("\n");
 				ticks = 0;
+			}
+			else{
+				Helpers::print_debug("No Section Found");
+				Helpers::print_debug("\n");
 			}
 		}
 		catch (exception e){
@@ -387,7 +403,6 @@ void WavManipulation::freqcomparison(){
 	if (terminate) Helpers::print_debug("WavManipulation: terminated.\n");
 	else Helpers::print_debug("WavManipulation: stopped.\n");
 }
-
 void WavManipulation::freqSnip(string filePath, string filename, string csvname){
 	ifstream file(csvname + ".csv");
 	SoundFileRead insound((filePath + filename).c_str());
@@ -420,17 +435,16 @@ void WavManipulation::freqSnip(string filePath, string filename, string csvname)
 	double freq = 0;
 	for (unsigned int i = 0; i < times.size(); i++){
 		vector<float> list;
-		for (int l = 0; l < 3; l++){
+		for (int l = 0; l < 5; l++){
 			vector<float> snippet;
-			startSample = ((times[i] + (l * 0.2)) * insound.getSrate() + 0.5);  //starting sample
-			stopSample = ((times[i] + (l * 0.2) + 0.2) * insound.getSrate() + 0.5);//ending sample
+			startSample = round((times[i] + (l * 0.2)) * insound.getSrate() + 0.5);  //starting sample
+			stopSample = round((times[i] + (l * 0.2) + 0.2) * insound.getSrate() + 0.5);//ending sample
 			n = stopSample - startSample; //number of samples
 			insound.gotoSample(startSample);
 			for (int j = 0; j < n; j++){
 				//for (int k = 0; k < insound.getChannels(); k++){
-				snippet.push_back((float)insound.getCurrentSampleDouble(0));
-				insound.incrementSample();
-				//}
+					snippet.push_back((int)(insound.getCurrentSampleDouble(0) * 0x8000));
+					insound.incrementSample();
 			}
 			freq = freqAnalysis(snippet);
 			list.push_back(freq);
@@ -444,13 +458,12 @@ void WavManipulation::freqSnip(string filePath, string filename, string csvname)
 			section = SecAnlys(names[i], list, ceil((length - times[i]) / 0.2));
 		}
 		if (!checkrepeats(names[i])){
-			Helpers::print_debug(names[i].c_str());
+			//Helpers::print_debug(names[i].c_str());
 			freqList.push_back(section);
 		}
 	}
 	
 }
-
 void WavManipulation::start(){
 	freqcomparison();
 }

@@ -404,7 +404,7 @@ void SoundFileRead::determineReadingFunction(void) {
                readSample = soundReadSample8L_L;
                break;
             case SND_FORMAT_LINEAR_16:
-               readSample = soundReadSample16L_L;
+               readSample = soundReadSample16L_B;
                break;
             case SND_FORMAT_LINEAR_24:
                readSample = soundReadSample24L_L;
