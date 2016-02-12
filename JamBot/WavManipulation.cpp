@@ -46,6 +46,8 @@ SongSection::SongSection(string n, double t){
 }
 SongSection::~SongSection(){
 }
+SecAnlys::SecAnlys(){
+}
 SecAnlys::SecAnlys(string n, vector<float> t, int d){
 	name = n;
 	pitch = t;
@@ -231,12 +233,12 @@ bool WavManipulation::readFrequency(){
 }
 void WavManipulation::startanalysis(){
 	vector<SongSection> secs = vector<SongSection>();
-	secs.push_back(SongSection("Chorus", 0.0));
-	secs.push_back(SongSection("Verse1", 2.0));
-	secs.push_back(SongSection("Chorus", 4.0));
-	secs.push_back(SongSection("Verse2", 6.0));
+	secs.push_back(SongSection("Verse1", 23.0));
+	secs.push_back(SongSection("Chorus", 54.0));
+	secs.push_back(SongSection("verse2", 89.0));
+	secs.push_back(SongSection("Chorus", 122.0));
 	dataStore("song1", secs);
-	freqSnip("C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\", "crunchy_bass_swag.flv.wav", "song1");
+	freqSnip("C:\\Users\\emerson\\Downloads\\", "Boston_More_than_a_FeelingVocals_Only.wav", "song1");
 }
 
 void WavManipulation::dataStore(string filename, vector<SongSection> sections){
@@ -261,7 +263,7 @@ bool WavManipulation::checkrepeats(string name){
 float WavManipulation::freqtonote(float in){
 	return 12 * log2f(in / 440) + 49;
 }
-float WavManipulation::notetofreq(float in){
+float WavManipulation::notetofreq(int in){
 	return pow(2, ((in - 49) / 12)) * 440;
 }
 float WavManipulation::threshold(float in){
@@ -294,7 +296,7 @@ float WavManipulation::freqAnalysis(vector<float> data){
 	for (int i = 0; i < 1200; i++)
 	{
 		// Use every-other sample
-		if (i < FFT_SIZE && i % 2 == 0)
+		if (i < FFT_SIZE)
 		{
 			in[i] = data[i] * hannFunction(i);
 		}
@@ -311,7 +313,6 @@ float WavManipulation::freqAnalysis(vector<float> data){
 			{
 				maxDensity = magnitude;
 				maxIndex = i;
-				break;
 			}
 	}
 	frequency = maxIndex * SAMPLE_RATE / OUTPUT_SIZE;
@@ -399,6 +400,8 @@ void WavManipulation::freqSnip(string filePath, string filename, string csvname)
 	int numSnips = 0;
 	string value = "";
 	bool even = true;
+	SecAnlys section;
+	int length = floor((double)insound.getSamples() / (double)insound.getSrate());
 	getline(file, value, ',');
 	getline(file, value, '\n');
 	while (!file.eof()){
@@ -419,21 +422,28 @@ void WavManipulation::freqSnip(string filePath, string filename, string csvname)
 		vector<float> list;
 		for (int l = 0; l < 3; l++){
 			vector<float> snippet;
-			startSample = (short)((times[i] + l) * insound.getSrate() + 0.5);  //starting sample
-			stopSample = (short)((times[i] + l + 0.2) * insound.getSrate() + 0.5);//ending sample
+			startSample = ((times[i] + (l * 0.2)) * insound.getSrate() + 0.5);  //starting sample
+			stopSample = ((times[i] + (l * 0.2) + 0.2) * insound.getSrate() + 0.5);//ending sample
 			n = stopSample - startSample; //number of samples
 			insound.gotoSample(startSample);
 			for (int j = 0; j < n; j++){
+				//for (int k = 0; k < insound.getChannels(); k++){
 				snippet.push_back((float)insound.getCurrentSampleDouble(0));
 				insound.incrementSample();
+				//}
 			}
 			freq = freqAnalysis(snippet);
 			list.push_back(freq);
 			snippet.clear();
 		}
 
-		SecAnlys section = SecAnlys(names[i], list, ceil((times[i] - times[i + 1])/0.2));
-		if (checkrepeats(names[i])){
+		if (i < times.size() - 1){
+			section = SecAnlys(names[i], list, ceil((times[i + 1] - times[i]) / 0.2));
+		}
+		else {
+			section = SecAnlys(names[i], list, ceil((length - times[i]) / 0.2));
+		}
+		if (!checkrepeats(names[i])){
 			Helpers::print_debug(names[i].c_str());
 			freqList.push_back(section);
 		}

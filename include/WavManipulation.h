@@ -18,6 +18,7 @@ public:
 	string name;
 	vector<float> pitch;
 	int duration;
+	SecAnlys();
 	SecAnlys(string, vector<float>, int);
 	~SecAnlys();
 };
@@ -34,7 +35,7 @@ private:
 	static vector<SecAnlys> freqList;
 	float hannFunction(int);
 	float freqtonote(float);
-	float notetofreq(float);
+	float notetofreq(int);
 	float threshold(float);
 	bool checkrepeats(string);
 
@@ -57,6 +58,6 @@ public:
 	void startanalysis();
 	void start();
 	void stop();
-	bool pushFrequency(float);
-	bool readFrequency();
+	static bool pushFrequency(float);
+	static bool readFrequency();
 };
