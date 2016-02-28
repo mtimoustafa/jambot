@@ -161,7 +161,7 @@ static void startJamming(GtkWidget *button) {
 		CloseAllThreads();
 		ExitProcess(3);
 	}
-	hThreadArray[WAVGEN_THREAD_ARR_ID] = CreateThread(
+	/*hThreadArray[WAVGEN_THREAD_ARR_ID] = CreateThread(
 		NULL,
 		0,
 		WavGenThread,
@@ -173,7 +173,7 @@ static void startJamming(GtkWidget *button) {
 		ErrorHandler(TEXT("CreateThread"));
 		CloseAllThreads();
 		ExitProcess(3);
-	}
+	}*/
 	hThreadArray[AUDIOINPUT_THREAD_ARR_ID] = CreateThread(
 		NULL,
 		0,
@@ -251,7 +251,7 @@ int gtkStart(int argc, char* argv[])
 	g_signal_connect(GTK_OBJECT(startJambot), "clicked", G_CALLBACK(startJamming), window);	
 
 	emersonButton = gtk_button_new_with_label("Emerson Button");
-	//gtk_box_pack_start(GTK_BOX(jambox), emersonButton, false, false, 5);
+	gtk_box_pack_start(GTK_BOX(jambox), emersonButton, false, false, 5);
 	g_signal_connect(GTK_OBJECT(emersonButton), "clicked", G_CALLBACK(startEmerson), window);
 
 	windowBox = gtk_hbox_new(false, 0);
@@ -404,6 +404,7 @@ int gtkStart(int argc, char* argv[])
 
 	playButton = gtk_button_new_with_label("Play");
 	gtk_box_pack_start(GTK_BOX(songControlBox), playButton, false, false, 5);
+	g_signal_connect(GTK_OBJECT(playButton), "clicked", G_CALLBACK(startJamming), window);
 	gtk_widget_show(playButton);
 
 	playButton = gtk_button_new_with_label("Stop");
