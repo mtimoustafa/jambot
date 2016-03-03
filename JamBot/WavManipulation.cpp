@@ -20,11 +20,13 @@
 #include <math.h>
 #include <cmath>
 #include <queue>
+#include <algorithm>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
 
+#define NUM_FREQ 5
 //#ifndef OLDCPP
 //#include <iostream>
 //using namespace std;
@@ -35,6 +37,7 @@ using namespace std;
 
 vector<float> WavManipulation::realTimeBuffer = vector<float>();
 vector<SecAnlys> WavManipulation::freqList = vector<SecAnlys>();
+vector<SecAnlys> WavManipulation::lyrics = vector<SecAnlys>();
 static queue<float> frequency = queue<float>();
 static queue<string> section = queue<string>();
 static bool checkfrequency;
@@ -53,8 +56,15 @@ SecAnlys::SecAnlys(string n, vector<float> t, int d){
 	pitch = t;
 	duration = d;
 }
-SecAnlys::~SecAnlys(){
+SecAnlys::SecAnlys(string n, string l){
+	name = n;
+	lyric = l;
 }
+SecAnlys::~SecAnlys(){
+	pitch.clear();
+}
+
+
 WavManipulation::WavManipulation(){
 	durations = vector<short>();
 	filenames = vector<string>();
@@ -227,18 +237,19 @@ void clearqueue(){
 }
 
 void WavManipulation::startanalysis(){
-	vector<SongSection> secs = vector<SongSection>();
-	time_t startTime;
-	time_t endTime;
-	double exectime;
-	secs.push_back(SongSection("Verse1", 22.0));
-	secs.push_back(SongSection("Chorus", 55.0));
-	secs.push_back(SongSection("Verse2", 90.0));
-	secs.push_back(SongSection("Chorus", 123.2));
-	secs.push_back(SongSection("Verse3", 187.4));
-	secs.push_back(SongSection("Chorus", 239.95));
-	dataStore("song1", secs);
-	freqSnip("C:\\Users\\emerson\\Downloads\\", "Boston_More_than_a_FeelingVocals_Only.wav", "song1");
+	//vector<SongSection> secs = vector<SongSection>();
+	//time_t startTime;
+	//time_t endTime;
+	//double exectime;
+	//secs.push_back(SongSection("Verse1", 22.0));
+	//secs.push_back(SongSection("Chorus", 55.0));
+	//secs.push_back(SongSection("Verse2", 90.0));
+	//secs.push_back(SongSection("Chorus", 123.2));
+	//secs.push_back(SongSection("Verse3", 187.4));
+	//secs.push_back(SongSection("Chorus", 239.95));
+	//dataStore("song1", secs);
+	//freqSnip("C:\\Users\\emerson\\Downloads\\", "Boston_More_than_a_FeelingVocals_Only.wav", "song1");
+	parseTxt("testlyrics");
 }
 /////////////////////////////////////////
 ///		Frequency Fingerprint Functions
@@ -251,6 +262,11 @@ bool WavManipulation::pushFrequency(float in){
 bool WavManipulation::readFrequency(){
 	return checkfrequency;
 }
+
+//dataStore(string, vector<SongSection>)
+//Parameters filename: Name of the csv file probably just the name of the song
+//			sections: a vector of the section information using the SongSection class
+//This function takes the name of th csv file and the list of sections and writes them to a csv file from the GUI
 void WavManipulation::dataStore(string filename, vector<SongSection> sections){
 	ofstream song;
 	ostringstream s;
@@ -330,17 +346,27 @@ float WavManipulation::freqAnalysis(vector<float> data){
 	return frequency;
 }
 void WavManipulation::freqcomparison(){
-	float inFreq = 0.0;
+	/*float inFreq = 0.0;
 	float freq = 0.0;
 	float t = 0.0;
-	int point = 0;
-	int part = 0;
-	int num = 0;
+	float diff1 = 0.0;
+	float diff2 = 0.0;
+	int choruscount = 0;
+	int versecount = 0;
+	int index = 0;
 	int j = 0;
 	int ticks = 0;
 	int duration = 0;
+	vector<float> chorus, verse;
 	char * err_str;
 	Helpers::SongElement element = Helpers::NIL;
+
+	for (int k = 0; k < freqList.size(); k++){
+		if (lowercase(freqList[k].name) == "chorus")
+			chorus = freqList[k].pitch;
+		if (lowercase(freqList[k].name) == "verse1")
+			verse = freqList[k].pitch;
+	}
 	while (!terminate){
 
 		while (ticks < duration){
@@ -350,41 +376,46 @@ void WavManipulation::freqcomparison(){
 		}
 		checkfrequency = true;
 		try{
-			while (j < 5){
+			while (j < NUM_FREQ){
 				while (frequency.empty()){ if (terminate){ return; } }
 				inFreq = frequency.front();
 				frequency.pop();
-				if (point == 0){
-					for (int i = 0; i < freqList.size(); i++){
-						freq = freqList[i].pitch[j];
-						t = threshold(freq);
-						if (abs(freq - inFreq) < t){
-							part = i;
-							point++;
-							break;
-						}
-					}
-				}
-				freq = freqList[part].pitch[j];
-				t = threshold(freq);
-				if (abs(freq - inFreq) < t){
-					point++;
-					j++;
-				}
-				else{
-					j++;
-				}
-				ticks++;
+				diff1 = abs(inFreq - chorus[j]);
+				diff2 = abs(inFreq - verse[j]);
+				if (diff1 < diff2)
+					choruscount++;
+				else
+					versecount++;
+
 			}
-			if (point > 2){
+			if (choruscount > versecount){
 				//send info to mohamed here, was causing some kind of warning message
+				for (int k = 0; k < freqList.size(); k++){
+					if (lowercase(freqList[k].name).find("chorus"))
+						index = k;
+				}
 				//element = getElement(freqList[part].name);
 				//num = getNum(freqList[part].name);
 				//push this to queue for best fit algorithm
 				//duration = freqList[part].duration;
-				Helpers::print_debug(freqList[part].name.c_str());
-				Helpers::print_debug("\n");
+				//Helpers::print_debug(freqList[].name.c_str());
+				//Helpers::print_debug("\n");
 				ticks = 0;
+			}
+			else if (versecount > choruscount){
+				//send info to mohamed here, was causing some kind of warning message
+				for (int k = 0; k < freqList.size(); k++){
+					if (lowercase(freqList[k].name).find("verse"))
+						index = k;
+				}
+				//element = getElement(freqList[part].name);
+				//num = getNum(freqList[part].name);
+				//push this to queue for best fit algorithm
+				//duration = freqList[part].duration;
+				//Helpers::print_debug(freqList[].name.c_str());
+				//Helpers::print_debug("\n");
+				ticks = 0;
+
 			}
 			else{
 				Helpers::print_debug("No Section Found");
@@ -401,8 +432,41 @@ void WavManipulation::freqcomparison(){
 
 	}	
 	if (terminate) Helpers::print_debug("WavManipulation: terminated.\n");
-	else Helpers::print_debug("WavManipulation: stopped.\n");
+	else Helpers::print_debug("WavManipulation: stopped.\n");*/
 }
+string lowercase(string str){
+	std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+	return str;
+}
+bool WavManipulation::checklyricrepeats(string name){
+	for (int i = 0; i < lyrics.size(); i++){
+		if (lowercase(lyrics[i].name) == lowercase(name)){
+			return true;
+		}
+	}
+	return false;
+}
+void WavManipulation::parseTxt(string filename){
+	ifstream file(filename + ".txt");
+	string value;
+	SecAnlys section;
+	getline(file, value, '[');
+	while (!file.eof()){
+		getline(file, value, ']');
+		checklyricrepeats(value);
+		section.name = value;
+		getline(file, value, '[');
+		section.lyric = value;
+		lyrics.push_back(section);
+	}
+}
+
+//freqSnip(string, string, string)
+//Parameters: filePath: the absolute path of the folder containing the wav files
+//			  filename: the name of the file selected
+//			  csvname: the name of the csv file selected that contains the section information
+//This function is meant to be called before live play is started, this collects the data 
+//from the wav file to be compared to while live playing
 void WavManipulation::freqSnip(string filePath, string filename, string csvname){
 	ifstream file(csvname + ".csv");
 	SoundFileRead insound((filePath + filename).c_str());
