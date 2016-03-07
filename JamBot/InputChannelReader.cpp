@@ -51,6 +51,7 @@
 #include <string>
 #include <vector>
 #include <math.h>
+#include <sstream>
 
 float *in;
 fftwf_complex *out;
@@ -179,11 +180,16 @@ void InputChannelReader::analyseBuffer(paData *data)
 		}
 	}
 
+	ostringstream o_debug;
+	o_debug << "[IN] Frequency peaks (Hz): [";
 	for (int i = 0; i < NUM_PEAKS; i++)
 	{
 		frequency[i] = maxIndex[i] * SAMPLE_RATE / OUTPUT_SIZE;
-		Helpers::print_debug(("Frequency peak " + to_string(i + 1) + " (Hz): " + to_string(frequency[i]) + "\n").c_str());
+		o_debug << to_string(frequency[i]);
+		if (i + 1 < NUM_PEAKS) o_debug << ", ";
 	}
+	o_debug << "]\n";
+	Helpers::print_debug(o_debug.str().c_str());
 	audioSamples.set_frequency((float)frequency[0]);
 	if (WavManipulation::readFrequency()){
 		WavManipulation::pushFrequency(frequency[0]);
@@ -194,7 +200,7 @@ void InputChannelReader::analyseBuffer(paData *data)
 	if ((data->numBuffers % 15) == 0)
 	{
 		audioSamples.set_tempo(tempo.estimateTempo());
-		Helpers::print_debug(("Average sample tempo (bpm): " + to_string(tempo.estimateTempo()) + "\n\n").c_str());
+		Helpers::print_debug(("[IN] Average sample tempo (bpm): " + to_string(tempo.estimateTempo()) + "\n\n").c_str());
 		tempo.reset();
 	}
 
