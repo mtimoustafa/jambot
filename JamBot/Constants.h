@@ -37,6 +37,17 @@ const double DIM_UB = 255.0;
 const double DIM_LB = 0.0;
 
 #pragma region Optimization Algorithm parameters
+// TODO: remove redundant consts and update numbers
+//Raw input bounds
+const double OA_FREQ_UB = 700.0;
+const double OA_FREQ_LB = 150.0;
+const double OA_TEMPO_UB = 120.0;
+const double OA_TEMPO_LB = 90.0;
+const double OA_INTENS_UB = 5000.0;
+const double OA_INTENS_LB = 3000.0;
+const double OA_LOUD_INTENS_RATIO_UB = 2.2;
+const double OA_LOUD_INTENS_RATIO_LB = 1.3;
+
 const unsigned int AUDIO_BUF_SIZE = 256;
 const unsigned int HISTORY_BUF_SIZE = 10;
 const unsigned int MAX_LOUD_HIST_BUF_SIZE = 4;
@@ -47,7 +58,7 @@ const unsigned int SILENCES_TO_STOP = 10 * 5;
 const unsigned int DIFFS_FOR_CHANGE = 4;
 
 const int TOO_SMALL_SMOOTH_THRESH = 20;
-const int CHANGE_TO_MAX_LOUD_THRESH = 500.0;
+const double CHANGE_TO_MAX_LOUD_THRESH = 500.0;
 
 const int TENURE_START = 6;
 const int TENURE_COOLDOWN = 2;
