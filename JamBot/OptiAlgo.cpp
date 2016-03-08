@@ -13,12 +13,14 @@
 #include <sstream>
 #include <queue>
 #include <exception>
+#include <functional>
 
 #include "Constructs.h"
 #include "Constants.h"
 #include "Helpers.h"
 #include "OptiAlgo.h"
 #include "DMXOutput.h"
+
 
 using namespace std;
 
@@ -27,350 +29,482 @@ using namespace std;
 
 OptiAlgo::AudioProps::AudioProps()
 {
-	freq_conc = make_pair(new_modifiers_set(MODIFIERS), 0.5);
-	overall_tempo = make_pair(new_modifiers_set(MODIFIERS), 0.5);
-	beatiness = make_pair(new_modifiers_set(MODIFIERS), 0.5);
-	overall_intens = make_pair(new_modifiers_set(MODIFIERS), 0.5);
+	freq_avg = 0.0;
+	tempo_avg = 0.0;
+	loudness_avg = 0.0;
+	loudness_nomax_avg = 0.0;
+	loudness_max_avg = 0.0;
 }
 
-map<string, double> OptiAlgo::AudioProps::new_modifiers_set(const double * mods)
-{
-	map<string, double> modifiers;
-	modifiers.insert(make_pair("r", mods[0]));
-	modifiers.insert(make_pair("R", mods[1]));
-	modifiers.insert(make_pair("g", mods[2]));
-	modifiers.insert(make_pair("G", mods[3]));
-	modifiers.insert(make_pair("b", mods[4]));
-	modifiers.insert(make_pair("B", mods[5]));
-	modifiers.insert(make_pair("w", mods[6]));
-	modifiers.insert(make_pair("W", mods[7]));
-	modifiers.insert(make_pair("dim", mods[8]));
-	modifiers.insert(make_pair("DIM", mods[9]));
-	return modifiers;
-}
-
-void OptiAlgo::AudioProps::adjust_weights(AudioInfo input, double max_loud)
-{
-	double freq, tempo, loud;
-	double overall_intens, overall_tempo, beatiness;
-	input.get_frequency(freq);
-	input.get_tempo(tempo);
-	input.get_loudness(loud);
-
-	// NT: set freq conc weight
-	freq_conc.second = 0.0;
-
-	silence = (loud < SILENCE_THRESH);
-
-	if (loud > 5000.0)
-		overall_intens = 1;
-	else if (loud < 3000.0)
-		overall_intens = 0;
-	else
-		overall_intens = loud / 2000.0 - 1.5;
-	overall_intens_add_and_avg(overall_intens);
-
-	if (max_loud / loud > 2.2)
-		beatiness = 1;
-	else if (max_loud / loud < 1.3)
-		beatiness = 0;
-	else
-		beatiness = (max_loud/loud) / (2.2-1.3) - 1.3/(2.2-1.3);
-	beatiness_add_and_avg(beatiness); // NT: add freq to this weight
-
-	if (tempo < 90.0)
-		overall_tempo = 0;
-	else if (tempo > 120.0)
-		overall_tempo = 1;
-	else
-		overall_tempo = tempo / 30.0 - 3.0;
-	overall_tempo_add_and_avg(overall_tempo);
-}
-
-double OptiAlgo::AudioProps::freq_conc_add_and_avg(double val)
+double OptiAlgo::AudioProps::freq_add_and_avg(double val)
 {
 	double avg = 0.0;
-	freq_conc_hist.push_front(val);
-	if (freq_conc_hist.size() > WEIGHTS_HIST_BUF_SIZE) freq_conc_hist.pop_back();
-	for each (double val in freq_conc_hist)
+	freq_hist.push_front(val);
+	if (freq_hist.size() > HISTORY_BUF_SIZE) freq_hist.pop_back();
+	for each (double val in freq_hist)
 		avg += val;
-	avg /= (double)freq_conc_hist.size();
-	freq_conc.second = avg;
+	avg /= (double)freq_hist.size();
+	freq_avg = avg;
 	return avg;
 }
-double OptiAlgo::AudioProps::overall_tempo_add_and_avg(double val)
+double OptiAlgo::AudioProps::tempo_add_and_avg(double val)
 {
 	double avg = 0.0;
-	overall_tempo_hist.push_front(val);
-	if (overall_tempo_hist.size() > WEIGHTS_HIST_BUF_SIZE) overall_tempo_hist.pop_back();
-	for each (double val in overall_tempo_hist)
+	tempo_hist.push_front(val);
+	if (tempo_hist.size() > HISTORY_BUF_SIZE) tempo_hist.pop_back();
+	for each (double val in tempo_hist)
 		avg += val;
-	avg /= (double)overall_tempo_hist.size();
-	overall_tempo.second = avg;
+	avg /= (double)tempo_hist.size();
+	tempo_avg = avg;
 	return avg;
 }
-double OptiAlgo::AudioProps::beatiness_add_and_avg(double val)
+double OptiAlgo::AudioProps::loudness_hist_add_and_avg(double val)
 {
 	double avg = 0.0;
-	beatiness_hist.push_front(val);
-	if (beatiness_hist.size() > WEIGHTS_HIST_BUF_SIZE) beatiness_hist.pop_back();
-	for each (double val in beatiness_hist)
+	loudness_hist.push_front(val);
+	if (loudness_hist.size() > HISTORY_BUF_SIZE) loudness_hist.pop_back();
+	for each (double val in loudness_hist)
 		avg += val;
-	avg /= (double)beatiness_hist.size();
-	beatiness.second = avg;
+	avg /= (double)loudness_hist.size();
+	loudness_avg = avg;
 	return avg;
 }
-double OptiAlgo::AudioProps::overall_intens_add_and_avg(double val)
+double OptiAlgo::AudioProps::loudness_nomax_hist_add_and_avg(double val)
 {
 	double avg = 0.0;
-	overall_intens_hist.push_front(val);
-	if (overall_intens_hist.size() > WEIGHTS_HIST_BUF_SIZE) overall_intens_hist.pop_back();
-	for each (double val in overall_intens_hist)
+	loudness_nomax_hist.push_front(val);
+	if (loudness_nomax_hist.size() > HISTORY_BUF_SIZE) loudness_nomax_hist.pop_back();
+	for each (double val in loudness_nomax_hist)
 		avg += val;
-	avg /= (double)overall_intens_hist.size();
-	overall_intens.second = avg;
+	avg /= (double)loudness_nomax_hist.size();
+	loudness_nomax_avg = avg;
+	return avg;
+}
+double OptiAlgo::AudioProps::loudness_max_hist_add_and_avg(double val)
+{
+	double avg = 0.0;
+	loudness_max_hist.push_front(val);
+	if (loudness_max_hist.size() > HISTORY_BUF_SIZE) loudness_max_hist.pop_back();
+	for each (double val in loudness_max_hist)
+		avg += val;
+	avg /= (double)loudness_max_hist.size();
+	loudness_max_avg = avg;
 	return avg;
 }
 
 #pragma endregion
 
+#pragma region FuzzyLogic
 
-#pragma region ProblemRepresentation
-
-OptiAlgo::ProblemRepresentation::ProblemRepresentation()
-{
-	representation = LightsInfo();
-	rep_value = 0;
-}
-OptiAlgo::ProblemRepresentation::ProblemRepresentation(AudioProps properties, bool centered)
-{
-	// Start with a random candidate solution
-	representation = LightsInfo(centered);
-	rep_value = objective_function(representation, properties);
+OptiAlgo::FLSystem::FLSystem() {
+	// Initialize cutoffs
+	ResetCutoffs();
 }
 
-double OptiAlgo::ProblemRepresentation::objective_function(LightsInfo cand_sol, AudioProps props)
-{
-	double rep_value = 0;
-	rep_value += obf_overall_tempo(representation, props);
-	rep_value += obf_beatiness(representation, props);
-	rep_value += obf_overall_intens(representation, props);
-	rep_value += obf_silence(representation, props);
-	return rep_value;
-}
-double OptiAlgo::ProblemRepresentation::obf_overall_tempo(LightsInfo cand_sol, AudioProps props)
-{
-	double weight, b, B, dim, DIM;
-	b = MODIFIERS[4]; B = MODIFIERS[5];
-	dim = MODIFIERS[8]; DIM = MODIFIERS[9];
+void OptiAlgo::FLSystem::ResetCutoffs() {
+	Rcutoff[none] = 1.0;
+	Gcutoff[none] = 1.0;
+	Bcutoff[none] = 1.0;
 
-	weight = props.overall_tempo.second;
-	return 1 / (abs(B + (b - B)*weight - (double)cand_sol.blue_intensity) + 1);
-}
-double OptiAlgo::ProblemRepresentation::obf_beatiness(LightsInfo cand_sol, AudioProps props)
-{
-	double weight, r, R, dim, DIM;
-	r = MODIFIERS[0]; R = MODIFIERS[1];
-	dim = MODIFIERS[8]; DIM = MODIFIERS[9];
+	Rcutoff[dark] = 1.0;
+	Gcutoff[dark] = 1.0;
+	Bcutoff[dark] = 1.0;
 
-	weight = props.beatiness.second;
-	return 1 / (abs(r + (R - r)*weight - (double)cand_sol.red_intensity) + 1);
-}
-double OptiAlgo::ProblemRepresentation::obf_overall_intens(LightsInfo cand_sol, AudioProps props)
-{
-	double weight, g, G, dim, DIM;
-	g = MODIFIERS[2]; G = MODIFIERS[3];
-	dim = MODIFIERS[8]; DIM = MODIFIERS[9];
+	Rcutoff[medium] = 1.0;
+	Gcutoff[medium] = 1.0;
+	Bcutoff[medium] = 1.0;
 
-	weight = props.overall_intens.second;
-	return 1 / (abs(g + (G - g)*weight - (double)cand_sol.green_intensity) + 1);
-}
-double OptiAlgo::ProblemRepresentation::obf_silence(LightsInfo cand_sol, AudioProps props)
-{
-	double dim, DIM, obf_silence;
-	dim = MODIFIERS[8]; DIM = MODIFIERS[9];
+	Rcutoff[strong] = 1.0;
+	Gcutoff[strong] = 1.0;
+	Bcutoff[strong] = 1.0;
 
-	return abs(dim + (DIM - dim)*props.silence - (double)cand_sol.dimness);
+	Wcutoff[off] = 1.0;
+	Wcutoff[normal] = 1.0;
+	Wcutoff[bright] = 1.0;
 }
 
-int OptiAlgo::ProblemRepresentation::tune(int value)
-{
-	value += (int)Helpers::fRand(tune_lb, tune_ub);
-	if (value > (int)R_UB) value = (int)R_UB;
-	if (value < (int)R_LB) value = (int)R_LB;
-	return value;
-}
+#pragma region MembershipFunctions
 
-#pragma endregion
-
-
-#pragma region TabuSearch
-
-OptiAlgo::TabuSearch::TabuSearch(int tenure = 3, int n_iterations = 1000)
-{
-	TENURE = tenure;
-	this->n_iterations = n_iterations;
-}
-
-// Helper function
-bool OptiAlgo::TabuSearch::pairCompare(const pair<LightsInfo, double>& firstElem, const pair<LightsInfo, double>& secondElem) {
-	return firstElem.second > secondElem.second;
-}
-
-OptiAlgo::ProblemRepresentation OptiAlgo::TabuSearch::search(ProblemRepresentation problem, AudioProps audio_props)
-{
-	// Initialize structures
-	vector<pair<LightsInfo, double>> nbrs_r, nbrs_g, nbrs_b, nbrs_dim;
-	vector<pair<LightsInfo, int>> tabuStructure;
-	vector<pair<LightsInfo, int>>::const_iterator it;
-
-	LightsInfo temp_neighbour;
-	pair<LightsInfo, double> candidate;
-	bool solutionChanged;
-	vector<pair<LightsInfo, int>> new_structure;
-
-	// Search for optimal solution!
-	for (int i = 0; i < n_iterations; i++)
-	{
-		// Generate neighbours
-		nbrs_r = vector<pair<LightsInfo, double>>();
-		nbrs_g = vector<pair<LightsInfo, double>>();
-		nbrs_b = vector<pair<LightsInfo, double>>();
-		nbrs_dim = vector<pair<LightsInfo, double>>();
-
-		for (int j = 0; j < 5; j++)
-		{
-			temp_neighbour.red_intensity = problem.tune(problem.representation.red_intensity);
-			nbrs_r.push_back(make_pair(temp_neighbour, (problem.obf_beatiness(temp_neighbour, audio_props) - problem.obf_beatiness(problem.representation, audio_props))));
-			temp_neighbour.blue_intensity = problem.tune(problem.representation.blue_intensity);
-			nbrs_b.push_back(make_pair(temp_neighbour, (problem.obf_overall_tempo(temp_neighbour, audio_props) - problem.obf_overall_tempo(problem.representation, audio_props))));
-			temp_neighbour.green_intensity = problem.tune(problem.representation.green_intensity);
-			nbrs_g.push_back(make_pair(temp_neighbour, (problem.obf_overall_intens(temp_neighbour, audio_props) - problem.obf_overall_intens(problem.representation, audio_props))));
-			temp_neighbour.dimness = problem.tune(problem.representation.dimness);
-			nbrs_dim.push_back(make_pair(temp_neighbour, (problem.obf_silence(temp_neighbour, audio_props) - problem.obf_silence(problem.representation, audio_props))));
-		}
-		sort(nbrs_r.begin(), nbrs_r.end(), TabuSearch::pairCompare);
-		sort(nbrs_g.begin(), nbrs_g.end(), TabuSearch::pairCompare);
-		sort(nbrs_b.begin(), nbrs_b.end(), TabuSearch::pairCompare);
-		sort(nbrs_dim.begin(), nbrs_dim.end(), TabuSearch::pairCompare);
-
-		// Choose new candidate solution
-		solutionChanged = false;
-		while (nbrs_r.size() > 0)
-		{
-			candidate = nbrs_r.front();
-			nbrs_r.erase(nbrs_r.begin());
-
-			// If not tabu or if aspiration criteria allows it
-			it = find_if(tabuStructure.begin(), tabuStructure.end(), [&candidate](const pair<LightsInfo, double> &x) { return x.first == candidate.first; });
-
-			if (it == tabuStructure.end()) //|| (it->second <= 1 && !nbrs_r.empty() && candidate.second >= nbrs_r.front().second * 3))
-			{
-				// Use neighbouring solution
-				problem.representation.red_intensity = candidate.first.red_intensity;
-
-				if (it != tabuStructure.end())
-				{
-					tabuStructure.erase(it);
-				}
-				tabuStructure.push_back(make_pair(problem.representation, TENURE + 1));
-
-				solutionChanged = true;
-				break;
-			}
-		}
-		while (nbrs_dim.size() > 0)
-		{
-			candidate = nbrs_dim.front();
-			nbrs_dim.erase(nbrs_dim.begin());
-
-			// If not tabu or if aspiration criteria allows it
-			it = find_if(tabuStructure.begin(), tabuStructure.end(), [&candidate](const pair<LightsInfo, double> &x) { return x.first == candidate.first; });
-
-			if (it == tabuStructure.end()) //|| (it->second <= 1 && !nbrs_dim.empty() && candidate.second >= nbrs_dim.front().second * 3))
-			{
-				// Use neighbouring solution
-				problem.representation.dimness = candidate.first.dimness;
-
-				if (it != tabuStructure.end())
-				{
-					tabuStructure.erase(it);
-				}
-				tabuStructure.push_back(make_pair(problem.representation, TENURE + 1));
-
-				solutionChanged = true;
-				break;
-			}
-		}
-		while (nbrs_g.size() > 0)
-		{
-			candidate = nbrs_g.front();
-			nbrs_g.erase(nbrs_g.begin());
-
-			// If not tabu or if aspiration criteria allows it
-			it = find_if(tabuStructure.begin(), tabuStructure.end(), [&candidate](const pair<LightsInfo, double> &x) { return x.first == candidate.first; });
-
-			if (it == tabuStructure.end()) //|| (it->second <= 1 && !nbrs_g.empty() && candidate.second >= nbrs_g.front().second * 3))
-			{
-				// Use neighbouring solution
-				problem.representation.green_intensity = candidate.first.green_intensity;
-
-				if (it != tabuStructure.end())
-				{
-					tabuStructure.erase(it);
-				}
-				tabuStructure.push_back(make_pair(problem.representation, TENURE + 1));
-
-				solutionChanged = true;
-				break;
-			}
-		}
-		while (nbrs_b.size() > 0)
-		{
-			candidate = nbrs_b.front();
-			nbrs_b.erase(nbrs_b.begin());
-
-			// If not tabu or if aspiration criteria allows it
-			it = find_if(tabuStructure.begin(), tabuStructure.end(), [&candidate](const pair<LightsInfo, double> &x) { return x.first == candidate.first; });
-
-			if (it == tabuStructure.end()) //|| (it->second <= 1 && !nbrs_b.empty() && candidate.second >= nbrs_b.front().second * 3))
-			{
-				// Use neighbouring solution
-				problem.representation.blue_intensity = candidate.first.blue_intensity;
-
-				if (it != tabuStructure.end())
-				{
-					tabuStructure.erase(it);
-				}
-				tabuStructure.push_back(make_pair(problem.representation, TENURE + 1));
-
-				solutionChanged = true;
-				break;
-			}
-		}
-		if (!solutionChanged)
-		{
-			cerr << "x";
-		}
-
-		// Decrement values in tabu structure
-		new_structure = vector<pair<LightsInfo, int>>();
-		for each (pair<LightsInfo, int> element in tabuStructure)
-		{
-			if (element.second > 0)
-			{
-				element.second--;
-				new_structure.push_back(element);
-			}
-		}
-		tabuStructure = new_structure;
+double OptiAlgo::FLSystem::FreqInClass(double input, FreqClassIDs flClass) {
+	double mu;
+	switch (flClass) {
+	case vlow:
+		if (input <= 200.0) mu = 1.0;
+		else if (input < 250.0) mu = 1.0 - (input - 200.0) / (250.0 - 200.0);
+		else mu = 0.0;
+		break;
+	case low:
+		if (input <= 190.0) mu = 0.0;
+		else if (input <= 300.0) mu = (input - 190.0) / (300.0 - 190.0);
+		else if (input < 420.0) mu = 1.0 - (input - 300.0) / (420.0 - 300.0);
+		else mu = 0.0;
+		break;
+	case high:
+		if (input <= 320.0) mu = 0.0;
+		else if (input <= 450.0) mu = (input - 320.0) / (450.0 - 320.0);
+		else if (input < 580.0) mu = 1.0 - (input - 450.0) / (580.0 - 450.0);
+		else mu = 0.0;
+		break;
+	case vhigh:
+		if (input <= 480.0) mu = 0.0;
+		else if (input < 600.0) mu = (input - 480.0) / (600.0 - 480.0);
+		else mu = 1.0;
+		break;
+	default:
+		Helpers::print_debug("ERROR: undefined freq class requested.\n");
+		mu = 0.0;
+		break;
 	}
+	return mu;
+}
 
-	return problem;
+double OptiAlgo::FLSystem::TempoInClass(double input, TempoClassIDs flClass) {
+	double mu;
+	switch (flClass) {
+	case vslow:
+		if (input <= 30.0) mu = 1.0;
+		else if (input < 50.0) mu = 1.0 - (input - 30.0) / (50.0 - 30.0);
+		else mu = 0.0;
+		break;
+	case slow:
+		if (input <= 35.0) mu = 0.0;
+		else if (input <= 50.0) mu = (input - 35.0) / (50.0 - 35.0);
+		else if (input < 70.0) mu = 1.0 - (input - 50.0) / (70.0 - 50.0);
+		else mu = 0.0;
+		break;
+	case moderate:
+		if (input <= 62.5) mu = 0.0;
+		else if (input <= 80.0) mu = (input - 62.5) / (80.0 - 62.5);
+		else if (input < 110.0) mu = 1.0 - (input - 80.0) / (110.0 - 80.0);
+		else mu = 0.0;
+		break;
+	case fast:
+		if (input <= 80.0) mu = 0.0;
+		else if (input < 110.0) mu = (input - 80.0) / (110.0 - 80.0);
+		else if (input <= 125.0) mu = 1.0;
+		else if (input < 150.0) mu = 1.0 - (input - 125.0) / (150.0 - 125.0);
+		else mu = 0.0;
+		break;
+	case vfast:
+		if (input <= 125.0) mu = 0.0;
+		else if (input < 150.0) mu = (input - 125.0) / (150.0 - 125.0);
+		else mu = 1.0;
+		break;
+	default:
+		Helpers::print_debug("ERROR: undefined tempo class requested.\n");
+		mu = 0.0;
+		break;
+	}
+	return mu;
+}
+
+double OptiAlgo::FLSystem::IntensInClass(double input, IntensClassIDs flClass) {
+	double mu;
+	switch (flClass) {
+	case quiet:
+		if (input <= 3000) mu = 1.0;
+		else if (input < 3500) mu = 1.0 - (input - 3000) / (3500 - 3000);
+		else mu = 0.0;
+		break;
+	case mid:
+		if (input <= 3150) mu = 0.0;
+		else if (input <= 4000) mu = (input - 3150) / (4000 - 3150);
+		else if (input < 4800) mu = 1.0 - (input - 4000) / (4800 - 4000);
+		else mu = 0.0;
+		break;
+	case loud:
+		if (input <= 4200) mu = 0.0;
+		else if (input < 5000) mu = (input - 4200) / (5000 - 4200);
+		else mu = 1.0;
+		break;
+	default:
+		Helpers::print_debug("ERROR: undefined intens class requested.\n");
+		mu = 0.0;
+		break;
+	}
+	return mu;
+}
+
+// TODO: implement beatiness' values
+double OptiAlgo::FLSystem::BeatinessInClass(double input, BeatinessClassIDs flClass) {
+	double mu;
+	switch (flClass) {
+	case notbeaty:
+		if (input <= 3000) mu = 1.0;
+		else if (input < 3500) mu = 1.0 - (input - 3000) / (3500 - 3000);
+		else mu = 0.0;
+		break;
+	case sbeaty:
+		if (input <= 3150) mu = 0.0;
+		else if (input <= 4000) mu = (input - 3150) / (4000 - 3150);
+		else if (input < 4800) mu = 1.0 - (input - 4000) / (4800 - 4000);
+		else mu = 0.0;
+		break;
+	case beaty:
+		if (input <= 3150) mu = 0.0;
+		else if (input <= 4000) mu = (input - 3150) / (4000 - 3150);
+		else if (input < 4800) mu = 1.0 - (input - 4000) / (4800 - 4000);
+		else mu = 0.0;
+		break;
+	case vbeaty:
+		if (input <= 4200) mu = 0.0;
+		else if (input < 5000) mu = (input - 4200) / (5000 - 4200);
+		else mu = 1.0;
+		break;
+	default:
+		Helpers::print_debug("ERROR: undefined beatiness class requested.\n");
+		mu = 0.0;
+		break;
+	}
+	return mu;
+}
+
+double OptiAlgo::FLSystem::ROutClass(double input, RGBClassIDs flClass) {
+	double mu;
+	switch (flClass) {
+	case none:
+		if (input <= 64.0) mu = 1.0;
+		else if (input < 128.0) mu = 1.0 - (input - 64.0) / (128.0 - 64.0);
+		else mu = 0.0;
+		break;
+	case dark:
+		if (input <= 64.0) mu = 0.0;
+		else if (input <= 128.0) mu = (input - 64.0) / (128.0 - 64.0);
+		else if (input < 192.0) mu = 1.0 - (input - 128.0) / (192.0 - 128.0);
+		else mu = 0.0;
+		break;
+	case medium:
+		if (input <= 128.0) mu = 0.0;
+		else if (input <= 192.0) mu = (input - 128.0) / (192.0 - 128.0);
+		else if (input < 255.0) mu = 1.0 - (input - 192.0) / (255.0 - 192.0);
+		else mu = 0.0;
+		break;
+	case strong:
+		if (input <= 192.0) mu = 0.0;
+		else if (input < 255.0) mu = (input - 192.0) / (255.0- 192.0);
+		else mu = 1.0;
+		break;
+	default:
+		Helpers::print_debug("ERROR: undefined RB class requested.\n");
+		mu = 0.0;
+		break;
+	}
+	return (mu < Rcutoff[flClass]) ? mu : Rcutoff[flClass];
+}
+
+double OptiAlgo::FLSystem::BOutClass(double input, RGBClassIDs flClass) {
+	double mu;
+	switch (flClass) {
+	case none:
+		if (input <= 64.0) mu = 1.0;
+		else if (input < 128.0) mu = 1.0 - (input - 64.0) / (128.0 - 64.0);
+		else mu = 0.0;
+		break;
+	case dark:
+		if (input <= 64.0) mu = 0.0;
+		else if (input <= 128.0) mu = (input - 64.0) / (128.0 - 64.0);
+		else if (input < 192.0) mu = 1.0 - (input - 128.0) / (192.0 - 128.0);
+		else mu = 0.0;
+		break;
+	case medium:
+		if (input <= 128.0) mu = 0.0;
+		else if (input <= 192.0) mu = (input - 128.0) / (192.0 - 128.0);
+		else if (input < 255.0) mu = 1.0 - (input - 192.0) / (255.0 - 192.0);
+		else mu = 0.0;
+		break;
+	case strong:
+		if (input <= 192.0) mu = 0.0;
+		else if (input < 255.0) mu = (input - 192.0) / (255.0 - 192.0);
+		else mu = 1.0;
+		break;
+	default:
+		Helpers::print_debug("ERROR: undefined RB class requested.\n");
+		mu = 0.0;
+		break;
+	}
+	return (mu < Bcutoff[flClass]) ? mu : Bcutoff[flClass];
+}
+
+double OptiAlgo::FLSystem::GpercentOutClass(double input, RGBClassIDs flClass) {
+	double mu;
+	switch (flClass) {
+	case none:
+		if (input <= 25.0) mu = 1.0;
+		else if (input < 50.0) mu = 1.0 - (input - 25.0) / (50.0 - 25.0);
+		else mu = 0.0;
+		break;
+	case dark:
+		if (input <= 25.0) mu = 0.0;
+		else if (input <= 50.0) mu = (input - 25.0) / (50.0 - 25.0);
+		else if (input < 75.0) mu = 1.0 - (input - 50.0) / (75.0 - 50.0);
+		else mu = 0.0;
+		break;
+	case medium:
+		if (input <= 50.0) mu = 0.0;
+		else if (input <= 75.0) mu = (input - 50.0) / (75.0 - 50.0);
+		else if (input < 100.0) mu = 1.0 - (input - 75.0) / (100.0 - 75.0);
+		else mu = 0.0;
+		break;
+	case strong:
+		if (input <= 75.0) mu = 0.0;
+		else if (input < 100.0) mu = (input - 75.0) / (100.0 - 75.0);
+		else mu = 1.0;
+		break;
+	default:
+		Helpers::print_debug("ERROR: undefined Gpercent class requested.\n");
+		mu = 0.0;
+		break;
+	}
+	return (mu < Gcutoff[flClass]) ? mu : Gcutoff[flClass];
+}
+
+double OptiAlgo::FLSystem::WOutClass(double input, WClassIDs flClass) {
+	double mu;
+	switch (flClass) {
+	case none:
+		if (input <= 50.0) mu = 1.0;
+		else if (input < 75.0) mu = 1.0 - (input - 50.0) / (75.0 - 50.0);
+		else mu = 0.0;
+		break;
+	case WClassIDs::normal:
+		if (input <= 50.0) mu = 0.0;
+		else if (input <= 75.0) mu = (input - 50.0) / (75.0 - 50.0);
+		else if (input < 100.0) mu = 1.0 - (input - 75.0) / (100.0 - 75.0);
+		else mu = 0.0;
+		break;
+	case WClassIDs::bright:
+		if (input <= 75.0) mu = 0.0;
+		else if (input < 100.0) mu = (input - 75.0) / (100.0 - 75.0);
+		else mu = 1.0;
+		break;
+	default:
+		Helpers::print_debug("ERROR: undefined W class requested.\n");
+		mu = 0.0;
+		break;
+	}
+	return (mu < Wcutoff[flClass]) ? mu : Wcutoff[flClass];
 }
 
 #pragma endregion
 
+double OptiAlgo::FLSystem::Tnorm(vector<double> inputs) {
+	double output = 1.0;
+	for each (double input in inputs) {
+		if (input > 1.0 || input < 0.0) Helpers::print_debug("ERROR: OptiAlgo: Tnorm encountered out-of-bounds mu; skipping value.\n");
+		else output = min(output, input);
+	}
+	return output;
+}
+
+template <typename T>
+T OptiAlgo::FLSystem::GetHighestCutoff(map <T, double> cutoff) {
+	T classID = (T)0;
+	double max_val = 0.0;
+	for (map<T,double>::iterator it = cutoff.begin(); it != cutoff.end(); it++) {
+		if (it->second > max_val) {
+			max_val = it->second;
+			classID = it->first;
+		}
+	}
+	
+	return classID;
+}
+
+// TODO: make G a % by taking % of red or blue (is this a good idea though? Talk to Brandon about it)
+double OptiAlgo::FLSystem::DefuzzifyRGB(RGBClassIDs classID) {
+	double ret_val;
+	switch (classID) {
+	case none:
+		ret_val = 64.0;
+		break;
+	case dark:
+		ret_val = 128.0;
+		break;
+	case medium:
+		ret_val = 192.0;
+		break;
+	case strong:
+		ret_val = 255.0;;
+		break;
+	default:
+		Helpers::print_debug("ERROR: OptiAlgo: RGB defuzzification didn't get correct class; defaulting to 0.\n");
+		ret_val = 0.0;
+		break;
+	}
+	if (ret_val < 0.0) Helpers::print_debug("ERROR: OptiAlgo: RGB defuzzification returning negative value!\n");
+	return ret_val;
+}
+
+double OptiAlgo::FLSystem::DefuzzifyW(WClassIDs classID) {
+	double ret_val;
+	switch (classID) {
+	case off:
+		ret_val = 50.0;
+		break;
+	case normal:
+		ret_val = 75.0;
+		break;
+	case bright:
+		ret_val = 100.0;
+		break;
+	default:
+		Helpers::print_debug("ERROR: OptiAlgo: W defuzzification didn't get correct class; defaulting to 0.\n");
+		ret_val = 0.0;
+		break;
+	}
+	if (ret_val < 0.0) Helpers::print_debug("ERROR: OptiAlgo: W defuzzification returning negative value!\n");
+	return ret_val;
+}
+
+
+LightsInfo OptiAlgo::FLSystem::Infer(AudioProps input) {
+	vector<double> tnorm_temp;
+	LightsInfo out_crisp;
+
+	// Reset cutoffs before doing anything
+	ResetCutoffs();
+
+	// Use generic inference rules for testing		// TODO: make this real
+	Rcutoff[none] = FreqInClass(input.freq_avg, vlow);		// F = vlow => R = none
+	Rcutoff[dark] = FreqInClass(input.freq_avg, low);		// F = low => R = dark
+	Rcutoff[medium] = FreqInClass(input.freq_avg, high);	// F = high => R = medium
+	Rcutoff[strong] = FreqInClass(input.freq_avg, vhigh);	// F = vhigh => R = strong
+
+	tnorm_temp.clear();
+	tnorm_temp.push_back(TempoInClass(input.tempo_avg, vslow));
+	tnorm_temp.push_back(TempoInClass(input.tempo_avg, slow));
+	Bcutoff[none] = Tnorm(tnorm_temp);							// T = vslow || T = slow => B = none
+	Bcutoff[dark] = TempoInClass(input.tempo_avg, moderate);	// T = moderate => B = dark
+	Bcutoff[medium] = TempoInClass(input.tempo_avg, fast);		// T = fast => B = medium
+	Bcutoff[strong] = TempoInClass(input.tempo_avg, vfast);		// T = vfast => B = strong
+
+	// TODO: add this after beatiness values are tweaked properly
+	double beatiness = input.loudness_max_avg - input.loudness_nomax_avg;
+	//Gcutoff[none] = BeatinessInClass(beatiness, notbeaty);		// B = vlow => G = none
+	//Gcutoff[dark] = BeatinessInClass(beatiness, sbeaty);		// B = low => G = dark
+	//Gcutoff[medium] = BeatinessInClass(beatiness, beaty);	// B = high => G = medium
+	//Gcutoff[strong] = BeatinessInClass(beatiness, vbeaty);	// B = vhigh => G = strong
+	Gcutoff[none] = 0.0;
+	Gcutoff[dark] = 0.0;
+	Gcutoff[medium] = 0.0;
+	Gcutoff[strong] = 0.0;
+
+	Wcutoff[off] = IntensInClass(input.loudness_avg, quiet);		// W is never off
+	Wcutoff[normal] = IntensInClass(input.loudness_avg, mid);		// I = mid => W = normal
+	Wcutoff[bright] = IntensInClass(input.loudness_avg, loud);		// I = high => W = bright
+
+	// Defuzzify each output parameter // TODO: prevent magic numbers here and in mem. fn. functions by unifying them
+	out_crisp.red_intensity = (int)DefuzzifyRGB(GetHighestCutoff<RGBClassIDs>(Rcutoff));
+	out_crisp.green_intensity = (int)DefuzzifyRGB(GetHighestCutoff<RGBClassIDs>(Gcutoff));
+	out_crisp.blue_intensity = (int)DefuzzifyRGB(GetHighestCutoff<RGBClassIDs>(Bcutoff));
+	out_crisp.dimness = (int)DefuzzifyW(GetHighestCutoff<WClassIDs>(Wcutoff));
+	out_crisp.strobing_speed = (beatiness > BEAT_THRESH * 3) ? (int)input.tempo_avg : 0; // TODO: tweak this - this obviously won't work
+
+	// Done!
+	return out_crisp;
+}
+
+#pragma endregion
 
 #pragma region OptiAlgo
 
@@ -388,75 +522,6 @@ bool OptiAlgo::receive_audio_input_sample(AudioInfo audio_sample)
 	if (audio_buffer.size() < AUDIO_BUF_SIZE)
 		audio_buffer.push(audio_sample);
 	return audio_buffer.size() < AUDIO_BUF_SIZE;
-}
-
-map<string, double> OptiAlgo::execute_algorithm(TabuSearch algo, int n_iterations)
-{
-	double sum;
-	double sum_time;
-	clock_t begin, end;
-	list<double> values;
-	ProblemRepresentation problem;
-	double mean, variance;
-	audio_props = AudioProps();
-
-	// Execute search multiple times, compute statistics
-	sum = 0;
-	sum_time = 0.0;
-	for (int i = 0; i < n_iterations; i++)
-	{
-		problem = ProblemRepresentation(audio_props, false);
-		begin = clock();
-		problem = algo.search(problem, audio_props);
-		end = clock();
-		values.push_back(problem.rep_value);
-		sum += problem.rep_value;
-		sum_time += double(end - begin) / CLOCKS_PER_SEC;
-	}
-
-	mean = sum / n_iterations;
-	variance = 0.0;
-	for each (double val in values)
-	{
-		variance += (mean - val) * (mean - val);
-	}
-	variance /= n_iterations;
-
-	map<string, double> stats = map<string, double>();
-	stats.insert(make_pair("max", *(max_element(values.begin(), values.end()))));
-	stats.insert(make_pair("mean", mean));
-	stats.insert(make_pair("var", variance));
-	stats.insert(make_pair("avg", sum_time / n_iterations * 1000));
-
-	return stats;
-}
-
-
-void OptiAlgo::test_algo()
-{
-	ofstream tabuFile;
-
-	// Apply Tabu search
-	TabuSearch tabuSearch;
-	map<string, double> stats;
-
-	tabuFile.open("tabu_results.csv");
-	tabuFile << "tenure;N_iterations;Mean;Max;Variance;Avg_time\n";
-	Helpers::print_debug("Testing Best-fit Tabu search Optimization Algorithm:");
-	for (int n_iterations = 1; n_iterations <= 100; n_iterations = n_iterations==100 ? 150 : n_iterations * 10)
-	{
-		Helpers::print_debug(("\n" + to_string(n_iterations)).c_str());
-		for (int tenure = 1; tenure < 20; tenure++)
-		{
-			Helpers::print_debug(".");
-			tabuSearch = TabuSearch(tenure, n_iterations);
-			stats = execute_algorithm(tabuSearch, 100);
-			tabuFile << tenure << ";" << n_iterations << ";" << stats.at("mean") << ";"
-				<< stats.at("max") << ";" << stats.at("var") << ";" << stats.at("avg") << "\n";
-		}
-	}
-	Helpers::print_debug("\ntest done. Results output to tabu_results.csv");
-	tabuFile.close();
 }
 
 void OptiAlgo::test_lights()
@@ -511,34 +576,24 @@ void OptiAlgo::test_lights()
 
 void OptiAlgo::start_algo()
 {
-	//unsigned int nudges = 0, silences = 0;
-	//bool listen_for_silence = false;
-
-	unsigned int tenure = TENURE_START, n_iterations = 10;
-	TabuSearch algorithm = TabuSearch(tenure, n_iterations);
-	ProblemRepresentation cur_sol;
+	// Initialize input variables
 	AudioInfo audio_sample, smoothed_input;
-	audio_props = AudioProps();
-	AudioProps prev_props;
-	int tenure_cooldown = 0;
-
-	double avg_freq=0.0, avg_tempo=0.0, avg_loud=0.0, avg_max_loud=0.0, avg_loud_with_max=0.0;
+	AudioProps input = AudioProps();
 	double cur_freq, cur_tempo, cur_loud;
 	bool got_freq, got_tempo, got_loud;
-
-	deque<double> tempo_hist = deque<double>();
-	deque<double> loud_hist = deque<double>();
-	deque<double> max_loud_hist = deque<double>();
-	deque<double> loud_hist_with_max = deque<double>();
-
+	// Initialize solution variables
+	FLSystem flSystem = FLSystem();
+	LightsInfo cur_sol;
+	// Initialize output variables
 	deque<LightsInfo> out_hist = deque<LightsInfo>();
 	LightsInfo avg_out = LightsInfo(true);
-
+	// Initialize print-loggers
 	stringstream out_str;
 	char * err_str;
 
-	// NT: add stop on silence
-	while (!terminate) //&& (!listen_for_silence || silences < SILENCES_TO_STOP))
+
+	// Start main execution loop
+	while (!terminate)
 	{
 		try {
 			// Wait for audio input samples
@@ -555,120 +610,75 @@ void OptiAlgo::start_algo()
 			got_loud = audio_sample.get_loudness(cur_loud);
 			audio_buffer.pop();
 
+			// Are we still silent?
+			if (got_loud) input.silence = (cur_loud < SILENCE_THRESH);
+
 			// Update averages & history
-			if (audio_props.silence)
+			if (!input.silence)
 			{
-				avg_tempo = cur_tempo;
-				avg_loud = cur_loud;
-				avg_max_loud = cur_loud;
-			}
-			else
-			{
-				if (got_tempo)
-				{
-					tempo_hist.push_front(cur_tempo);
-					if (tempo_hist.size() > HISTORY_BUF_SIZE) tempo_hist.pop_back();
-					avg_tempo = 0.0;
-					for each (double val in tempo_hist)
-						avg_tempo += val;
-					avg_tempo /= tempo_hist.size();
-				}
+				if (got_freq) input.freq_add_and_avg(cur_freq);
+
+				if (got_tempo) input.tempo_add_and_avg(cur_tempo);
+
 				if (got_loud)
 				{
-					if (avg_loud > 0.0 && cur_loud - avg_loud >= BEAT_THRESH)
-					{
-						max_loud_hist.push_front(cur_loud);
-						if (max_loud_hist.size() > MAX_LOUD_HIST_BUF_SIZE) max_loud_hist.pop_back();
-						avg_max_loud = 0.0;
-						for each (double val in max_loud_hist)
-							avg_max_loud += val;
-						avg_max_loud /= max_loud_hist.size();
-					}
+					input.loudness_hist_add_and_avg(cur_loud);
+					if (input.loudness_avg > 0.0 && cur_loud - input.loudness_avg >= BEAT_THRESH)
+						input.loudness_max_hist_add_and_avg(cur_loud);
 					else
+						input.loudness_nomax_hist_add_and_avg(cur_loud);
+
+					// Uncomment this if necessary
+					/*if (abs(input.loudness_avg - input.loudness_max_avg) >= CHANGE_TO_MAX_LOUD_THRESH)
 					{
-						loud_hist.push_front(cur_loud);
-						if (loud_hist.size() > HISTORY_BUF_SIZE) loud_hist.pop_back();
-						avg_loud = 0.0;
-						for each (double val in loud_hist)
-							avg_loud += val;
-						avg_loud /= loud_hist.size();
-					}
-
-					loud_hist_with_max.push_front(cur_loud);
-					if (loud_hist_with_max.size() > HISTORY_BUF_SIZE) loud_hist_with_max.pop_back();
-					avg_loud_with_max = 0.0;
-					for each (double val in loud_hist_with_max)
-						avg_loud_with_max += val;
-					avg_loud_with_max /= loud_hist_with_max.size();
-
-					if (abs(avg_loud_with_max - avg_max_loud) >= CHANGE_TO_MAX_LOUD_THRESH)
-					{
-						avg_loud = avg_loud_with_max;
-					}
-				}
-				if (avg_max_loud < avg_loud) avg_max_loud = avg_loud;
-			}
-
-			// Adjust property weights
-			smoothed_input = AudioInfo(NULL, &avg_loud, &avg_tempo);
-			prev_props = audio_props;
-			audio_props.adjust_weights(smoothed_input, avg_max_loud);
-			if (prev_props.silence != audio_props.silence)
-			{
-				if (audio_props.silence)
-				{
-					tempo_hist = deque<double>();
-					loud_hist = deque<double>();
-					max_loud_hist = deque<double>();
-					loud_hist_with_max = deque<double>();
-					out_hist = deque<LightsInfo>();
-				}
-				else
-				{
-					tenure = TENURE_START;
-					tenure_cooldown = TENURE_COOLDOWN;
+						input.loudness_nomax_avg = input.loudness_avg;
+						input.loudness_nomax_hist = input.loudness_hist;
+						input.loudness_hist.clear();
+					}*/
 				}
 			}
 
-			out_str << avg_freq << "," << avg_tempo << "," << avg_loud << "," << avg_max_loud;
+			// Log smoothed input
+			out_str << "[OA] S=" << input.silence << " ";
+			out_str << "in_avg:[F, T, L(nm, m)] = ["
+				<< input.freq_avg << "," << input.tempo_avg << ","
+				<< input.loudness_avg << "(" << input.loudness_nomax_avg << "," << input.loudness_max_avg << ")]";
 
+			// Fuzzy inference
+			if (!input.silence) {
+				// Use fuzzy logic system to get output
+				cur_sol = flSystem.Infer(input);
+
+				// Average output
+				out_hist.push_front(cur_sol);
+				if (out_hist.size() > OUT_HIST_BUF_SIZE) out_hist.pop_back();
+				avg_out = LightsInfo::average_and_smooth(out_hist);
+			}
+			else {
+				// On silence, clear output history and output 0's to lights
+				out_hist.clear();
+				cur_sol = LightsInfo();
+				avg_out = cur_sol;
+			}
+
+			// Log current output
 			out_str << " => ";
-			out_str << audio_props.beatiness.second << ","
-				<< audio_props.overall_tempo.second << ","
-				<< audio_props.overall_intens.second << ","
-				<< audio_props.silence;
+			out_str << "out:[R,G,B,W,Dim,Strobe]=[" << cur_sol.red_intensity << "," << cur_sol.green_intensity << ","
+				<< cur_sol.blue_intensity << "," << cur_sol.white_intensity << "," << cur_sol.dimness << ","
+				<< cur_sol.strobing_speed << "]";
 
-			// Use properties to find varying, near-optimal lights configuration
-			cur_sol.representation = avg_out;
-			cur_sol = algorithm.search(cur_sol, audio_props);
-			cur_sol.representation.white_intensity = 0;
-
+			// Log smoothed output
 			out_str << " => ";
-			out_str << "[" << cur_sol.representation.red_intensity << ","
-				<< cur_sol.representation.green_intensity << ","
-				<< cur_sol.representation.blue_intensity << ","
-				<< cur_sol.representation.white_intensity << ","
-				<< cur_sol.representation.dimness << ","
-				<< cur_sol.representation.strobing_speed << "]";
+			out_str << "out_avg:[R,G,B,W,Dim,Strobe]=[" << avg_out.red_intensity << "," << avg_out.green_intensity << ","
+				<< avg_out.blue_intensity << "," << avg_out.white_intensity << "," << avg_out.dimness << ","
+				<< avg_out.strobing_speed << "]";
 
-			// Average output
-			out_hist.push_front(cur_sol.representation);
-			if (out_hist.size() > OUT_HIST_BUF_SIZE) out_hist.pop_back();
-			avg_out = LightsInfo::average_and_smooth(out_hist);
-
-			// Send solution to output controller
-			avg_out.strobing_speed = 0; // TODO: remove this
-
-			out_str << " => ";
-			out_str << "[" << avg_out.red_intensity << "," << avg_out.green_intensity << "," << avg_out.blue_intensity << ","
-				<< avg_out.white_intensity << "," << avg_out.dimness << "," << avg_out.strobing_speed << "]\n";
+			// Print log to output window!
+			out_str << "\n";
 			Helpers::print_debug(out_str.str().c_str());
 
+			// Send solution to output controller
 			DMXOutput::updateLightsOutputQueue(avg_out);
-
-			// Cool down tenure
-			tenure_cooldown = (tenure_cooldown + 1) % TENURE_COOLDOWN;
-			if (tenure > 3 && tenure_cooldown == 0) tenure--;
 
 		}
 		catch (exception e)

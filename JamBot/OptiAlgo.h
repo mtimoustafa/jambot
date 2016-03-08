@@ -17,74 +17,88 @@
 #include "Constants.h"
 using namespace std;
 
-
 class OptiAlgo
 {
 	class AudioProps
 	{
-		deque<double> freq_conc_hist = deque<double>();
-		deque<double> overall_tempo_hist = deque<double>();
-		deque<double> beatiness_hist = deque<double>();
-		deque<double> overall_intens_hist = deque<double>();
-
 	public:
-		pair<map<string, double>, double> freq_conc;
-		pair<map<string, double>, double> overall_tempo;
-		pair<map<string, double>, double> beatiness;
-		pair<map<string, double>, double> overall_intens;
 		double silence = 1;
 
+		double freq_avg;
+		double tempo_avg;
+		double loudness_avg;
+		double loudness_nomax_avg;
+		double loudness_max_avg;
+
+		deque<double> freq_hist = deque<double>();
+		deque<double> tempo_hist = deque<double>();
+		deque<double> loudness_hist = deque<double>();
+		deque<double> loudness_nomax_hist = deque<double>();
+		deque<double> loudness_max_hist = deque<double>();
+
 		AudioProps();
-		map<string, double> new_modifiers_set(const double * mods);
-		void adjust_weights(AudioInfo input, double max_loud);
 
-		double freq_conc_add_and_avg(double val);
-		double overall_tempo_add_and_avg(double val);
-		double beatiness_add_and_avg(double val);
-		double overall_intens_add_and_avg(double val);
+		double freq_add_and_avg(double val);
+		double tempo_add_and_avg(double val);
+		double loudness_hist_add_and_avg(double val);
+		double loudness_nomax_hist_add_and_avg(double val);
+		double loudness_max_hist_add_and_avg(double val);
 	};
 
-	class ProblemRepresentation
+	class FLSystem
 	{
+		// Membership function classes:
+		// Inputs
+		enum FreqClassIDs { vlow, low, high, vhigh };
+		enum TempoClassIDs { vslow, slow, moderate, fast, vfast };
+		enum IntensClassIDs { quiet, mid, loud };
+		enum BeatinessClassIDs { notbeaty, sbeaty, beaty, vbeaty };
+		// Outputs
+		enum RGBClassIDs { none, dark, medium, strong };
+		enum WClassIDs { off, normal, bright };
+		// Output parameters
+		enum OutParams { r, g, b, w, dim, str };
+
+		// Membership function ...er, functions:
+		// Inputs
+		double FreqInClass(double input, FreqClassIDs flClass);
+		double TempoInClass(double input, TempoClassIDs flClass);
+		double IntensInClass(double input, IntensClassIDs flClass);
+		double BeatinessInClass(double input, BeatinessClassIDs flClass);
+		// Outputs
+		double ROutClass(double input, RGBClassIDs flClass);
+		double GpercentOutClass(double input, RGBClassIDs flClass);
+		double BOutClass(double input, RGBClassIDs flClass);
+		double WOutClass(double input, WClassIDs flClass);
+
+		// Cutoffs for computing modified output classes
+		map <RGBClassIDs, double> Rcutoff;
+		map <RGBClassIDs, double> Gcutoff;
+		map <RGBClassIDs, double> Bcutoff;
+		map <WClassIDs, double> Wcutoff;
+		void ResetCutoffs();
+
+		// Fuzzy operators
+		double Tnorm(vector<double> inputs);
+		double DefuzzifyRGB(RGBClassIDs classID);
+		double DefuzzifyW(WClassIDs classID);
+
+		// Local helper functions
+		template <typename T>
+		T GetHighestCutoff(map <T, double> cutoff);
+
 	public:
-		LightsInfo representation;
-		double rep_value;
-		double tune_ub = TUNE_UB;
-		double tune_lb = TUNE_LB;
-
-		ProblemRepresentation();
-		ProblemRepresentation(AudioProps properties, bool centered);
-
-		double objective_function(LightsInfo cand_sol, AudioProps props);
-		double obf_overall_tempo(LightsInfo cand_sol, AudioProps props);
-		double obf_beatiness(LightsInfo cand_sol, AudioProps props);
-		double obf_overall_intens(LightsInfo cand_sol, AudioProps props);
-		double obf_silence(LightsInfo cand_sol, AudioProps props);
-
-		int tune(int value);
+		FLSystem();
+		LightsInfo Infer(AudioProps input); // Runs the fuzzy logic system
 	};
 
-	class TabuSearch
-	{
-		int TENURE;
-		int n_iterations;
-
-	public:
-		TabuSearch(int tenure, int n_iterations);
-
-		static bool pairCompare(const pair<LightsInfo, double>& firstElem, const pair<LightsInfo, double>& secondElem);
-		ProblemRepresentation search(ProblemRepresentation problem, AudioProps audio_props);
-	};
-
-	AudioProps audio_props;
 	bool terminate;
 
 public:
 	OptiAlgo();
 
 	static bool receive_audio_input_sample(AudioInfo audio_sample); // returns false if internal buffer is full
-	map<string, double> execute_algorithm(TabuSearch algo, int n_iterations);
-	void test_algo();
+
 	void test_lights();
 	void start_algo();
 	void start();

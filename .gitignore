@@ -1,5 +1,7 @@
 *.sdf
 *.suo
+*.vspx
+*.psess
 Debug/JamBot.exe
 Debug/JamBot.ilk
 Debug/Jambot.pdb
