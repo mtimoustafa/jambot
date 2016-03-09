@@ -26,7 +26,7 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-#define NUM_FREQ 5
+#define NUM_FREQ 3
 //#ifndef OLDCPP
 //#include <iostream>
 //using namespace std;
@@ -223,6 +223,7 @@ void WavManipulation::comparisonPolling(){
 		}
 	}
 }
+
 void WavManipulation::startSnip(){
 	string filename = "Boston_More_than_a_FeelingVocals_Only.wav";
 	string filepath = "C:\\Users\\emerson\\Downloads\\";
@@ -231,11 +232,18 @@ void WavManipulation::startSnip(){
 	vector<double> startTimes = { 23.0, 55.0, 90.0, 123.08, 187.4, 239.95 };
 	snipAudio(names, startTimes, durations, filepath, filename);
 }
+
+
+///////////////////////////////////
+//	Better Code
+//////////////////////////////////
+//This is where the frequency code is
+
 void clearqueue(){
 	queue<float> empty;
 	swap(frequency, empty);
 }
-
+//This is a testing function for now
 void WavManipulation::startanalysis(){
 	//vector<SongSection> secs = vector<SongSection>();
 	//time_t startTime;
@@ -253,14 +261,11 @@ void WavManipulation::startanalysis(){
 }
 /////////////////////////////////////////
 ///		Frequency Fingerprint Functions
-
+//Brandon Function that is used to push the frequencies
 bool WavManipulation::pushFrequency(float in){
 	if (frequency.size() < AUDIO_BUF_SIZE)
 		frequency.push(in);
 	return frequency.size() < AUDIO_BUF_SIZE;
-}
-bool WavManipulation::readFrequency(){
-	return checkfrequency;
 }
 
 //dataStore(string, vector<SongSection>)
@@ -304,6 +309,11 @@ float WavManipulation::hannFunction(int n)
 	double inner = (2 * M_PI * n) / (FFT_SIZE - 1);
 	return (float)(0.5 * (1.0 - cos(inner)));
 }
+
+string lowercase(string str){
+	std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+	return str;
+}
 float WavManipulation::freqAnalysis(vector<float> data){
 
 	float *in;
@@ -346,18 +356,18 @@ float WavManipulation::freqAnalysis(vector<float> data){
 	return frequency;
 }
 void WavManipulation::freqcomparison(){
-	/*float inFreq = 0.0;
-	float freq = 0.0;
-	float t = 0.0;
+	float inFreq = 0.0;
 	float diff1 = 0.0;
 	float diff2 = 0.0;
 	int choruscount = 0;
 	int versecount = 0;
+	int chorusdiffcount = 0;
+	int versediffcount = 0;
 	int index = 0;
 	int j = 0;
 	int ticks = 0;
 	int duration = 0;
-	vector<float> chorus, verse;
+	vector<float> chorus, verse,chorusdiff, versediff,freqdiff;
 	char * err_str;
 	Helpers::SongElement element = Helpers::NIL;
 
@@ -367,6 +377,15 @@ void WavManipulation::freqcomparison(){
 		if (lowercase(freqList[k].name) == "verse1")
 			verse = freqList[k].pitch;
 	}
+	chorusdiff.push_back(abs(0.0 - chorus[1]));
+	chorusdiff.push_back(abs(chorus[0] - chorus[1]));
+	chorusdiff.push_back(abs(chorus[1] - chorus[2]));
+	chorusdiff.push_back(abs(0.0 - chorus[2]));
+	versediff.push_back(abs(0.0 - verse[1]));
+	versediff.push_back(abs(verse[0] - verse[1]));
+	versediff.push_back(abs(verse[1] - verse[2]));
+	versediff.push_back(abs(0.0 - verse[2]));
+
 	while (!terminate){
 
 		while (ticks < duration){
@@ -378,44 +397,55 @@ void WavManipulation::freqcomparison(){
 		try{
 			while (j < NUM_FREQ){
 				while (frequency.empty()){ if (terminate){ return; } }
+				freqdiff.push_back(abs(inFreq - frequency.front()));
 				inFreq = frequency.front();
 				frequency.pop();
 				diff1 = abs(inFreq - chorus[j]);
 				diff2 = abs(inFreq - verse[j]);
+
 				if (diff1 < diff2)
 					choruscount++;
 				else
-					versecount++;
+					versecount++;	
 
+				ticks++;
+			}
+			for (int i = 0; i < 4; i++){
+				
+				if (abs(chorusdiff[i] - freqdiff[i]) 
+					< abs(versediff[i] - freqdiff[i]))
+					choruscount++;
+				else
+					versecount++;
 			}
 			if (choruscount > versecount){
 				//send info to mohamed here, was causing some kind of warning message
 				for (int k = 0; k < freqList.size(); k++){
-					if (lowercase(freqList[k].name).find("chorus"))
+					if (lowercase(freqList[k].name).find("chorus")){
 						index = k;
+					}
 				}
-				//element = getElement(freqList[part].name);
-				//num = getNum(freqList[part].name);
-				//push this to queue for best fit algorithm
-				//duration = freqList[part].duration;
-				//Helpers::print_debug(freqList[].name.c_str());
-				//Helpers::print_debug("\n");
+				//TODO: Push Lyrics Jack: 
+				//TODO: Push section to Mohammed: Call receive_song_section()
+				Helpers::print_debug(freqList[index].name.c_str());
+				Helpers::print_debug("\n");
 				ticks = 0;
+				duration = freqList[index].duration;
 			}
 			else if (versecount > choruscount){
 				//send info to mohamed here, was causing some kind of warning message
 				for (int k = 0; k < freqList.size(); k++){
-					if (lowercase(freqList[k].name).find("verse"))
+					if (lowercase(freqList[k].name).find("verse")){
 						index = k;
+						break;
+					}
 				}
-				//element = getElement(freqList[part].name);
-				//num = getNum(freqList[part].name);
-				//push this to queue for best fit algorithm
-				//duration = freqList[part].duration;
-				//Helpers::print_debug(freqList[].name.c_str());
-				//Helpers::print_debug("\n");
+				//TODO: Push Lyrics Jack: 
+				//TODO: Push section to Mohammed: Call receive_song_section()
+				Helpers::print_debug(freqList[index].name.c_str());
+				Helpers::print_debug("\n");
 				ticks = 0;
-
+				duration = freqList[index].duration;
 			}
 			else{
 				Helpers::print_debug("No Section Found");
@@ -432,11 +462,7 @@ void WavManipulation::freqcomparison(){
 
 	}	
 	if (terminate) Helpers::print_debug("WavManipulation: terminated.\n");
-	else Helpers::print_debug("WavManipulation: stopped.\n");*/
-}
-string lowercase(string str){
-	std::transform(str.begin(), str.end(), str.begin(), ::tolower);
-	return str;
+	else Helpers::print_debug("WavManipulation: stopped.\n");
 }
 bool WavManipulation::checklyricrepeats(string name){
 	for (int i = 0; i < lyrics.size(); i++){

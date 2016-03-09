@@ -191,9 +191,7 @@ void InputChannelReader::analyseBuffer(paData *data)
 	o_debug << "]\n";
 	Helpers::print_debug(o_debug.str().c_str());
 	audioSamples.set_frequency((float)frequency[0]);
-	if (WavManipulation::readFrequency()){
-		WavManipulation::pushFrequency(frequency[0]);
-	}
+	WavManipulation::pushFrequency(frequency[0]);
 
 	// Measure average tempo every 1.5s
 	tempo.process(const_cast<float*>(&data->recordedSamples[0]), NUM_SAMPLES);
