@@ -1,0 +1,12 @@
+[chorus]
+This is a test
+to see if the
+lyric parsing works
+[Verse1]
+This is the verse 
+to test Lyric parsing
+[chorus]
+Lalalalalalalala
+[Verse2]
+Tell us how this 
+is supposed to work

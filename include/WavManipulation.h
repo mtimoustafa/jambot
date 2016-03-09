@@ -5,6 +5,13 @@
 #include "soundfile.h"
 
 using namespace std;
+class SectionLyric{
+public:
+	string lyric;
+	int numLines;
+	SectionLyric(string, int);
+	~SectionLyric();
+};
 
 class SongSection{
 public:
@@ -18,8 +25,10 @@ public:
 	string name;
 	vector<float> pitch;
 	int duration;
+	string lyric;
 	SecAnlys();
 	SecAnlys(string, vector<float>, int);
+	SecAnlys(string, string);
 	~SecAnlys();
 };
 class WavManipulation {
@@ -38,6 +47,8 @@ private:
 	float notetofreq(int);
 	float threshold(float);
 	bool checkrepeats(string);
+	static vector<SecAnlys> lyrics;
+	bool checklyricrepeats(string);
 
 
 public:
@@ -58,6 +69,7 @@ public:
 	void startanalysis();
 	void start();
 	void stop();
+	void parseTxt(string);
 	static bool pushFrequency(float);
 	static bool readFrequency();
 };

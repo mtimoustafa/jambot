@@ -70,6 +70,8 @@ const double MODIFIERS[10] = { 0.0, 255.0, 0.0, 255.0, 0.0, 255.0, 0.0, 0.0, 0.0
 
 const double TUNE_UB = 10.0;
 const double TUNE_LB = -10.0;
+
+const enum SECTION {chorus, verse};
 #pragma endregion
 
 #endif
