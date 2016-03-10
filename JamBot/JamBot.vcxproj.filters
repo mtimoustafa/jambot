@@ -57,6 +57,9 @@
     <ClInclude Include="FTD2XX.H">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="LyricStruct.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -102,6 +105,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DMXOutput.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LyricStruct.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1,5 +1,4 @@
 // JamBot.cpp : Defines the entry point for the application.
-//
 
 #include "stdafx.h"
 #include "JamBot.h"
@@ -13,7 +12,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-
+#include <deque>
 
 #define MAX_LOADSTRING 100
 
@@ -60,7 +59,8 @@ GtkWidget *textEntry, *sectionNameBox, *sectionTimeBox;
 gchar *waveFile;
 string lyrics;
 GtkTextBuffer *lyricsBuffer;
-
+deque<GtkWidget*> sectionNameDetails;
+deque<GtkWidget*> sectionTimeDetails;
 
 static void changeProgressBar(GtkWidget *widget, gpointer data)
 {
@@ -71,10 +71,6 @@ void JamBot::updateLyrics(string text) {
 	lyrics += text;
 	lyrics += "\n";
 	gtk_text_buffer_set_text(lyricsBuffer, lyrics.c_str(), -1);
-}
-
-static void submitSongSection() {
-	wavmanipulation.start();
 }
 
 static void testFunction(GtkWidget *widget) {
@@ -102,8 +98,14 @@ static void addNewSection(GtkWidget *widget)
 	GtkWidget * tempEntry;
 	tempEntry = gtk_entry_new();
 	gtk_box_pack_start(GTK_BOX(sectionNameBox), tempEntry, false, false, 5);
+	sectionNameDetails.push_back(tempEntry);
+
 	tempEntry = gtk_entry_new();
 	gtk_box_pack_start(GTK_BOX(sectionTimeBox), tempEntry, false, false, 5);
+	sectionTimeDetails.push_back(tempEntry);
+
+	gtk_widget_show_all(sectionNameBox);
+	gtk_widget_show_all(sectionTimeBox);
 }
 
 static void dialog_result(GtkWidget *dialog, gint resp, gpointer data) {
@@ -184,6 +186,22 @@ static void displayLyrics(GtkWidget *widget, gpointer window)
 		g_print("The cancel was pressed");
 	}
 	gtk_widget_destroy(dialog);
+}
+
+static void submitSongSection() {
+	GtkWidget *sectionTime, *sectionName;
+	const gchar *name, *time;
+	
+	vector<SongSection> section = vector<SongSection>();
+
+	for (int i = 0; i < sectionNameDetails.size(); i++) {
+		name = gtk_entry_get_text(GTK_ENTRY(sectionNameDetails[i]));
+
+		time = gtk_entry_get_text(GTK_ENTRY(sectionTimeDetails[i]));
+
+		section.push_back(SongSection(name, atoi((char*)time)));
+	}
+	wavmanipulation.dataStore("song1", section);
 }
 
 static void fileBrowse(GtkWidget *button, gpointer window) {
@@ -314,7 +332,6 @@ int gtkStart(int argc, char* argv[])
 	GtkWidget *startJambot;
 	GtkWidget *label;
 
-
 	gtk_init(&argc, &argv);
 	lyrics = "Hi there";
 	/*=========================== Window ===========================*/
@@ -324,7 +341,7 @@ int gtkStart(int argc, char* argv[])
 
 	//gtk_container_set_border_width(GTK_CONTAINER(window), 150);
 	gtk_window_set_title(GTK_WINDOW(window), "JamBot");
-
+		
 	g_signal_connect(window, "dontcallthis", G_CALLBACK(changeProgressBar), NULL);
 
 	/*=========================== Widget boxes ===========================*/
@@ -386,39 +403,41 @@ int gtkStart(int argc, char* argv[])
 	gtk_box_pack_start(GTK_BOX(sectionButtonBox), addSectionButton, false, false, 5);
 
 	submitSectionButton = gtk_button_new_with_label("Submit");
-	g_signal_connect(GTK_OBJECT(submitSectionButton), "clicked", G_CALLBACK(displayLyrics), (gpointer)sectionNameBox, (gpointer)sectionTimeBox);
+	g_signal_connect(GTK_OBJECT(submitSectionButton), "clicked", G_CALLBACK(submitSongSection), (gpointer)sectionNameBox, (gpointer)sectionTimeBox);
 	gtk_box_pack_start(GTK_BOX(sectionButtonBox), submitSectionButton, false, false, 5);
 
 	fileSelectDialog = gtk_button_new_with_label("Select Audio File");
 	g_signal_connect(GTK_OBJECT(fileSelectDialog), "clicked", G_CALLBACK(selectWaveFile), (gpointer)sectionNameBox, (gpointer)sectionTimeBox);
 	gtk_box_pack_start(GTK_BOX(sectionButtonBox), fileSelectDialog, false, false, 5);
 
-
-
 	/*add sectionNameBox contents*/
 	sectionLabelName = gtk_label_new("Section Name: ");
 	gtk_box_pack_start(GTK_BOX(sectionNameBox), sectionLabelName, false, false, 5);
+
 	tempEntry = gtk_entry_new();
+	sectionNameDetails.push_back(tempEntry);
 	gtk_box_pack_start(GTK_BOX(sectionNameBox), tempEntry, false, false, 5);
+
 	tempEntry = gtk_entry_new();
+	sectionNameDetails.push_back(tempEntry);
 	gtk_box_pack_start(GTK_BOX(sectionNameBox), tempEntry, false, false, 5);
 
 	/*add sectionTimeBox contents*/
 	sectionLabelTime = gtk_label_new("Section Time:  ");
 	gtk_box_pack_start(GTK_BOX(sectionTimeBox), sectionLabelTime, false, false, 5);
+
 	tempEntry = gtk_entry_new();
-	gtk_box_pack_start(GTK_BOX(sectionTimeBox), tempEntry, false, false, 5);
-	tempEntry = gtk_entry_new();
+	sectionTimeDetails.push_back(tempEntry);
 	gtk_box_pack_start(GTK_BOX(sectionTimeBox), tempEntry, false, false, 5);
 
+	tempEntry = gtk_entry_new();
+	sectionTimeDetails.push_back(tempEntry);
+	gtk_box_pack_start(GTK_BOX(sectionTimeBox), tempEntry, false, false, 5);
 
 	gtk_box_pack_start(GTK_BOX(sectionBox), sectionButtonBox, false, false, 5);
 	gtk_box_pack_start(GTK_BOX(sectionBox), sectionNameBox, false, false, 5);
 	gtk_box_pack_start(GTK_BOX(sectionBox), sectionTimeBox, false, false, 5);
 	gtk_box_pack_start(GTK_BOX(graphBox), sectionBox, false, false, 5);
-
-
-
 	/*=========================== Progress bar ===========================*/
 	GtkWidget * tabs;
 	tabs = gtk_notebook_new();
