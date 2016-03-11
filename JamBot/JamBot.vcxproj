@@ -90,6 +90,7 @@
     <ClInclude Include="DMXOutput.h" />
     <ClInclude Include="FTD2XX.H" />
     <ClInclude Include="InputChannelReader.h" />
+    <ClInclude Include="LyricStruct.h" />
     <ClInclude Include="ms_stdint.h" />
     <ClInclude Include="OptiAlgo.h" />
     <ClInclude Include="Constants.h" />
@@ -109,6 +110,7 @@
     <ClCompile Include="..\src\SoundHeader.cpp" />
     <ClCompile Include="DMXOutput.cpp" />
     <ClCompile Include="InputChannelReader.cpp" />
+    <ClCompile Include="LyricStruct.cpp" />
     <ClCompile Include="OptiAlgo.cpp" />
     <ClCompile Include="Constructs.cpp" />
     <ClCompile Include="Helpers.cpp" />

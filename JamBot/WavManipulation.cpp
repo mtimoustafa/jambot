@@ -8,6 +8,7 @@
 #include "Helpers.h"
 #include "Constants.h"
 #include "fftw3.h"
+#include "JamBot.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string>
@@ -41,7 +42,6 @@ vector<SecAnlys> WavManipulation::lyrics = vector<SecAnlys>();
 static queue<float> frequency = queue<float>();
 static queue<string> section = queue<string>();
 static bool checkfrequency;
-
 
 SongSection::SongSection(string n, double t){
 	Name = n;
@@ -281,8 +281,8 @@ void WavManipulation::dataStore(string filename, vector<SongSection> sections){
 	for (int i = 0; i < sections.size(); i++){
 		song << sections[i].Name + "," + to_string(sections[i].startTime) + "\n";
 	}
-
 }
+
 bool WavManipulation::checkrepeats(string name){
 	for (int i = 0; i < freqList.size(); i++){
 		if (freqList[i].name == name){
@@ -555,7 +555,8 @@ void WavManipulation::freqSnip(string filePath, string filename, string csvname)
 	
 }
 void WavManipulation::start(){
-	freqcomparison();
+	JamBot::updateLyrics("Hi i am Jude");
+	//freqcomparison();
 }
 void WavManipulation::stop(){
 	terminate = true;
