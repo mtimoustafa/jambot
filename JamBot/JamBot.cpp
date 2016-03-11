@@ -40,7 +40,7 @@ DMXOutput lightsTest = DMXOutput();
 
 // Functions to run components in threads
 DWORD WINAPI AudioInputThread(LPVOID lpParam) { inputChannelReader = InputChannelReader(); Helpers::print_debug("START audio input.\n"); inputChannelReader.start(); return 0; }
-DWORD WINAPI WavGenThread(LPVOID lpParam) { wavmanipulation = WavManipulation(); Helpers::print_debug("START wav manip.\n"); wavmanipulation.start(); return 0; }
+DWORD WINAPI WavGenThread(LPVOID lpParam) { wavmanipulation = WavManipulation(); Helpers::print_debug("START wav manip.\n"); wavmanipulation.startanalysis(); return 0; }
 DWORD WINAPI OptiAlgoThread(LPVOID lpParam) { optiAlgo = OptiAlgo(); Helpers::print_debug("START opti algo.\n"); optiAlgo.start(); return 0; }
 DWORD WINAPI AudioOutputThread(LPVOID lpParam) { lightsTest = DMXOutput(); Helpers::print_debug("START audio output.\n"); lightsTest.start(); return 0; }
 
@@ -279,7 +279,7 @@ static void startJamming(GtkWidget *button) {
 		CloseAllThreads();
 		ExitProcess(3);
 	}
-
+	// Emerson's thread used to be created here
 	hThreadArray[AUDIOINPUT_THREAD_ARR_ID] = CreateThread(
 		NULL,
 		0,
@@ -296,7 +296,19 @@ static void startJamming(GtkWidget *button) {
 }
 
 static void startEmerson(GtkWidget *button) {
-	wavmanipulation.startanalysis();
+	hThreadArray[WAVGEN_THREAD_ARR_ID] = CreateThread(
+		NULL,
+		0,
+		WavGenThread,
+		NULL,
+		0,
+		&dwThreadArray[WAVGEN_THREAD_ARR_ID]);
+	if (hThreadArray[WAVGEN_THREAD_ARR_ID] == NULL)
+	{
+		ErrorHandler(TEXT("CreateThread"));
+		CloseAllThreads();
+		ExitProcess(3);
+	}
 }
 
 static gboolean delete_event(GtkWidget *widget, GdkEvent *event, gpointer data)

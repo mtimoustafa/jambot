@@ -4,11 +4,16 @@
 // InputChannelReader Parameters
 const int SAMPLE_RATE = 22050;
 const int FRAMES_PER_BUFFER = 4410;	//200ms of audio per buffer
-const int NUM_CHANNELS = 1;
+const int NUM_CHANNELS = 2;
 const int NUM_SAMPLES = FRAMES_PER_BUFFER * NUM_CHANNELS * 2;
 const int FFT_SIZE = 4096;
 const int OUTPUT_SIZE = (int)(FFT_SIZE / 2) + 1;
-const int NUM_PEAKS = 3;
+const int HIGHEST_PITCH = 7000;
+const int LOWEST_PITCH = 80;
+const int MAX_I = HIGHEST_PITCH * OUTPUT_SIZE / SAMPLE_RATE;
+const int MIN_I = LOWEST_PITCH * OUTPUT_SIZE / SAMPLE_RATE;
+const int REC_CHANNEL = 1;
+const int HPS_LENGTH = MAX_I - MIN_I;
 
 // AudioInfo parameter bounds
 const double FREQ_UB = 20000.0;
@@ -37,17 +42,6 @@ const double DIM_UB = 255.0;
 const double DIM_LB = 0.0;
 
 #pragma region Optimization Algorithm parameters
-// TODO: remove redundant consts and update numbers
-//Raw input bounds
-const double OA_FREQ_UB = 700.0;
-const double OA_FREQ_LB = 150.0;
-const double OA_TEMPO_UB = 120.0;
-const double OA_TEMPO_LB = 90.0;
-const double OA_INTENS_UB = 5000.0;
-const double OA_INTENS_LB = 3000.0;
-const double OA_LOUD_INTENS_RATIO_UB = 2.2;
-const double OA_LOUD_INTENS_RATIO_LB = 1.3;
-
 const unsigned int AUDIO_BUF_SIZE = 256;
 const unsigned int HISTORY_BUF_SIZE = 10;
 const unsigned int MAX_LOUD_HIST_BUF_SIZE = 4;
@@ -58,7 +52,7 @@ const unsigned int SILENCES_TO_STOP = 10 * 5;
 const unsigned int DIFFS_FOR_CHANGE = 4;
 
 const int TOO_SMALL_SMOOTH_THRESH = 20;
-const double CHANGE_TO_MAX_LOUD_THRESH = 500.0;
+const int CHANGE_TO_MAX_LOUD_THRESH = 500.0;
 
 const int TENURE_START = 6;
 const int TENURE_COOLDOWN = 2;

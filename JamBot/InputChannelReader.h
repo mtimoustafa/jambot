@@ -4,7 +4,10 @@
 #include "soundfile.h"
 #include <vector>
 
-#define IS_STEREO		(1)
+#define IS_STEREO		(0)
+#define WRITE_TO_FILE	(0)
+
+#define MAGNITUDE(o) ((float)sqrt((o[0])*(o[0]) + (o[1])*(o[1])))
 
 struct paData
 {
