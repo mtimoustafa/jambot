@@ -675,7 +675,7 @@ void OptiAlgo::start_algo()
 
 			// Print log to output window!
 			out_str << "\n";
-			Helpers::print_debug(out_str.str().c_str());
+			//Helpers::print_debug(out_str.str().c_str());
 
 			// Send solution to output controller
 			DMXOutput::updateLightsOutputQueue(avg_out);

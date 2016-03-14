@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include <string.h>
 #include <vector>
 #include <deque>
@@ -71,5 +72,6 @@ public:
 	void stop();
 	void parseTxt(string);
 	static bool pushFrequency(float);
+	static void startReading(bool);
 	static bool readFrequency();
 };

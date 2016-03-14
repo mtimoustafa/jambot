@@ -8,6 +8,7 @@
 #include "Helpers.h"
 #include "Constants.h"
 #include "fftw3.h"
+#include "JamBot.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string>
@@ -42,7 +43,6 @@ static queue<float> frequency = queue<float>();
 static queue<string> section = queue<string>();
 static bool checkfrequency;
 
-
 SongSection::SongSection(string n, double t){
 	Name = n;
 	startTime = t;
@@ -70,7 +70,7 @@ WavManipulation::WavManipulation(){
 	filenames = vector<string>();
 	frequency = queue<float>();
 	section = queue<string>();
-	checkfrequency = true;
+	checkfrequency = false;
 	terminate = false;
 	durationCounter = 0;
 	directoryPath = "";
@@ -250,13 +250,14 @@ void WavManipulation::startanalysis(){
 	//time_t endTime;
 	//double exectime;
 	secs.push_back(SongSection("Verse1", 22.0));
-	secs.push_back(SongSection("Chorus", 55.0));
+	secs.push_back(SongSection("Chorus", 54.75));
 	secs.push_back(SongSection("Verse2", 90.0));
 	secs.push_back(SongSection("Chorus", 123.2));
 	secs.push_back(SongSection("Verse3", 187.4));
 	secs.push_back(SongSection("Chorus", 239.95));
 	dataStore("song1", secs);
 	freqSnip("C:\\Users\\emerson\\Downloads\\", "Boston_More_than_a_FeelingVocals_Only.wav", "song1");
+	start();
 	//parseTxt("testlyrics");
 }
 /////////////////////////////////////////
@@ -266,6 +267,10 @@ bool WavManipulation::pushFrequency(float in){
 	if (frequency.size() < AUDIO_BUF_SIZE)
 		frequency.push(in);
 	return frequency.size() < AUDIO_BUF_SIZE;
+}
+
+void WavManipulation::startReading(bool in){
+	checkfrequency = in;
 }
 
 //dataStore(string, vector<SongSection>)
@@ -281,8 +286,8 @@ void WavManipulation::dataStore(string filename, vector<SongSection> sections){
 	for (int i = 0; i < sections.size(); i++){
 		song << sections[i].Name + "," + to_string(sections[i].startTime) + "\n";
 	}
-
 }
+
 bool WavManipulation::checkrepeats(string name){
 	for (int i = 0; i < freqList.size(); i++){
 		if (freqList[i].name == name){
@@ -350,7 +355,7 @@ float WavManipulation::freqAnalysis(vector<float> data){
 				maxIndex = i;
 			}
 	}
-	frequency = maxIndex * SAMPLE_RATE / OUTPUT_SIZE;
+	frequency = maxIndex * SAMPLE_RATE / FFT_SIZE;
 	fftwf_free(in);
 	fftwf_free(out);
 	return frequency;
@@ -380,26 +385,34 @@ void WavManipulation::freqcomparison(){
 	chorusdiff.push_back(abs(0.0 - chorus[1]));
 	chorusdiff.push_back(abs(chorus[0] - chorus[1]));
 	chorusdiff.push_back(abs(chorus[1] - chorus[2]));
-	chorusdiff.push_back(abs(0.0 - chorus[2]));
+	//chorusdiff.push_back(abs(0.0 - chorus[2]));
 	versediff.push_back(abs(0.0 - verse[1]));
 	versediff.push_back(abs(verse[0] - verse[1]));
 	versediff.push_back(abs(verse[1] - verse[2]));
-	versediff.push_back(abs(0.0 - verse[2]));
+	//versediff.push_back(abs(0.0 - verse[2]));
 
 	while (!terminate){
 
-		while (ticks < duration){
-			if (!frequency.empty()){
-				ticks++;
-			}
-			checkfrequency = false;
-			clearqueue();
 
+		while (ticks < duration || !checkfrequency){
+			if (!frequency.empty())
+			{
+				ticks++;
+				frequency.pop();
+				//clearqueue();
+			}
+			//checkfrequency = false;
 		}
-		checkfrequency = true;
+		//clearqueue();
+		//checkfrequency = true;
 		try{
 			while (j < NUM_FREQ){
-				while (frequency.empty()){ if (terminate){ return; } }
+				while (frequency.empty()){ 
+					if (terminate){ 
+						return; 
+					} 
+				}
+
 				freqdiff.push_back(abs(inFreq - frequency.front()));
 				inFreq = frequency.front();
 				frequency.pop();
@@ -412,20 +425,25 @@ void WavManipulation::freqcomparison(){
 					versecount++;	
 
 				ticks++;
+				j++;
 			}
-			for (int i = 0; i < 4; i++){
+
+			j = 0;
+
+			/*for (int i = 0; i < 3; i++){
 				
 				if (abs(chorusdiff[i] - freqdiff[i]) 
 					< abs(versediff[i] - freqdiff[i]))
 					choruscount++;
 				else
 					versecount++;
-			}
+			}*/
 			if (choruscount > versecount){
 				//send info to mohamed here, was causing some kind of warning message
 				for (int k = 0; k < freqList.size(); k++){
-					if (lowercase(freqList[k].name).find("chorus")){
+					if (lowercase(freqList[k].name).find("chorus") != string::npos){
 						index = k;
+						break;
 					}
 				}
 				//TODO: Push Lyrics Jack: 
@@ -436,9 +454,9 @@ void WavManipulation::freqcomparison(){
 				duration = freqList[index].duration;
 			}
 			else if (versecount > choruscount){
-				//send info to mohamed here, was causing some kind of warning message
-				for (int k = 0; k < freqList.size(); k++){
-					if (lowercase(freqList[k].name).find("verse")){
+				//send info to mohamed here, was causing some kindof warning message
+				for (int k = 0; k < freqList.size(); k++){ 
+					if (lowercase(freqList[k].name).find("verse") != string::npos){
 						index = k;
 						break;
 					}
@@ -454,6 +472,7 @@ void WavManipulation::freqcomparison(){
 				Helpers::print_debug("No Section Found");
 				Helpers::print_debug("\n");
 			}
+			choruscount = versecount = 0;
 		}
 		catch (exception e){
 			err_str = "";
@@ -558,7 +577,8 @@ void WavManipulation::freqSnip(string filePath, string filename, string csvname)
 	
 }
 void WavManipulation::start(){
-	freqcomparison();
+	JamBot::updateLyrics("Hi i am Jude");
+	//freqcomparison();
 }
 void WavManipulation::stop(){
 	terminate = true;

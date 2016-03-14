@@ -50,12 +50,12 @@
 #include "fftw3.h"
 #include <string>
 #include <vector>
-#include <math.h>
-#include <sstream>
+#include <cmath>
 
-float *in;
-fftwf_complex *out;
-fftwf_plan frequencyPlan;
+float *in, *in2;
+fftwf_complex *out, *out2;
+fftwf_plan fft, fft2;
+std::vector<float> recordedData;
 MiniBPM tempo = MiniBPM((float)SAMPLE_RATE);
 AudioInfo audioSamples = AudioInfo();
 SoundHeader header = SoundHeader();
@@ -135,81 +135,98 @@ float InputChannelReader::hannFunction(int n)
 void InputChannelReader::analyseBuffer(paData *data)
 {
 	float val = 0.0;
-	float magnitude;
-	float maxDensity[NUM_PEAKS];
-	float frequency[NUM_PEAKS];
-	int maxIndex[NUM_PEAKS];
+	float maxDensity = 0.0;
+	float maxDensity2 = 0.0;
+	float mag1, mag2;
+	int maxIndex, maxIndex2;
+	float frequency, frequency2;
 	double average = 0.0;
 	short fileSamples;
+	int j = 0;
 
-	// Initialize maximum spectrum peaks to zeroes
-	for (int i = 0; i < NUM_PEAKS; i++)
-	{
-		maxDensity[i] = 0.0;
-	}
 	// Measure average peak amplitude
-	for (int i = 0; i < NUM_SAMPLES; i++)
+	for (int i = 0; i < NUM_SAMPLES; i = i + (NUM_CHANNELS * 2))
 	{
 		// Use every-other sample
-		if (i < FFT_SIZE && i % 2 == 0)
+		if (j < FFT_SIZE)
 		{
-			in[i] = data->recordedSamples[i] * hannFunction(i);
+			in[j] = data->recordedSamples[i] * hannFunction(j);
+			if (NUM_CHANNELS > 1)
+				in2[j] = data->recordedSamples[i+2] * hannFunction(j);
+			j++;
 		}
 		val = data->recordedSamples[i];
-		if (val < 0) val = -val;
+		if (val < 0)
+		{
+			val = -val;
+		}
 		average += val;
+
+#if WRITE_TO_FILE
+		{
+			if (REC_CHANNEL == 1)
+				recordedData.push_back(data->recordedSamples[i]);
+			else
+				recordedData.push_back(data->recordedSamples[i+2]);
+		}
+#endif
 	}
-	average = average / (double)NUM_SAMPLES;
+	average = average / (double)FRAMES_PER_BUFFER;
 	audioSamples.set_loudness(average);
 	Helpers::print_debug(("Average sample loudness (dB): " + to_string(average) + "\n").c_str());
+
 	// Get frequency of wave
-	fftwf_execute(frequencyPlan);
+	fftwf_execute(fft);
+	if (NUM_CHANNELS > 1)
+		fftwf_execute(fft2);
 
-	for (int i = 0; i < 1200; i++)
+	for (int i = MIN_I; i < MAX_I; i++)
 	{
-		magnitude = (float)sqrt(pow(out[i][0], 2) + pow(out[i][1], 2));
-
-		for (int j = 0; j < NUM_PEAKS; j++)
+		mag1 = (float)sqrt(out[i][0]*out[i][0] + out[i][1]*out[i][1]);
+		if (mag1 > maxDensity)
 		{
-			if (magnitude > maxDensity[j])
+			maxDensity = mag1;
+			maxIndex = i;
+		}
+		if (NUM_CHANNELS > 1)
+		{
+			mag2 = (float)sqrt(out2[i][0]*out2[i][0] + out2[i][1]*out2[i][1]);
+			if (mag2 > maxDensity2)
 			{
-				maxDensity[j] = magnitude;
-				maxIndex[j] = i;
-				break;
+				maxDensity2 = mag2;
+				maxIndex2 = i;
 			}
 		}
 	}
-
-	ostringstream o_debug;
-	o_debug << "[IN] Frequency peaks (Hz): [";
-	for (int i = 0; i < NUM_PEAKS; i++)
+	
+	frequency = maxIndex * SAMPLE_RATE / FFT_SIZE;
+	//Helpers::print_debug(("Frequency peak [guitar] (Hz): " + to_string(frequency) + "\n").c_str());
+	if (NUM_CHANNELS > 1)
 	{
-		frequency[i] = maxIndex[i] * SAMPLE_RATE / OUTPUT_SIZE;
-		o_debug << to_string(frequency[i]);
-		if (i + 1 < NUM_PEAKS) o_debug << ", ";
+		frequency = maxIndex * SAMPLE_RATE / OUTPUT_SIZE;
+		audioSamples.set_frequency((float)frequency);
+		frequency2 = maxIndex2 * SAMPLE_RATE / FFT_SIZE;
+		Helpers::print_debug(("Frequency peak [voice] (Hz): " + to_string(frequency2) + "\n").c_str());
+
+		// Send frequency to WavManipulation
+		WavManipulation::pushFrequency(frequency2);
+
+		// Initiate frequency reads
+		WavManipulation::startReading(average > 10.0);
 	}
-	o_debug << "]\n";
-	Helpers::print_debug(o_debug.str().c_str());
-	audioSamples.set_frequency((float)frequency[0]);
-	WavManipulation::pushFrequency(frequency[0]);
 
 	// Measure average tempo every 1.5s
 	tempo.process(const_cast<float*>(&data->recordedSamples[0]), NUM_SAMPLES);
 	if ((data->numBuffers % 15) == 0)
 	{
 		audioSamples.set_tempo(tempo.estimateTempo());
-		Helpers::print_debug(("[IN] Average sample tempo (bpm): " + to_string(tempo.estimateTempo()) + "\n\n").c_str());
+		//Helpers::print_debug(("Average sample tempo (bpm): " + to_string(tempo.estimateTempo()) + "\n").c_str());
 		tempo.reset();
 	}
 
 	OptiAlgo::receive_audio_input_sample(audioSamples);	//Send to OptiAlgo
-	WavManipulation::inputData(data->recordedSamples);	//Send to WavManipulation
 
 	data->recordedSamples.clear();	//Empty recordedSamples
-
-	//TODO: Add file writing capabilities
-	//TODO: Add Multiple channel support
-	//TODO: Add frequency analyzer
 }
 
 void InputChannelReader::stop()
@@ -235,10 +252,16 @@ int InputChannelReader::main(void)
 
 	data.numBuffers = 0;
 
-	// Initialize FFTW plan
+	// Initialize FFTW plans
 	in = (float*)fftwf_malloc(sizeof(float) * FFT_SIZE);
-	out = (fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex) * OUTPUT_SIZE);
-	frequencyPlan = fftwf_plan_dft_r2c_1d(FFT_SIZE, in, out, FFTW_ESTIMATE);
+	out = (fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex)* OUTPUT_SIZE);
+	fft = fftwf_plan_dft_r2c_1d(FFT_SIZE, in, out, FFTW_ESTIMATE);
+	if (NUM_CHANNELS > 1)
+	{
+		in2 = (float*)fftwf_malloc(sizeof(float)* FFT_SIZE);
+		out2 = (fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex)* OUTPUT_SIZE);
+		fft2 = fftwf_plan_dft_r2c_1d(FFT_SIZE, in2, out2, FFTW_ESTIMATE);
+	}
 
 	err = Pa_Initialize();
 	if (err != paNoError) goto done;
@@ -266,7 +289,7 @@ int InputChannelReader::main(void)
 
 	err = Pa_StartStream(stream);
 	if (err != paNoError) goto done;
-	Helpers::print_debug("\n============= Now recording! =============\n");
+	//Helpers::print_debug("\n============= Now recording! =============\n");
 
 	while (!stopStream)
 	{
@@ -281,12 +304,27 @@ int InputChannelReader::main(void)
 	err = Pa_CloseStream(stream);
 	if (err != paNoError) goto done;
 
+	// Write to file
+#if WRITE_TO_FILE
+	{
+		WAV_Writer *writer = NULL;
+		Audio_WAV_OpenWriter(writer, "output.wav", SAMPLE_RATE, FRAMES_PER_BUFFER);
+		Audio_WAV_WriteShorts(writer, &recordedData.front(), recordedData.size());
+		Audio_WAV_CloseWriter(writer);
+	}
+#endif
+
 done:
 	Pa_Terminate();
 	data.recordedSamples.clear();
-	fftwf_destroy_plan(frequencyPlan);
-	fftwf_free(in); 
+	recordedData.clear();
+	fftwf_destroy_plan(fft);
+	fftwf_destroy_plan(fft2);
+	fftwf_free(in);
 	fftwf_free(out);
+	fftwf_free(in2); 
+	fftwf_free(out2);
+
 	if (err != paNoError)
 	{
 		Helpers::print_debug("ERROR: Terminated InputChannelReader module");
