@@ -213,6 +213,10 @@ static void submitSongSection() {
 		gtk_combo_set_popdown_strings(GTK_COMBO(songSelectBox), glist);
 		//wavmanipulation.dataStore("song1", section);
 	}
+<<<<<<< HEAD
+=======
+	//wavmanipulation.dataStore("song1", section);
+>>>>>>> 94465d4c500bcd17aa9127f4a4c8d236bb38a239
 }
 
 static void selectLyrics(GtkWidget *button, gpointer window) {

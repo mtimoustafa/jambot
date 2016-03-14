@@ -1019,7 +1019,7 @@ void SoundHeader::processInWavFormat(const char *filename) {
 
 
    // read the Subchunk2Size, calculate the number of samples:
-   sndfile.readLittleEndian(tempLong);
+   sndfile.readBigEndian(tempLong);
    samples = tempLong / (bitsPerSample/8) / channels;
 
    sndfile.close();
