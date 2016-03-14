@@ -173,7 +173,7 @@ void InputChannelReader::analyseBuffer(paData *data)
 	}
 	average = average / (double)FRAMES_PER_BUFFER;
 	audioSamples.set_loudness(average);
-	Helpers::print_debug(("Average sample loudness (dB): " + to_string(average) + "\n").c_str());
+	Helpers::print_debug(("Average sample LOUDNESS (dB): " + to_string(average) + "\n").c_str());
 
 	// Get frequency of wave
 	fftwf_execute(fft);
@@ -198,15 +198,15 @@ void InputChannelReader::analyseBuffer(paData *data)
 			}
 		}
 	}
-	
+
 	frequency = maxIndex * SAMPLE_RATE / FFT_SIZE;
-	//Helpers::print_debug(("Frequency peak [guitar] (Hz): " + to_string(frequency) + "\n").c_str());
+	Helpers::print_debug(("Frequency peak [guitar] (Hz): " + to_string(frequency) + "\n").c_str());
 	if (NUM_CHANNELS > 1)
 	{
 		frequency = maxIndex * SAMPLE_RATE / OUTPUT_SIZE;
 		audioSamples.set_frequency((float)frequency);
 		frequency2 = maxIndex2 * SAMPLE_RATE / FFT_SIZE;
-		Helpers::print_debug(("Frequency peak [voice] (Hz): " + to_string(frequency2) + "\n").c_str());
+		//Helpers::print_debug(("Frequency peak [voice] (Hz): " + to_string(frequency2) + "\n").c_str());
 
 		// Send frequency to WavManipulation
 		WavManipulation::pushFrequency(frequency2);
@@ -220,7 +220,7 @@ void InputChannelReader::analyseBuffer(paData *data)
 	if ((data->numBuffers % 15) == 0)
 	{
 		audioSamples.set_tempo(tempo.estimateTempo());
-		//Helpers::print_debug(("Average sample tempo (bpm): " + to_string(tempo.estimateTempo()) + "\n").c_str());
+		Helpers::print_debug(("[IN] Average sample TEMPO (bpm): " + to_string(tempo.estimateTempo()) + "\n").c_str());
 		tempo.reset();
 	}
 

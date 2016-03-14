@@ -230,10 +230,10 @@ LightsInfo LightsInfo::average_and_smooth(deque<LightsInfo> outputs)
 	avg.strobing_speed /= size;
 
 	// Smooth final result
-	if (avg.red_intensity < TOO_SMALL_SMOOTH_THRESH) avg.red_intensity = 0;
-	if (avg.green_intensity < TOO_SMALL_SMOOTH_THRESH) avg.green_intensity = 0;
-	if (avg.blue_intensity < TOO_SMALL_SMOOTH_THRESH) avg.blue_intensity = 0;
-	if (avg.white_intensity < TOO_SMALL_SMOOTH_THRESH) avg.white_intensity = 0;
+	if (avg.red_intensity < OUT_PARAM_TOO_SMALL_THRESH) avg.red_intensity = 0;
+	if (avg.green_intensity < OUT_PARAM_TOO_SMALL_THRESH) avg.green_intensity = 0;
+	if (avg.blue_intensity < OUT_PARAM_TOO_SMALL_THRESH) avg.blue_intensity = 0;
+	if (avg.white_intensity < OUT_PARAM_TOO_SMALL_THRESH) avg.white_intensity = 0;
 
 	return avg;
 }

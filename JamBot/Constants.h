@@ -14,6 +14,8 @@ const int MAX_I = HIGHEST_PITCH * OUTPUT_SIZE / SAMPLE_RATE;
 const int MIN_I = LOWEST_PITCH * OUTPUT_SIZE / SAMPLE_RATE;
 const int REC_CHANNEL = 1;
 const int HPS_LENGTH = MAX_I - MIN_I;
+const int NUM_PEAKS = 3;
+const unsigned int AUDIO_BUF_SIZE = 256;
 
 // AudioInfo parameter bounds
 const double FREQ_UB = 20000.0;
@@ -28,6 +30,7 @@ const double AI_EQUAL_THRESH = 2.0;
 
 //LightsInfo thresholds
 const double LI_EQUAL_THRESH = 2.0;
+const int OUT_PARAM_TOO_SMALL_THRESH = 20;
 
 //Output parameter bounds
 const double R_UB = 255.0;
@@ -41,31 +44,15 @@ const double W_LB = 0.0;
 const double DIM_UB = 255.0;
 const double DIM_LB = 0.0;
 
-#pragma region Optimization Algorithm parameters
-const unsigned int AUDIO_BUF_SIZE = 256;
-const unsigned int HISTORY_BUF_SIZE = 10;
-const unsigned int MAX_LOUD_HIST_BUF_SIZE = 4;
-const unsigned int WEIGHTS_HIST_BUF_SIZE = 1;
+#pragma region Fuzzy logic parameters
+// TODO: tweak these parameters
+const unsigned int IN_HIST_BUF_SIZE = 5;
 const unsigned int OUT_HIST_BUF_SIZE = 20;
-const unsigned int NUDGES_TO_CHANGE = 3;
-const unsigned int SILENCES_TO_STOP = 10 * 5;
-const unsigned int DIFFS_FOR_CHANGE = 4;
 
-const int TOO_SMALL_SMOOTH_THRESH = 20;
-const int CHANGE_TO_MAX_LOUD_THRESH = 500.0;
+const double BEATINESS_THRESH = 1000.0; // Remove this and use class
+const double SILENCE_THRESH = 100.0; //TODO: tweak this
 
-const int TENURE_START = 6;
-const int TENURE_COOLDOWN = 2;
-
-const double BEAT_THRESH = 1000.0;
-const double SILENCE_THRESH = 400.0;
-
-const double MODIFIERS[10] = { 0.0, 255.0, 0.0, 255.0, 0.0, 255.0, 0.0, 0.0, 0.0, 255.0 };
-
-const double TUNE_UB = 10.0;
-const double TUNE_LB = -10.0;
-
-const enum SECTION {chorus, verse};
+const enum SECTION { chorus, verse };
 #pragma endregion
 
 #endif
