@@ -245,19 +245,19 @@ void clearqueue(){
 }
 //This is a testing function for now
 void WavManipulation::startanalysis(){
-	//vector<SongSection> secs = vector<SongSection>();
+	vector<SongSection> secs = vector<SongSection>();
 	//time_t startTime;
 	//time_t endTime;
 	//double exectime;
-	//secs.push_back(SongSection("Verse1", 22.0));
-	//secs.push_back(SongSection("Chorus", 55.0));
-	//secs.push_back(SongSection("Verse2", 90.0));
-	//secs.push_back(SongSection("Chorus", 123.2));
-	//secs.push_back(SongSection("Verse3", 187.4));
-	//secs.push_back(SongSection("Chorus", 239.95));
-	//dataStore("song1", secs);
-	//freqSnip("C:\\Users\\emerson\\Downloads\\", "Boston_More_than_a_FeelingVocals_Only.wav", "song1");
-	parseTxt("testlyrics");
+	secs.push_back(SongSection("Verse1", 22.0));
+	secs.push_back(SongSection("Chorus", 55.0));
+	secs.push_back(SongSection("Verse2", 90.0));
+	secs.push_back(SongSection("Chorus", 123.2));
+	secs.push_back(SongSection("Verse3", 187.4));
+	secs.push_back(SongSection("Chorus", 239.95));
+	dataStore("song1", secs);
+	freqSnip("C:\\Users\\emerson\\Downloads\\", "Boston_More_than_a_FeelingVocals_Only.wav", "song1");
+	//parseTxt("testlyrics");
 }
 /////////////////////////////////////////
 ///		Frequency Fingerprint Functions
@@ -389,9 +389,12 @@ void WavManipulation::freqcomparison(){
 	while (!terminate){
 
 		while (ticks < duration){
+			if (!frequency.empty()){
+				ticks++;
+			}
 			checkfrequency = false;
 			clearqueue();
-			ticks++;
+
 		}
 		checkfrequency = true;
 		try{
@@ -525,7 +528,7 @@ void WavManipulation::freqSnip(string filePath, string filename, string csvname)
 	double freq = 0;
 	for (unsigned int i = 0; i < times.size(); i++){
 		vector<float> list;
-		for (int l = 0; l < 5; l++){
+		for (int l = 0; l < NUM_FREQ; l++){
 			vector<float> snippet;
 			startSample = round((times[i] + (l * 0.2)) * insound.getSrate() + 0.5);  //starting sample
 			stopSample = round((times[i] + (l * 0.2) + 0.2) * insound.getSrate() + 0.5);//ending sample
