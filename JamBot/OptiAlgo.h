@@ -13,6 +13,7 @@
 #include <array>
 #include <string>
 #include <queue>
+#include <sstream>
 #include "Constructs.h"
 #include "Constants.h"
 using namespace std;
@@ -67,9 +68,9 @@ class OptiAlgo
 		double BeatinessInClass(double input, BeatinessClassIDs flClass);
 		// Outputs
 		double ROutClass(double input, RGBClassIDs flClass);
-		double GpercentOutClass(double input, RGBClassIDs flClass);
+		double GOutClass(double input, RGBClassIDs flClass);
 		double BOutClass(double input, RGBClassIDs flClass);
-		double WOutClass(double input, WClassIDs flClass);
+		//double WOutClass(double input, WClassIDs flClass);
 
 		// Cutoffs for computing modified output classes
 		map <RGBClassIDs, double> Rcutoff;
@@ -98,6 +99,7 @@ public:
 	OptiAlgo();
 
 	static bool receive_audio_input_sample(AudioInfo audio_sample); // returns false if internal buffer is full
+	static bool receive_song_section(SECTION audio_sample); // returns false if internal buffer is full
 
 	void test_lights();
 	void start_algo();
