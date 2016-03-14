@@ -55,8 +55,8 @@ void CloseAllThreads();
 void ErrorHandler(LPTSTR lpszFunction);
 const gchar *textInput;
 GtkWidget *window, *lyricsEntry;
-GtkWidget *textEntry, *sectionNameBox, *sectionTimeBox;
-gchar *waveFile;
+GtkWidget *textEntry, *sectionNameBox, *sectionTimeBox, *songSelectBox;
+gchar *waveFilePath, *lyricsPath;
 string lyrics;
 GtkTextBuffer *lyricsBuffer;
 deque<GtkWidget*> sectionNameDetails;
@@ -85,7 +85,7 @@ static void selectWaveFile(GtkWidget *widget) {
 	gtk_widget_show_all(dialog);
 	gint resp = gtk_dialog_run(GTK_DIALOG(dialog));
 	if (resp == GTK_RESPONSE_OK) {
-		waveFile = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+		waveFilePath = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
 	}
 	else {
 		g_print("You Pressed the cancel button");
@@ -192,19 +192,30 @@ static void submitSongSection() {
 	GtkWidget *sectionTime, *sectionName;
 	const gchar *name, *time;
 	
-	vector<SongSection> section = vector<SongSection>();
+	if (lyricsPath != NULL && waveFilePath != NULL) {
+		vector<SongSection> section = vector<SongSection>();
 
-	for (int i = 0; i < sectionNameDetails.size(); i++) {
-		name = gtk_entry_get_text(GTK_ENTRY(sectionNameDetails[i]));
+		for (int i = 0; i < sectionNameDetails.size(); i++) {
+			name = gtk_entry_get_text(GTK_ENTRY(sectionNameDetails[i]));
 
-		time = gtk_entry_get_text(GTK_ENTRY(sectionTimeDetails[i]));
+			time = gtk_entry_get_text(GTK_ENTRY(sectionTimeDetails[i]));
 
-		section.push_back(SongSection(name, atoi((char*)time)));
+			section.push_back(SongSection(name, atoi((char*)time)));
+		}
+
+		GList *glist = NULL;
+
+		glist = g_list_append(glist, "String 1");
+		glist = g_list_append(glist, "String 2");
+		glist = g_list_append(glist, "String 3");
+		glist = g_list_append(glist, "String 4");
+
+		gtk_combo_set_popdown_strings(GTK_COMBO(songSelectBox), glist);
+		//wavmanipulation.dataStore("song1", section);
 	}
-	wavmanipulation.dataStore("song1", section);
 }
 
-static void fileBrowse(GtkWidget *button, gpointer window) {
+static void selectLyrics(GtkWidget *button, gpointer window) {
 	GtkWidget *dialog;
 	gchar *fileName;
 	dialog = gtk_file_chooser_dialog_new("Choose a file", GTK_WINDOW(window), GTK_FILE_CHOOSER_ACTION_OPEN, GTK_STOCK_OK,
@@ -212,8 +223,9 @@ static void fileBrowse(GtkWidget *button, gpointer window) {
 	gtk_widget_show_all(dialog);
 	gint resp = gtk_dialog_run(GTK_DIALOG(dialog));
 	if (resp == GTK_RESPONSE_OK) {
-		fileName = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
-		ifstream file(fileName);
+		lyricsPath = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+
+		/*ifstream file(fileName);
 		string line, text;
 		if (file.is_open())
 		{
@@ -226,7 +238,8 @@ static void fileBrowse(GtkWidget *button, gpointer window) {
 			GtkTextBuffer *buffer;
 			buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textEntry));
 			gtk_text_buffer_set_text(buffer, text.c_str(), -1);
-		}
+		}*/
+
 	}
 	else {
 		g_print("You Pressed the cancel button");
@@ -236,7 +249,7 @@ static void fileBrowse(GtkWidget *button, gpointer window) {
 
 
 static void startJamming(GtkWidget *button) {
-	if (waveFile != NULL) {
+	if (waveFilePath != NULL) {
 		int i = 0;
 		hThreadArray[WAVGEN_THREAD_ARR_ID] = CreateThread(
 		NULL,
@@ -535,16 +548,16 @@ int gtkStart(int argc, char* argv[])
 	g_signal_connect(GTK_OBJECT(playButton), "clicked", G_CALLBACK(CloseAllThreads), NULL);
 	gtk_widget_show(playButton);
 
-	playButton = gtk_button_new_with_label("Record");
-	gtk_box_pack_start(GTK_BOX(songControlBox), playButton, false, false, 5);
-	gtk_widget_show(playButton);
+	songSelectBox = gtk_combo_new();
+	gtk_box_pack_start(GTK_BOX(graphBox), songSelectBox, false, false, 5);
+
 
 	GtkWidget *temphBox;
 	temphBox = gtk_hbox_new(false, 0);
 
 	fileSelectDialog = gtk_button_new_with_label("Select Lyrics");
 	gtk_box_pack_start(GTK_BOX(temphBox), fileSelectDialog, false, false, 5);
-	g_signal_connect(GTK_OBJECT(fileSelectDialog), "clicked", G_CALLBACK(fileBrowse), window);
+	g_signal_connect(GTK_OBJECT(fileSelectDialog), "clicked", G_CALLBACK(selectLyrics), window);
 
 	GtkWidget *outputLyrics;
 	outputLyrics = gtk_button_new_with_label("Display Lyrics");
@@ -576,14 +589,6 @@ int gtkStart(int argc, char* argv[])
 	gtk_table_attach(GTK_TABLE(table), scroll, 1, 2, 0, 1, GTK_FILL, GTK_EXPAND, 0, 0);
 
 	gtk_box_pack_start(GTK_BOX(songLyricsBox), scroll, false, false, 5);
-
-
-	/*=========================== File Browser ===========================*/
-	/*fileBrowser = gtk_file_chooser_dialog_new("File selection", GTK_WINDOW(window), GTK_FILE_CHOOSER_ACTION_OPEN, GTK_STOCK_OK,
-	GTK_RESPONSE_OK, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, NULL);
-	gtk_file_selection_set_filename(GTK_FILE_SELECTION(fileBrowser), "penguin.png");
-	gtk_box_pack_start(GTK_BOX(windowBox), fileBrowser, false, false, 5);*/
-
 	/*=========================== the rest ===========================*/
 	gtk_container_add(GTK_CONTAINER(window), windowBox2);
 
