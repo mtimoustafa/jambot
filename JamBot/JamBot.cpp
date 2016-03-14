@@ -201,7 +201,7 @@ static void submitSongSection() {
 
 		section.push_back(SongSection(name, atoi((char*)time)));
 	}
-	wavmanipulation.dataStore("song1", section);
+	//wavmanipulation.dataStore("song1", section);
 }
 
 static void fileBrowse(GtkWidget *button, gpointer window) {

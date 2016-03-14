@@ -249,14 +249,12 @@ void WavManipulation::startanalysis(){
 	//time_t startTime;
 	//time_t endTime;
 	//double exectime;
-	secs.push_back(SongSection("Verse1", 22.0));
-	secs.push_back(SongSection("Chorus", 54.75));
-	secs.push_back(SongSection("Verse2", 90.0));
-	secs.push_back(SongSection("Chorus", 123.2));
-	secs.push_back(SongSection("Verse3", 187.4));
-	secs.push_back(SongSection("Chorus", 239.95));
-	dataStore("song1", secs);
-	freqSnip("C:\\Users\\emerson\\Downloads\\", "Boston_More_than_a_FeelingVocals_Only.wav", "song1");
+	secs.push_back(SongSection("Verse1", 1.6));
+	secs.push_back(SongSection("Chorus1", 24.8));
+	secs.push_back(SongSection("Chorus2", 53.4));
+	dataStore("Hey Jude VCC", secs, "C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VCC.wav", 
+		"C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VCC.txt");
+	freqSnip("Hey Jude VCC.csv");
 	start();
 	//parseTxt("testlyrics");
 }
@@ -277,10 +275,12 @@ void WavManipulation::startReading(bool in){
 //Parameters filename: Name of the csv file probably just the name of the song
 //			sections: a vector of the section information using the SongSection class
 //This function takes the name of th csv file and the list of sections and writes them to a csv file from the GUI
-void WavManipulation::dataStore(string filename, vector<SongSection> sections){
+void WavManipulation::dataStore(string csvname, vector<SongSection> sections, string wavfile, string lyricfile){
 	ofstream song;
 	ostringstream s;
-	song.open(filename + ".csv");
+	song.open(csvname + ".csv");
+	song << "Wav File, Lyric File\n";
+	song << wavfile + "," + lyricfile + "\n";
 	song << "Section Name, Start Time\n";
 	string str = "";
 	for (int i = 0; i < sections.size(); i++){
@@ -377,7 +377,7 @@ void WavManipulation::freqcomparison(){
 	Helpers::SongElement element = Helpers::NIL;
 
 	for (int k = 0; k < freqList.size(); k++){
-		if (lowercase(freqList[k].name) == "chorus")
+		if (lowercase(freqList[k].name) == "chorus1")
 			chorus = freqList[k].pitch;
 		if (lowercase(freqList[k].name) == "verse1")
 			verse = freqList[k].pitch;
@@ -430,14 +430,14 @@ void WavManipulation::freqcomparison(){
 
 			j = 0;
 
-			/*for (int i = 0; i < 3; i++){
-				
-				if (abs(chorusdiff[i] - freqdiff[i]) 
-					< abs(versediff[i] - freqdiff[i]))
-					choruscount++;
-				else
-					versecount++;
-			}*/
+			//for (int i = 0; i < 3; i++){
+			//	
+			//	if (abs(chorusdiff[i] - freqdiff[i]) 
+			//		< abs(versediff[i] - freqdiff[i]))
+			//		choruscount++;
+			//	else
+			//		versecount++;
+			//}
 			if (choruscount > versecount){
 				//send info to mohamed here, was causing some kind of warning message
 				for (int k = 0; k < freqList.size(); k++){
@@ -446,7 +446,7 @@ void WavManipulation::freqcomparison(){
 						break;
 					}
 				}
-				//TODO: Push Lyrics Jack: 
+				JamBot::updateLyrics(lyrics[index].lyric);
 				//TODO: Push section to Mohammed: Call receive_song_section()
 				Helpers::print_debug(freqList[index].name.c_str());
 				Helpers::print_debug("\n");
@@ -461,7 +461,7 @@ void WavManipulation::freqcomparison(){
 						break;
 					}
 				}
-				//TODO: Push Lyrics Jack: 
+				JamBot::updateLyrics(lyrics[index].lyric);
 				//TODO: Push section to Mohammed: Call receive_song_section()
 				Helpers::print_debug(freqList[index].name.c_str());
 				Helpers::print_debug("\n");
@@ -495,7 +495,7 @@ bool WavManipulation::checklyricrepeats(string name){
 	return false;
 }
 void WavManipulation::parseTxt(string filename){
-	ifstream file(filename + ".txt");
+	ifstream file(filename);
 	string value;
 	SecAnlys section;
 	getline(file, value, '[');
@@ -515,20 +515,21 @@ void WavManipulation::parseTxt(string filename){
 //			  csvname: the name of the csv file selected that contains the section information
 //This function is meant to be called before live play is started, this collects the data 
 //from the wav file to be compared to while live playing
-void WavManipulation::freqSnip(string filePath, string filename, string csvname){
-	ifstream file(csvname + ".csv");
-	SoundFileRead insound((filePath + filename).c_str());
-	SoundHeader header = insound;
+void WavManipulation::freqSnip(string csvname){
+	ifstream file(csvname);
 	vector<string> names;
 	vector<double> times;
-	int startSample = 0;
-	int stopSample = 0;
-	int n = 0;
-	int numSnips = 0;
 	string value = "";
+	string wavfile = "";
+	string lyricfile = "";
 	bool even = true;
-	SecAnlys section;
-	int length = floor((double)insound.getSamples() / (double)insound.getSrate());
+	getline(file, value, ',');
+	getline(file, value, '\n');
+	getline(file, value, ',');
+	wavfile = value;
+	getline(file, value, '\n');
+	lyricfile = value;
+
 	getline(file, value, ',');
 	getline(file, value, '\n');
 	while (!file.eof()){
@@ -544,6 +545,15 @@ void WavManipulation::freqSnip(string filePath, string filename, string csvname)
 		cout << value << endl;
 		even = !even;
 	}
+	SoundFileRead insound((wavfile).c_str());
+	SoundHeader header = insound;
+	int startSample = 0;
+	int stopSample = 0;
+	int n = 0;
+	int numSnips = 0;
+	SecAnlys section;
+	int length = floor((double)insound.getSamples() / (double)insound.getSrate());
+
 	double freq = 0;
 	for (unsigned int i = 0; i < times.size(); i++){
 		vector<float> list;
@@ -574,11 +584,12 @@ void WavManipulation::freqSnip(string filePath, string filename, string csvname)
 			freqList.push_back(section);
 		}
 	}
+	parseTxt(lyricfile);
 	
 }
 void WavManipulation::start(){
-	JamBot::updateLyrics("Hi i am Jude");
-	//freqcomparison();
+	//JamBot::updateLyrics("Hi i am Jude");
+	freqcomparison();
 }
 void WavManipulation::stop(){
 	terminate = true;
