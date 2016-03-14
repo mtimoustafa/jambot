@@ -563,7 +563,7 @@ LightsInfo OptiAlgo::FLSystem::Infer(AudioProps input) {
 #pragma region OptiAlgo
 
 static queue<AudioInfo> audio_buffer = queue<AudioInfo>();
-static queue<SECTION> audio_buffer = queue<SECTION>();
+static queue<SECTION> song_section_buffer = queue<SECTION>();
 
 OptiAlgo::OptiAlgo()
 {
@@ -581,9 +581,9 @@ bool OptiAlgo::receive_audio_input_sample(AudioInfo audio_sample)
 
 bool OptiAlgo::receive_song_section(SECTION audio_sample)
 {
-	if (audio_buffer.size() < AUDIO_BUF_SIZE)
-		audio_buffer.push(audio_sample);
-	return audio_buffer.size() < AUDIO_BUF_SIZE;
+	if (song_section_buffer.size() < AUDIO_BUF_SIZE)
+		song_section_buffer.push(audio_sample);
+	return song_section_buffer.size() < AUDIO_BUF_SIZE;
 }
 
 void OptiAlgo::test_lights()
