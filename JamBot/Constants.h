@@ -44,6 +44,13 @@ const double W_LB = 0.0;
 const double DIM_UB = 255.0;
 const double DIM_LB = 0.0;
 
+//GUI Madness
+
+#pragma region Optimization Algorithm parameters
+const unsigned int AUDIO_BUF_SIZE = 256;
+const unsigned int HISTORY_BUF_SIZE = 10;
+const unsigned int MAX_LOUD_HIST_BUF_SIZE = 4;
+const unsigned int WEIGHTS_HIST_BUF_SIZE = 1;
 #pragma region Fuzzy logic parameters
 // TODO: tweak these parameters
 const unsigned int IN_HIST_BUF_SIZE = 5;
