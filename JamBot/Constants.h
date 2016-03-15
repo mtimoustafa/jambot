@@ -44,9 +44,13 @@ const double W_LB = 0.0;
 const double DIM_UB = 255.0;
 const double DIM_LB = 0.0;
 
+<<<<<<< HEAD
 //GUI Madness
 
 #pragma region Fuzzy logic parameters
+=======
+//Fuzzy logic parameters
+>>>>>>> 6743194b2de20c6206768d32681952a361b86b9d
 // TODO: tweak these parameters
 const unsigned int IN_HIST_BUF_SIZE = 5;
 const unsigned int OUT_HIST_BUF_SIZE = 20;
@@ -55,6 +59,5 @@ const double BEATINESS_THRESH = 1000.0; // Remove this and use class
 const double SILENCE_THRESH = 100.0; //TODO: tweak this
 
 const enum SECTION { chorus, verse };
-#pragma endregion
 
 #endif
