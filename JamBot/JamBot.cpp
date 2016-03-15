@@ -56,11 +56,13 @@ void ErrorHandler(LPTSTR lpszFunction);
 const gchar *textInput;
 GtkWidget *window, *lyricsEntry;
 GtkWidget *textEntry, *sectionNameBox, *sectionTimeBox, *songSelectBox;
-gchar *waveFilePath, *lyricsPath;
+GList *songList = NULL;
+string waveFilePath, lyricsPath;
 string lyrics;
 GtkTextBuffer *lyricsBuffer;
 deque<GtkWidget*> sectionNameDetails;
 deque<GtkWidget*> sectionTimeDetails;
+ofstream masterCSV;
 
 static void changeProgressBar(GtkWidget *widget, gpointer data)
 {
@@ -192,31 +194,33 @@ static void submitSongSection() {
 	GtkWidget *sectionTime, *sectionName;
 	const gchar *name, *time;
 	
-	if (lyricsPath != NULL && waveFilePath != NULL) {
+	if (!lyricsPath.empty() && !waveFilePath.empty()) {
 		vector<SongSection> section = vector<SongSection>();
 
 		for (int i = 0; i < sectionNameDetails.size(); i++) {
 			name = gtk_entry_get_text(GTK_ENTRY(sectionNameDetails[i]));
-
 			time = gtk_entry_get_text(GTK_ENTRY(sectionTimeDetails[i]));
-
 			section.push_back(SongSection(name, atoi((char*)time)));
 		}
+		int position = lyricsPath.find_last_of('/\\');
+		string fileName = lyricsPath.substr(position + 1);
+		fileName = fileName.substr(0, fileName.size() - 4);
+		wavmanipulation.dataStore(fileName, section, waveFilePath, lyricsPath);
 
-		GList *glist = NULL;
+		songList = g_list_append(songList, (gpointer)fileName.c_str());
+		char* testing = (char*)g_list_nth_data(songList, (guint)0);
+		gtk_combo_set_popdown_strings(GTK_COMBO(songSelectBox), songList);
 
-		glist = g_list_append(glist, "String 1");
-		glist = g_list_append(glist, "String 2");
-		glist = g_list_append(glist, "String 3");
-		glist = g_list_append(glist, "String 4");
+		masterCSV.open("masterCSV.csv", ios_base::app);
+		masterCSV << fileName + "\n";
+		//masterCSV << "I don't need you \n";
+		masterCSV << "HeyJude\n";
+		masterCSV << "circuleoflife\n";
+		masterCSV << "littlewhalesong\n";
 
-		gtk_combo_set_popdown_strings(GTK_COMBO(songSelectBox), glist);
-		//wavmanipulation.dataStore("song1", section);
+
+		masterCSV.close();
 	}
-<<<<<<< HEAD
-=======
-	//wavmanipulation.dataStore("song1", section);
->>>>>>> 94465d4c500bcd17aa9127f4a4c8d236bb38a239
 }
 
 static void selectLyrics(GtkWidget *button, gpointer window) {
@@ -253,7 +257,7 @@ static void selectLyrics(GtkWidget *button, gpointer window) {
 
 
 static void startJamming(GtkWidget *button) {
-	if (waveFilePath != NULL) {
+	if (waveFilePath.empty()) {
 		int i = 0;
 		hThreadArray[WAVGEN_THREAD_ARR_ID] = CreateThread(
 		NULL,
@@ -552,8 +556,54 @@ int gtkStart(int argc, char* argv[])
 	g_signal_connect(GTK_OBJECT(playButton), "clicked", G_CALLBACK(CloseAllThreads), NULL);
 	gtk_widget_show(playButton);
 
+
+
+	/*============================== COMBO  ========================================*/
 	songSelectBox = gtk_combo_new();
-	gtk_box_pack_start(GTK_BOX(graphBox), songSelectBox, false, false, 5);
+
+	GtkListStore *liststore;
+    GtkWidget *combo;
+    GtkCellRenderer *column;
+
+    gtk_init(&argc, &argv);
+
+    liststore = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_STRING);
+
+	ifstream file("masterCSV.csv");
+	string line, text;
+	if (file.is_open())
+	{
+		while (getline(file, line))
+		{
+			gtk_list_store_insert_with_values(liststore, NULL, -1, 0, "red", 1, (char*)line.c_str(), -1);		
+		}
+		file.close();
+	}
+
+    combo = gtk_combo_box_new_with_model(GTK_TREE_MODEL(liststore));
+
+    /* liststore is now owned by combo, so the initial reference can
+     * be dropped */
+    g_object_unref(liststore);
+
+    column = gtk_cell_renderer_text_new();
+    gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(combo), column, TRUE);
+
+    /* column does not need to be g_object_unref()ed because it
+     * is GInitiallyUnowned and the floating reference has been
+     * passed to combo by the gtk_cell_layout_pack_start() call. */
+
+    gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(combo), column,
+                                   "cell-background", 0,
+                                   "text", 1,
+                                   NULL);
+
+    gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 1);
+
+
+
+	gtk_combo_set_popdown_strings(GTK_COMBO(songSelectBox), songList);
+	gtk_box_pack_start(GTK_BOX(graphBox), combo, false, false, 5);
 
 
 	GtkWidget *temphBox;
