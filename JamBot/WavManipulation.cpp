@@ -9,6 +9,7 @@
 #include "Constants.h"
 #include "fftw3.h"
 #include "JamBot.h"
+#include "OptiAlgo.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string>
@@ -249,12 +250,12 @@ void WavManipulation::startanalysis(){
 	//time_t startTime;
 	//time_t endTime;
 	//double exectime;
-	secs.push_back(SongSection("Verse1", 0.8));
-	secs.push_back(SongSection("Chorus1", 24.8));
-	secs.push_back(SongSection("Chorus2", 53.4));
-	dataStore("Hey Jude VCC", secs, "C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VCC.wav", 
-		"C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VCC.txt");
-	freqSnip("Hey Jude VCC.csv");
+	secs.push_back(SongSection("Verse1", 1.6));
+	secs.push_back(SongSection("Verse2", 24.8));
+	secs.push_back(SongSection("Chorus", 48.6));
+	dataStore("Hey Jude VVC", secs, "C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VVC.wav", 
+		"C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VVC.txt");
+	freqSnip("Hey Jude VVC.csv");
 	start();
 	//parseTxt("testlyrics");
 }
@@ -366,11 +367,10 @@ void WavManipulation::freqcomparison(){
 	float diff2 = 0.0;
 	int choruscount = 0;
 	int versecount = 0;
-	int c = 1;
-	int v = 1;
+	int c = -1;
+	int v = -1;
 	int chorusdiffcount = 0;
 	int versediffcount = 0;
-	int index = 0;
 	int j = 0;
 	int ticks = 0;
 	int duration = 0;
@@ -379,9 +379,9 @@ void WavManipulation::freqcomparison(){
 	Helpers::SongElement element = Helpers::NIL;
 
 	for (int k = 0; k < freqList.size(); k++){
-		if (lowercase(freqList[k].name) == "chorus1")
+		if (lowercase(freqList[k].name).find("chorus") != string::npos)
 			chorus = freqList[k].pitch;
-		if (lowercase(freqList[k].name) == "verse1")
+		if (lowercase(freqList[k].name).find("verse1") != string::npos)
 			verse = freqList[k].pitch;
 	}
 	chorusdiff.push_back(abs(0.0 - chorus[0]));
@@ -439,38 +439,40 @@ void WavManipulation::freqcomparison(){
 				else
 					versecount++;
 			}
+			freqdiff.clear();
 			if (choruscount > versecount){
 				//send info to mohamed here, was causing some kind of warning message
 				for (int k = 0; k < freqList.size(); k++){
 					if (lowercase(freqList[k].name).find("chorus") != string::npos){
-						if (k != index){
-							index = k;
+						if (k != c){
+							c = k;
 							break;
 						}
 					}
 				}
-				JamBot::updateLyrics(lyrics[index].lyric);
-				//TODO: Push section to Mohammed: Call receive_song_section()
-				Helpers::print_debug(freqList[index].name.c_str());
+				JamBot::updateLyrics(lyrics[c].lyric);
+				OptiAlgo::receive_song_section(SECTION::chorus);
+				Helpers::print_debug(freqList[c].name.c_str());
 				Helpers::print_debug("\n");
 				ticks = 0;
-				duration = freqList[index].duration;
+				duration = freqList[c].duration;
 			}
 			else if (versecount > choruscount){
 				//send info to mohamed here, was causing some kindof warning message
 				for (int k = 0; k < freqList.size(); k++){ 
 					if (lowercase(freqList[k].name).find("verse") != string::npos){
-						index = k;
-						break;
+						if (k != v){
+							v = k;
+							break;
+						}
 					}
 				}
-				JamBot::updateLyrics(lyrics[index].lyric);
-				//TODO: Push section to Mohammed: Call receive_song_section()
-				Helpers::print_debug(freqList[index].name.c_str());
+				JamBot::updateLyrics(lyrics[v].lyric);
+				OptiAlgo::receive_song_section(SECTION::verse);
+				Helpers::print_debug(freqList[v].name.c_str());
 				Helpers::print_debug("\n");
 				ticks = 0;
-				duration = freqList[index].duration;
-				freqList.erase(freqList.begin() + index);
+				duration = freqList[v].duration;
 			}
 			else{
 				Helpers::print_debug("No Section Found");
@@ -519,7 +521,7 @@ void WavManipulation::parseTxt(string filename){
 //This function is meant to be called before live play is started, this collects the data 
 //from the wav file to be compared to while live playing
 void WavManipulation::freqSnip(string csvname){
-	ifstream file(csvname);
+	ifstream file("CSV\\" + csvname);
 	vector<string> names;
 	vector<double> times;
 	string value = "";
