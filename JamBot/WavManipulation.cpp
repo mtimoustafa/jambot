@@ -249,7 +249,7 @@ void WavManipulation::startanalysis(){
 	//time_t startTime;
 	//time_t endTime;
 	//double exectime;
-	secs.push_back(SongSection("Verse1", 1.6));
+	secs.push_back(SongSection("Verse1", 0.8));
 	secs.push_back(SongSection("Chorus1", 24.8));
 	secs.push_back(SongSection("Chorus2", 53.4));
 	dataStore("Hey Jude VCC", secs, "C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VCC.wav", 
@@ -277,8 +277,7 @@ void WavManipulation::startReading(bool in){
 //This function takes the name of th csv file and the list of sections and writes them to a csv file from the GUI
 void WavManipulation::dataStore(string csvname, vector<SongSection> sections, string wavfile, string lyricfile){
 	ofstream song;
-	ostringstream s;
-	song.open(csvname + ".csv");
+	song.open("CSV\\" + csvname + ".csv");
 	song << "Wav File, Lyric File\n";
 	song << wavfile + "," + lyricfile + "\n";
 	song << "Section Name, Start Time\n";
@@ -286,6 +285,7 @@ void WavManipulation::dataStore(string csvname, vector<SongSection> sections, st
 	for (int i = 0; i < sections.size(); i++){
 		song << sections[i].Name + "," + to_string(sections[i].startTime) + "\n";
 	}
+	song.close();
 }
 
 bool WavManipulation::checkrepeats(string name){
@@ -366,13 +366,15 @@ void WavManipulation::freqcomparison(){
 	float diff2 = 0.0;
 	int choruscount = 0;
 	int versecount = 0;
+	int c = 1;
+	int v = 1;
 	int chorusdiffcount = 0;
 	int versediffcount = 0;
 	int index = 0;
 	int j = 0;
 	int ticks = 0;
 	int duration = 0;
-	vector<float> chorus, verse,chorusdiff, versediff,freqdiff;
+	vector<float> chorus, verse,chorusdiff, versediff,freqdiff, freq;
 	char * err_str;
 	Helpers::SongElement element = Helpers::NIL;
 
@@ -382,18 +384,16 @@ void WavManipulation::freqcomparison(){
 		if (lowercase(freqList[k].name) == "verse1")
 			verse = freqList[k].pitch;
 	}
-	chorusdiff.push_back(abs(0.0 - chorus[1]));
+	chorusdiff.push_back(abs(0.0 - chorus[0]));
 	chorusdiff.push_back(abs(chorus[0] - chorus[1]));
 	chorusdiff.push_back(abs(chorus[1] - chorus[2]));
 	//chorusdiff.push_back(abs(0.0 - chorus[2]));
-	versediff.push_back(abs(0.0 - verse[1]));
+	versediff.push_back(abs(0.0 - verse[0]));
 	versediff.push_back(abs(verse[0] - verse[1]));
 	versediff.push_back(abs(verse[1] - verse[2]));
 	//versediff.push_back(abs(0.0 - verse[2]));
 
 	while (!terminate){
-
-
 		while (ticks < duration || !checkfrequency){
 			if (!frequency.empty())
 			{
@@ -412,9 +412,9 @@ void WavManipulation::freqcomparison(){
 						return; 
 					} 
 				}
-
 				freqdiff.push_back(abs(inFreq - frequency.front()));
 				inFreq = frequency.front();
+				freq.push_back(inFreq);
 				frequency.pop();
 				diff1 = abs(inFreq - chorus[j]);
 				diff2 = abs(inFreq - verse[j]);
@@ -423,6 +423,7 @@ void WavManipulation::freqcomparison(){
 					choruscount++;
 				else
 					versecount++;	
+					
 
 				ticks++;
 				j++;
@@ -430,20 +431,22 @@ void WavManipulation::freqcomparison(){
 
 			j = 0;
 
-			//for (int i = 0; i < 3; i++){
-			//	
-			//	if (abs(chorusdiff[i] - freqdiff[i]) 
-			//		< abs(versediff[i] - freqdiff[i]))
-			//		choruscount++;
-			//	else
-			//		versecount++;
-			//}
+			for (int i = 0; i < 3; i++){
+				
+				if (abs(chorusdiff[i] - freqdiff[i]) 
+					< abs(versediff[i] - freqdiff[i]))
+					choruscount++;
+				else
+					versecount++;
+			}
 			if (choruscount > versecount){
 				//send info to mohamed here, was causing some kind of warning message
 				for (int k = 0; k < freqList.size(); k++){
 					if (lowercase(freqList[k].name).find("chorus") != string::npos){
-						index = k;
-						break;
+						if (k != index){
+							index = k;
+							break;
+						}
 					}
 				}
 				JamBot::updateLyrics(lyrics[index].lyric);
@@ -467,6 +470,7 @@ void WavManipulation::freqcomparison(){
 				Helpers::print_debug("\n");
 				ticks = 0;
 				duration = freqList[index].duration;
+				freqList.erase(freqList.begin() + index);
 			}
 			else{
 				Helpers::print_debug("No Section Found");
@@ -507,12 +511,11 @@ void WavManipulation::parseTxt(string filename){
 		section.lyric = value;
 		lyrics.push_back(section);
 	}
+	file.close();
 }
 
 //freqSnip(string, string, string)
-//Parameters: filePath: the absolute path of the folder containing the wav files
-//			  filename: the name of the file selected
-//			  csvname: the name of the csv file selected that contains the section information
+//Parameters: csvname: the name of the CSV file, The wav file and lyric file are stored in the csv file
 //This function is meant to be called before live play is started, this collects the data 
 //from the wav file to be compared to while live playing
 void WavManipulation::freqSnip(string csvname){
@@ -545,6 +548,7 @@ void WavManipulation::freqSnip(string csvname){
 		cout << value << endl;
 		even = !even;
 	}
+	file.close();
 	SoundFileRead insound((wavfile).c_str());
 	SoundHeader header = insound;
 	int startSample = 0;
