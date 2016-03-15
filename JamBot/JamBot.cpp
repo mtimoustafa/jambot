@@ -38,9 +38,26 @@ WavManipulation wavmanipulation = WavManipulation();
 OptiAlgo optiAlgo = OptiAlgo();
 DMXOutput lightsTest = DMXOutput();
 
+void CloseThread(int id);
+void CloseAllThreads();
+void ErrorHandler(LPTSTR lpszFunction);
+const gchar *textInput;
+GtkWidget *window, *lyricsEntry;
+GtkWidget *textEntry, *sectionNameBox, *sectionTimeBox, *songSelectBox;
+GList *songList = NULL;
+string waveFilePath, lyricsPath;
+string lyrics, csvFileName;
+GtkTextBuffer *lyricsBuffer;
+deque<GtkWidget*> sectionNameDetails;
+deque<GtkWidget*> sectionTimeDetails;
+ofstream masterCSV;
+deque<string> csvList;
+GtkListStore *liststore;
+bool songSelectedFlag = false;
+
 // Functions to run components in threads
 DWORD WINAPI AudioInputThread(LPVOID lpParam) { inputChannelReader = InputChannelReader(); Helpers::print_debug("START audio input.\n"); inputChannelReader.start(); return 0; }
-DWORD WINAPI WavGenThread(LPVOID lpParam) { wavmanipulation = WavManipulation(); Helpers::print_debug("START wav manip.\n"); wavmanipulation.startanalysis(); return 0; }
+DWORD WINAPI WavGenThread(LPVOID lpParam) { wavmanipulation = WavManipulation(); Helpers::print_debug("START wav manip.\n"); wavmanipulation.start(csvFileName); return 0; }
 DWORD WINAPI OptiAlgoThread(LPVOID lpParam) { optiAlgo = OptiAlgo(); Helpers::print_debug("START opti algo.\n"); optiAlgo.start(); return 0; }
 DWORD WINAPI AudioOutputThread(LPVOID lpParam) { lightsTest = DMXOutput(); Helpers::print_debug("START audio output.\n"); lightsTest.start(); return 0; }
 
@@ -50,19 +67,7 @@ ATOM				MyRegisterClass(HINSTANCE hInstance);
 BOOL				InitInstance(HINSTANCE, int);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
-void CloseThread(int id);
-void CloseAllThreads();
-void ErrorHandler(LPTSTR lpszFunction);
-const gchar *textInput;
-GtkWidget *window, *lyricsEntry;
-GtkWidget *textEntry, *sectionNameBox, *sectionTimeBox, *songSelectBox;
-GList *songList = NULL;
-string waveFilePath, lyricsPath;
-string lyrics;
-GtkTextBuffer *lyricsBuffer;
-deque<GtkWidget*> sectionNameDetails;
-deque<GtkWidget*> sectionTimeDetails;
-ofstream masterCSV;
+
 
 static void changeProgressBar(GtkWidget *widget, gpointer data)
 {
@@ -88,6 +93,19 @@ static void selectWaveFile(GtkWidget *widget) {
 	gint resp = gtk_dialog_run(GTK_DIALOG(dialog));
 	if (resp == GTK_RESPONSE_OK) {
 		waveFilePath = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+
+		SoundFileRead insound((waveFilePath).c_str());
+		SoundHeader header = insound;
+		int sampleAmount = header.getSamples();
+		int length = floor((double)insound.getSamples() / (double)insound.getSrate());
+		int currentSample = 0;
+		int sampleRate = sampleAmount / 1000;
+		double sample;
+		while (currentSample < sampleAmount){
+			sample = insound.getCurrentSampleDouble(0);
+			insound.gotoSample(currentSample);
+			currentSample += sampleRate;
+		}
 	}
 	else {
 		g_print("You Pressed the cancel button");
@@ -124,7 +142,7 @@ static void dialog_result(GtkWidget *dialog, gint resp, gpointer data) {
 static void displayLyricsNonmodal(GtkWidget *widget, gpointer window)
 {
 	GtkWidget *dialog, *label, *image;
-	dialog = gtk_dialog_new_with_buttons("Nonmodal dialog", GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, NULL, 
+	dialog = gtk_dialog_new_with_buttons("Nonmodal dialog", GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, NULL,
 		NULL, NULL, NULL);
 	PangoFontDescription *font_desc;
 
@@ -193,7 +211,7 @@ static void displayLyrics(GtkWidget *widget, gpointer window)
 static void submitSongSection() {
 	GtkWidget *sectionTime, *sectionName;
 	const gchar *name, *time;
-	
+
 	if (!lyricsPath.empty() && !waveFilePath.empty()) {
 		vector<SongSection> section = vector<SongSection>();
 
@@ -207,19 +225,14 @@ static void submitSongSection() {
 		fileName = fileName.substr(0, fileName.size() - 4);
 		wavmanipulation.dataStore(fileName, section, waveFilePath, lyricsPath);
 
-		songList = g_list_append(songList, (gpointer)fileName.c_str());
-		char* testing = (char*)g_list_nth_data(songList, (guint)0);
-		gtk_combo_set_popdown_strings(GTK_COMBO(songSelectBox), songList);
-
-		masterCSV.open("masterCSV.csv", ios_base::app);
+		masterCSV.open("CSV\\masterCSV.csv", ios_base::app);
 		masterCSV << fileName + "\n";
-		//masterCSV << "I don't need you \n";
-		masterCSV << "HeyJude\n";
-		masterCSV << "circuleoflife\n";
-		masterCSV << "littlewhalesong\n";
-
-
 		masterCSV.close();
+
+		gtk_list_store_insert_with_values(liststore, NULL, -1, 0, "red", 1, (char*)fileName.c_str(), -1);
+		songSelectBox = gtk_combo_box_new_with_model(GTK_TREE_MODEL(liststore));
+		gtk_widget_show_all(songSelectBox);
+		songSelectedFlag = true;
 	}
 }
 
@@ -237,15 +250,15 @@ static void selectLyrics(GtkWidget *button, gpointer window) {
 		string line, text;
 		if (file.is_open())
 		{
-			while (getline(file, line))
-			{
-				text += line;
-				text += "\n";
-			}
-			file.close();
-			GtkTextBuffer *buffer;
-			buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textEntry));
-			gtk_text_buffer_set_text(buffer, text.c_str(), -1);
+		while (getline(file, line))
+		{
+		text += line;
+		text += "\n";
+		}
+		file.close();
+		GtkTextBuffer *buffer;
+		buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textEntry));
+		gtk_text_buffer_set_text(buffer, text.c_str(), -1);
 		}*/
 
 	}
@@ -257,20 +270,22 @@ static void selectLyrics(GtkWidget *button, gpointer window) {
 
 
 static void startJamming(GtkWidget *button) {
-	if (waveFilePath.empty()) {
-		int i = 0;
+	gint position = gtk_combo_box_get_active(GTK_COMBO_BOX(songSelectBox));
+	if (songSelectedFlag && position > 0) {
+		csvFileName = csvList[position] + ".csv";
+
 		hThreadArray[WAVGEN_THREAD_ARR_ID] = CreateThread(
-		NULL,
-		0,
-		WavGenThread,
-		NULL,
-		0,
-		&dwThreadArray[WAVGEN_THREAD_ARR_ID]);
+			NULL,
+			0,
+			WavGenThread,
+			NULL,
+			0,
+			&dwThreadArray[WAVGEN_THREAD_ARR_ID]);
 		if (hThreadArray[WAVGEN_THREAD_ARR_ID] == NULL)
 		{
-		ErrorHandler(TEXT("CreateThread"));
-		CloseAllThreads();
-		ExitProcess(3);
+			ErrorHandler(TEXT("CreateThread"));
+			CloseAllThreads();
+			ExitProcess(3);
 		}
 	}
 
@@ -374,7 +389,7 @@ int gtkStart(int argc, char* argv[])
 
 	//gtk_container_set_border_width(GTK_CONTAINER(window), 150);
 	gtk_window_set_title(GTK_WINDOW(window), "JamBot");
-		
+
 	g_signal_connect(window, "dontcallthis", G_CALLBACK(changeProgressBar), NULL);
 
 	/*=========================== Widget boxes ===========================*/
@@ -429,7 +444,7 @@ int gtkStart(int argc, char* argv[])
 	sectionBox = gtk_vbox_new(false, 0);
 	sectionNameBox = gtk_hbox_new(false, 0);
 	sectionTimeBox = gtk_hbox_new(false, 0);
-		
+
 	/*sectionButtonBox*/
 	addSectionButton = gtk_button_new_with_label("Add Section");
 	g_signal_connect(GTK_OBJECT(addSectionButton), "clicked", G_CALLBACK(addNewSection), (gpointer)sectionNameBox, (gpointer)sectionTimeBox);
@@ -556,54 +571,49 @@ int gtkStart(int argc, char* argv[])
 	g_signal_connect(GTK_OBJECT(playButton), "clicked", G_CALLBACK(CloseAllThreads), NULL);
 	gtk_widget_show(playButton);
 
-
-
 	/*============================== COMBO  ========================================*/
 	songSelectBox = gtk_combo_new();
+	GtkCellRenderer *column;
 
-	GtkListStore *liststore;
-    GtkWidget *combo;
-    GtkCellRenderer *column;
+	gtk_init(&argc, &argv);
 
-    gtk_init(&argc, &argv);
+	liststore = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_STRING);
 
-    liststore = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_STRING);
-
-	ifstream file("masterCSV.csv");
+	ifstream file("CSV\\masterCSV.csv");
 	string line, text;
 	if (file.is_open())
 	{
+		gtk_list_store_insert_with_values(liststore, NULL, -1, 0, "red", 1, "None", -1);
+		csvList.push_back("None");
+
 		while (getline(file, line))
 		{
-			gtk_list_store_insert_with_values(liststore, NULL, -1, 0, "red", 1, (char*)line.c_str(), -1);		
+			csvList.push_back(line);
+			gtk_list_store_insert_with_values(liststore, NULL, -1, 0, "red", 1, (char*)line.c_str(), -1);
 		}
 		file.close();
 	}
+	songSelectBox = gtk_combo_box_new_with_model(GTK_TREE_MODEL(liststore));
 
-    combo = gtk_combo_box_new_with_model(GTK_TREE_MODEL(liststore));
+	/* liststore is now owned by combo, so the initial reference can
+	* be dropped */
+	g_object_unref(liststore);
 
-    /* liststore is now owned by combo, so the initial reference can
-     * be dropped */
-    g_object_unref(liststore);
+	column = gtk_cell_renderer_text_new();
+	gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(songSelectBox), column, TRUE);
 
-    column = gtk_cell_renderer_text_new();
-    gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(combo), column, TRUE);
+	/* column does not need to be g_object_unref()ed because it
+	* is GInitiallyUnowned and the floating reference has been
+	* passed to combo by the gtk_cell_layout_pack_start() call. */
 
-    /* column does not need to be g_object_unref()ed because it
-     * is GInitiallyUnowned and the floating reference has been
-     * passed to combo by the gtk_cell_layout_pack_start() call. */
+	gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(songSelectBox), column, "cell-background", 0, "text", 1, NULL);
 
-    gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(combo), column,
-                                   "cell-background", 0,
-                                   "text", 1,
-                                   NULL);
-
-    gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 1);
-
-
-
-	gtk_combo_set_popdown_strings(GTK_COMBO(songSelectBox), songList);
-	gtk_box_pack_start(GTK_BOX(graphBox), combo, false, false, 5);
+	gtk_combo_box_set_active(GTK_COMBO_BOX(songSelectBox), 1);
+	gtk_box_pack_start(GTK_BOX(graphBox), songSelectBox, false, false, 5);
+	
+	if (csvList.size() > 1) {
+		songSelectedFlag = true;
+	}
 
 
 	GtkWidget *temphBox;
