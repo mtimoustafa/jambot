@@ -44,7 +44,6 @@ const double W_LB = 0.0;
 const double DIM_UB = 255.0;
 const double DIM_LB = 0.0;
 
-//Fuzzy logic parameters
 // TODO: tweak these parameters
 const unsigned int IN_HIST_BUF_SIZE = 5;
 const unsigned int OUT_HIST_BUF_SIZE = 20;
