@@ -56,8 +56,8 @@ GtkListStore *liststore;
 bool songSelectedFlag = false;
 
 // Functions to run components in threads
-DWORD WINAPI AudioInputThread(LPVOID lpParam) { inputChannelReader = InputChannelReader(); Helpers::print_debug("START audio input.\n"); inputChannelReader.start(); return 0; }
-DWORD WINAPI WavGenThread(LPVOID lpParam) { wavmanipulation = WavManipulation(); Helpers::print_debug("START wav manip.\n"); wavmanipulation.start(csvFileName); return 0; }
+DWORD WINAPI AudioInputThread(LPVOID lpParam) { inputChannelReader = InputChannelReader(); Helpers::print_debug("START audio input.\n"); inputChannelReader.start(songSelectedFlag); return 0; }
+DWORD WINAPI WavGenThread(LPVOID lpParam) { wavmanipulation = WavManipulation(); Helpers::print_debug("START wav manip.\n"); wavmanipulation.start(); return 0; }
 DWORD WINAPI OptiAlgoThread(LPVOID lpParam) { optiAlgo = OptiAlgo(); Helpers::print_debug("START opti algo.\n"); optiAlgo.start(); return 0; }
 DWORD WINAPI AudioOutputThread(LPVOID lpParam) { lightsTest = DMXOutput(); Helpers::print_debug("START audio output.\n"); lightsTest.start(); return 0; }
 
@@ -232,7 +232,6 @@ static void submitSongSection() {
 		gtk_list_store_insert_with_values(liststore, NULL, -1, 0, "red", 1, (char*)fileName.c_str(), -1);
 		songSelectBox = gtk_combo_box_new_with_model(GTK_TREE_MODEL(liststore));
 		gtk_widget_show_all(songSelectBox);
-		songSelectedFlag = true;
 	}
 }
 
@@ -271,9 +270,10 @@ static void selectLyrics(GtkWidget *button, gpointer window) {
 
 static void startJamming(GtkWidget *button) {
 	gint position = gtk_combo_box_get_active(GTK_COMBO_BOX(songSelectBox));
-	if (songSelectedFlag && position > 0) {
-		csvFileName = csvList[position] + ".csv";
-
+	csvFileName = csvList[position] + ".csv";
+	if (position > 0 || csvFileName.compare("None.csv") != 0)
+	{
+		songSelectedFlag = true;		
 		hThreadArray[WAVGEN_THREAD_ARR_ID] = CreateThread(
 			NULL,
 			0,
@@ -611,11 +611,6 @@ int gtkStart(int argc, char* argv[])
 	gtk_combo_box_set_active(GTK_COMBO_BOX(songSelectBox), 1);
 	gtk_box_pack_start(GTK_BOX(graphBox), songSelectBox, false, false, 5);
 	
-	if (csvList.size() > 1) {
-		songSelectedFlag = true;
-	}
-
-
 	GtkWidget *temphBox;
 	temphBox = gtk_hbox_new(false, 0);
 

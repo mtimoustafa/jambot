@@ -592,7 +592,6 @@ void WavManipulation::freqSnip(string csvname){
 	
 }
 void WavManipulation::start(){
-	//JamBot::updateLyrics("Hi i am Jude");
 	freqcomparison();
 }
 void WavManipulation::stop(){

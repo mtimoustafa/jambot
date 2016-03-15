@@ -234,7 +234,7 @@ void InputChannelReader::stop()
 	stopStream = true;
 }
 
-void InputChannelReader::start()
+void InputChannelReader::start(bool songSelected)
 {
 	main();
 }
