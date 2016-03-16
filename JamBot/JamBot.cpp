@@ -57,6 +57,8 @@ bool songSelectedFlag = false;
 bool graphWaveFlag = false;
 GtkWidget *drawArea, *sectionDialog;
 bool songSectionFlag = false;
+bool alreadyJamming = false;
+int songListPosition = 0;
 
 // Functions to run components in threads
 DWORD WINAPI AudioInputThread(LPVOID lpParam) { inputChannelReader = InputChannelReader(); Helpers::print_debug("START audio input.\n"); inputChannelReader.start(songSelectedFlag); return 0; }
@@ -84,10 +86,8 @@ void JamBot::updateLyrics(string text) {
 }
 
 static void testFunction(GtkWidget *widget) {
-	//g_signal_new("pitch-data", G_TYPE_OBJECT, G_SIGNAL_RUN_FIRST, 0, NULL, NULL, NULL, G_TYPE_NONE, 0);
 	g_signal_emit_by_name(window, "button_press_event");
 }
-
 
 static void dialog_result(GtkWidget *dialog, gint resp, gpointer data) {
 	if (resp != GTK_RESPONSE_OK) {
@@ -193,6 +193,7 @@ static void addNewSection(GtkWidget *widget)
 static void submitSongSection() {
 	GtkWidget *sectionTime, *sectionName;
 	const gchar *name, *time;
+	GtkCellRenderer *column;
 
 	if (!lyricsPath.empty() && !waveFilePath.empty()) {
 		vector<SongSection> section = vector<SongSection>();
@@ -211,8 +212,11 @@ static void submitSongSection() {
 		masterCSV << fileName + "\n";
 		masterCSV.close();
 
+		csvList.push_back(fileName);
+
 		gtk_list_store_insert_with_values(liststore, NULL, -1, 0, "red", 1, (char*)fileName.c_str(), -1);
-		songSelectBox = gtk_combo_box_new_with_model(GTK_TREE_MODEL(liststore));
+		gtk_dialog_response(GTK_DIALOG(sectionDialog), GTK_RESPONSE_CLOSE);
+
 		gtk_widget_show_all(songSelectBox);
 	}
 }
@@ -373,67 +377,69 @@ static void selectLyrics(GtkWidget *button, gpointer window) {
 	gtk_widget_destroy(dialog);
 }
 
-
 static void startJamming(GtkWidget *button) {
 	gint position = gtk_combo_box_get_active(GTK_COMBO_BOX(songSelectBox));
 	csvFileName = csvList[position] + ".csv";
-	if (position > 0 || csvFileName.compare("None.csv") != 0)
-	{
-		songSelectedFlag = true;
-		hThreadArray[WAVGEN_THREAD_ARR_ID] = CreateThread(
+	if (!alreadyJamming) {
+
+		if (position > 0 || csvFileName.compare("None.csv") != 0)
+		{
+			songSelectedFlag = true;
+			hThreadArray[WAVGEN_THREAD_ARR_ID] = CreateThread(
+				NULL,
+				0,
+				WavGenThread,
+				NULL,
+				0,
+				&dwThreadArray[WAVGEN_THREAD_ARR_ID]);
+			if (hThreadArray[WAVGEN_THREAD_ARR_ID] == NULL)
+			{
+				ErrorHandler(TEXT("CreateThread"));
+				CloseAllThreads();
+				ExitProcess(3);
+			}
+		}
+		hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID] = CreateThread(
 			NULL,
 			0,
-			WavGenThread,
+			AudioOutputThread,
 			NULL,
 			0,
-			&dwThreadArray[WAVGEN_THREAD_ARR_ID]);
-		if (hThreadArray[WAVGEN_THREAD_ARR_ID] == NULL)
+			&dwThreadArray[AUDIOOUTPUT_THREAD_ARR_ID]);
+		if (hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID] == NULL)
 		{
 			ErrorHandler(TEXT("CreateThread"));
 			CloseAllThreads();
 			ExitProcess(3);
 		}
-	}
-
-	hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID] = CreateThread(
-		NULL,
-		0,
-		AudioOutputThread,
-		NULL,
-		0,
-		&dwThreadArray[AUDIOOUTPUT_THREAD_ARR_ID]);
-	if (hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID] == NULL)
-	{
-		ErrorHandler(TEXT("CreateThread"));
-		CloseAllThreads();
-		ExitProcess(3);
-	}
-	hThreadArray[OPTIALGO_THREAD_ARR_ID] = CreateThread(
-		NULL,
-		0,
-		OptiAlgoThread,
-		NULL,
-		0,
-		&dwThreadArray[OPTIALGO_THREAD_ARR_ID]);
-	if (hThreadArray[OPTIALGO_THREAD_ARR_ID] == NULL)
-	{
-		ErrorHandler(TEXT("CreateThread"));
-		CloseAllThreads();
-		ExitProcess(3);
-	}
-	// Emerson's thread used to be created here
-	hThreadArray[AUDIOINPUT_THREAD_ARR_ID] = CreateThread(
-		NULL,
-		0,
-		AudioInputThread,
-		NULL,
-		0,
-		&dwThreadArray[AUDIOINPUT_THREAD_ARR_ID]);
-	if (hThreadArray[AUDIOINPUT_THREAD_ARR_ID] == NULL)
-	{
-		ErrorHandler(TEXT("CreateThread"));
-		CloseAllThreads();
-		ExitProcess(3);
+		hThreadArray[OPTIALGO_THREAD_ARR_ID] = CreateThread(
+			NULL,
+			0,
+			OptiAlgoThread,
+			NULL,
+			0,
+			&dwThreadArray[OPTIALGO_THREAD_ARR_ID]);
+		if (hThreadArray[OPTIALGO_THREAD_ARR_ID] == NULL)
+		{
+			ErrorHandler(TEXT("CreateThread"));
+			CloseAllThreads();
+			ExitProcess(3);
+		}
+		// Emerson's thread used to be created here
+		hThreadArray[AUDIOINPUT_THREAD_ARR_ID] = CreateThread(
+			NULL,
+			0,
+			AudioInputThread,
+			NULL,
+			0,
+			&dwThreadArray[AUDIOINPUT_THREAD_ARR_ID]);
+		if (hThreadArray[AUDIOINPUT_THREAD_ARR_ID] == NULL)
+		{
+			ErrorHandler(TEXT("CreateThread"));
+			CloseAllThreads();
+			ExitProcess(3);
+		}
+		alreadyJamming = true;
 	}
 }
 
@@ -451,6 +457,17 @@ static void startEmerson(GtkWidget *button) {
 		CloseAllThreads();
 		ExitProcess(3);
 	}
+}
+
+static void updateProgress()
+{
+	int i = 0;
+	g_signal_new("pitch-data", G_TYPE_OBJECT, G_SIGNAL_RUN_FIRST, 0, NULL, NULL, NULL, G_TYPE_NONE, 0);
+}
+
+void JamBot::signalNewAnalysisValues()
+{
+	g_signal_emit_by_name(window, "pitch-data");
 }
 
 static gboolean delete_event(GtkWidget *widget, GdkEvent *event, gpointer data)
@@ -564,8 +581,10 @@ int gtkStart(int argc, char* argv[])
 	/*configure draw area*/
 	gtk_box_pack_start(GTK_BOX(graphBox), sectionBox, false, false, 5);
 	drawArea = gtk_drawing_area_new();
-	//gtk_widget_set_double_buffered(drawArea, (gboolean)false);
-	gtk_widget_set_size_request(GTK_WIDGET(drawArea), 100, 300);
+
+	gtk_widget_set_size_request(GTK_WIDGET(drawArea), 550, 300);
+	gtk_window_set_resizable(GTK_WINDOW(drawArea), FALSE);
+
 	gtk_box_pack_start(GTK_BOX(graphBox), drawArea, true, true, 0);
 
 	g_signal_connect(drawArea, "expose-event", G_CALLBACK(graphWave), NULL);
@@ -590,6 +609,7 @@ int gtkStart(int argc, char* argv[])
 	hbox = gtk_hbox_new(false, 0);
 	label = gtk_label_new("Intensity (dB):");
 	gtk_box_pack_start(GTK_BOX(hbox), label, false, false, 5);
+	g_signal_connect(G_OBJECT(window), "pitch-data", G_CALLBACK(updateProgress), NULL);
 	temp = gtk_entry_new();
 	gtk_box_pack_start(GTK_BOX(hbox), temp, false, false, 5);
 	gtk_box_pack_start(GTK_BOX(voiceProgressBox), hbox, false, false, 5);
@@ -629,22 +649,6 @@ int gtkStart(int argc, char* argv[])
 	gtk_box_pack_start(GTK_BOX(hbox), temp, false, false, 5);
 	gtk_box_pack_start(GTK_BOX(songProgressBox), hbox, false, false, 5);
 
-
-	/*progressBar = gtk_progress_bar_new();
-	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progressBar), 0.2);
-	gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progressBar), "Intensity");
-	gtk_box_pack_start(GTK_BOX(songProgressBox), progressBar, false, false, 5);
-
-	progressBar = gtk_progress_bar_new();
-	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progressBar), 0.8);
-	gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progressBar), "Pitch");
-	gtk_box_pack_start(GTK_BOX(songProgressBox), progressBar, false, false, 5);
-
-	progressBar = gtk_progress_bar_new();
-	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progressBar), 0.5);
-	gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progressBar), "Tempo");
-	gtk_box_pack_start(GTK_BOX(songProgressBox), progressBar, false, false, 5);*/
-
 	playButton = gtk_button_new_with_label("Play");
 	gtk_widget_set_double_buffered(playButton, (gboolean)false);
 	gtk_box_pack_start(GTK_BOX(songControlBox), playButton, false, false, 5);
@@ -657,7 +661,8 @@ int gtkStart(int argc, char* argv[])
 	gtk_widget_show(playButton);
 
 	/*============================== COMBO  ========================================*/
-	songSelectBox = gtk_combo_new();
+	songSelectBox = gtk_combo_box_new();
+	g_signal_connect(GTK_OBJECT(songSelectBox), "move-active", G_CALLBACK(testFunction), NULL);
 	GtkCellRenderer *column;
 
 	gtk_init(&argc, &argv);
@@ -668,21 +673,21 @@ int gtkStart(int argc, char* argv[])
 	string line, text;
 	if (file.is_open())
 	{
-		gtk_list_store_insert_with_values(liststore, NULL, -1, 0, "red", 1, "None", -1);
+		gtk_list_store_insert_with_values(liststore, NULL, songListPosition, 0, "red", 1, "None", -1);
 		csvList.push_back("None");
+		songListPosition++;
 
 		while (getline(file, line))
 		{
+			gtk_list_store_insert_with_values(liststore, NULL, songListPosition, 0, "red", 1, (char*)line.c_str(), -1);
 			csvList.push_back(line);
-			gtk_list_store_insert_with_values(liststore, NULL, -1, 0, "red", 1, (char*)line.c_str(), -1);
+			songListPosition++;
 		}
 		file.close();
 	}
 	songSelectBox = gtk_combo_box_new_with_model(GTK_TREE_MODEL(liststore));
 
-	/* liststore is now owned by combo, so the initial reference can
-	* be dropped */
-	g_object_unref(liststore);
+	//g_object_unref(liststore);
 
 	column = gtk_cell_renderer_text_new();
 	gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(songSelectBox), column, TRUE);
@@ -693,7 +698,7 @@ int gtkStart(int argc, char* argv[])
 
 	gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(songSelectBox), column, "cell-background", 0, "text", 1, NULL);
 
-	gtk_combo_box_set_active(GTK_COMBO_BOX(songSelectBox), 1);
+	gtk_combo_box_set_active(GTK_COMBO_BOX(songSelectBox), 0);
 	gtk_box_pack_start(GTK_BOX(graphBox), songSelectBox, false, false, 5);
 
 	GtkWidget *temphBox;
@@ -764,39 +769,41 @@ void CloseThread(int id)
 void CloseAllThreads()
 {
 	DWORD result;
+	if (alreadyJamming){
+		if (hThreadArray[AUDIOINPUT_THREAD_ARR_ID] != NULL){
+			Helpers::print_debug("Stopping audio input...\n");
+			inputChannelReader.stop();
+			result = WaitForSingleObject(hThreadArray[AUDIOINPUT_THREAD_ARR_ID], 10000);
+			if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP audio input.\n"); }
+			else if (result == WAIT_FAILED) { ErrorHandler(TEXT("WaitForSingleObject")); }
+			else { Helpers::print_debug("FAILED stopping audio input.\n"); }
+		}
 
-	if (hThreadArray[AUDIOINPUT_THREAD_ARR_ID] != NULL){
-		Helpers::print_debug("Stopping audio input...\n");
-		inputChannelReader.stop();
-		result = WaitForSingleObject(hThreadArray[AUDIOINPUT_THREAD_ARR_ID], 10000);
-		if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP audio input.\n"); }
+		if (hThreadArray[OPTIALGO_THREAD_ARR_ID] != NULL){
+			Helpers::print_debug("Stopping optimization algorithm...\n");
+			optiAlgo.stop();
+			result = WaitForSingleObject(hThreadArray[OPTIALGO_THREAD_ARR_ID], 3000);
+			if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP opti algo.\n"); }
+			else if (result == WAIT_FAILED) { ErrorHandler(TEXT("WaitForSingleObject")); }
+			else { Helpers::print_debug("FAILED stopping optimization algorithm.\n"); }
+		}
+
+		/*Helpers::print_debug("Stopping wav manip...\n");
+		wavmanipulation.stop();
+		result = WaitForSingleObject(hThreadArray[WAVGEN_THREAD_ARR_ID], 500);
+		if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP wav manip.\n"); }
 		else if (result == WAIT_FAILED) { ErrorHandler(TEXT("WaitForSingleObject")); }
-		else { Helpers::print_debug("FAILED stopping audio input.\n"); }
-	}
+		else { Helpers::print_debug("FAILED stopping wav manip.\n"); }*/
 
-	if (hThreadArray[OPTIALGO_THREAD_ARR_ID] != NULL){
-		Helpers::print_debug("Stopping optimization algorithm...\n");
-		optiAlgo.stop();
-		result = WaitForSingleObject(hThreadArray[OPTIALGO_THREAD_ARR_ID], 3000);
-		if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP opti algo.\n"); }
-		else if (result == WAIT_FAILED) { ErrorHandler(TEXT("WaitForSingleObject")); }
-		else { Helpers::print_debug("FAILED stopping optimization algorithm.\n"); }
-	}
-
-	/*Helpers::print_debug("Stopping wav manip...\n");
-	wavmanipulation.stop();
-	result = WaitForSingleObject(hThreadArray[WAVGEN_THREAD_ARR_ID], 500);
-	if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP wav manip.\n"); }
-	else if (result == WAIT_FAILED) { ErrorHandler(TEXT("WaitForSingleObject")); }
-	else { Helpers::print_debug("FAILED stopping wav manip.\n"); }*/
-
-	if (hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID] != NULL) {
-		Helpers::print_debug("Stopping audio output...\n");
-		lightsTest.stop();
-		result = WaitForSingleObject(hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID], 3000);
-		if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP audio output.\n"); }
-		else if (result == WAIT_FAILED) { ErrorHandler(TEXT("WaitForSingleObject")); }
-		else { Helpers::print_debug("FAILED stopping audio output.\n"); }
+		if (hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID] != NULL) {
+			Helpers::print_debug("Stopping audio output...\n");
+			lightsTest.stop();
+			result = WaitForSingleObject(hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID], 3000);
+			if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP audio output.\n"); }
+			else if (result == WAIT_FAILED) { ErrorHandler(TEXT("WaitForSingleObject")); }
+			else { Helpers::print_debug("FAILED stopping audio output.\n"); }
+		}
+		alreadyJamming = false;
 	}
 }
 

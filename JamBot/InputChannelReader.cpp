@@ -51,6 +51,7 @@
 #include <string>
 #include <vector>
 #include <cmath>
+#include "JamBot.h"
 
 float *in, *in2;
 fftwf_complex *out, *out2;
@@ -225,6 +226,7 @@ void InputChannelReader::analyseBuffer(paData *data)
 	}
 
 	OptiAlgo::receive_audio_input_sample(audioSamples);	//Send to OptiAlgo
+	JamBot::signalNewAnalysisValues();
 
 	data->recordedSamples.clear();	//Empty recordedSamples
 }
