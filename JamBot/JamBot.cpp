@@ -59,10 +59,12 @@ GtkWidget *drawArea, *sectionDialog;
 bool songSectionFlag = false;
 bool alreadyJamming = false;
 int songListPosition = 0;
+GtkWidget *instrumentFrequency, *instrumentLoudness, *instrumentTempo;
+int counter = 0;
 
 // Functions to run components in threads
 DWORD WINAPI AudioInputThread(LPVOID lpParam) { inputChannelReader = InputChannelReader(); Helpers::print_debug("START audio input.\n"); inputChannelReader.start(songSelectedFlag); return 0; }
-DWORD WINAPI WavGenThread(LPVOID lpParam) { wavmanipulation = WavManipulation(); Helpers::print_debug("START wav manip.\n"); wavmanipulation.start(); return 0; }
+DWORD WINAPI WavGenThread(LPVOID lpParam) { wavmanipulation = WavManipulation(); Helpers::print_debug("START wav manip.\n"); wavmanipulation.start(csvFileName); return 0; }
 DWORD WINAPI OptiAlgoThread(LPVOID lpParam) { optiAlgo = OptiAlgo(); Helpers::print_debug("START opti algo.\n"); optiAlgo.start(); return 0; }
 DWORD WINAPI AudioOutputThread(LPVOID lpParam) { lightsTest = DMXOutput(); Helpers::print_debug("START audio output.\n"); lightsTest.start(); return 0; }
 
@@ -385,7 +387,7 @@ static void startJamming(GtkWidget *button) {
 		if (position > 0 || csvFileName.compare("None.csv") != 0)
 		{
 			songSelectedFlag = true;
-			hThreadArray[WAVGEN_THREAD_ARR_ID] = CreateThread(
+			/*hThreadArray[WAVGEN_THREAD_ARR_ID] = CreateThread(
 				NULL,
 				0,
 				WavGenThread,
@@ -397,7 +399,7 @@ static void startJamming(GtkWidget *button) {
 				ErrorHandler(TEXT("CreateThread"));
 				CloseAllThreads();
 				ExitProcess(3);
-			}
+			}*/
 		}
 		hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID] = CreateThread(
 			NULL,
@@ -465,9 +467,20 @@ static void updateProgress()
 	g_signal_new("pitch-data", G_TYPE_OBJECT, G_SIGNAL_RUN_FIRST, 0, NULL, NULL, NULL, G_TYPE_NONE, 0);
 }
 
-void JamBot::signalNewAnalysisValues()
+void JamBot::updateSongValues(float frequency, double loudness, double tempo)
 {
-	g_signal_emit_by_name(window, "pitch-data");
+	string freq = to_string(frequency);
+	string loud = to_string(loudness);
+	string temp = to_string(tempo);
+
+	if (counter % 5)
+	{
+
+		gtk_entry_set_text(GTK_ENTRY(instrumentFrequency), freq.c_str());
+		gtk_entry_set_text(GTK_ENTRY(instrumentLoudness), loud.c_str());
+		gtk_entry_set_text(GTK_ENTRY(instrumentTempo), temp.c_str());
+	}
+	counter++;
 }
 
 static gboolean delete_event(GtkWidget *widget, GdkEvent *event, gpointer data)
@@ -607,34 +620,34 @@ int gtkStart(int argc, char* argv[])
 	gtk_box_pack_start(GTK_BOX(windowBox), tabs, false, false, 5);
 
 	hbox = gtk_hbox_new(false, 0);
-	label = gtk_label_new("Intensity (dB):");
+	label = gtk_label_new("Loudness (dB):");
 	gtk_box_pack_start(GTK_BOX(hbox), label, false, false, 5);
-	g_signal_connect(G_OBJECT(window), "pitch-data", G_CALLBACK(updateProgress), NULL);
-	temp = gtk_entry_new();
-	gtk_box_pack_start(GTK_BOX(hbox), temp, false, false, 5);
+	instrumentLoudness = gtk_entry_new();
+	gtk_box_pack_start(GTK_BOX(hbox), instrumentLoudness, false, false, 5);
 	gtk_box_pack_start(GTK_BOX(voiceProgressBox), hbox, false, false, 5);
 
 	hbox = gtk_hbox_new(false, 0);
-	label = gtk_label_new("Pitch (kHz):");
+	label = gtk_label_new("Frequency (kHz):");
 	gtk_box_pack_start(GTK_BOX(hbox), label, false, false, 5);
-	temp = gtk_entry_new();
-	gtk_box_pack_start(GTK_BOX(hbox), temp, false, false, 5);
+	instrumentFrequency = gtk_entry_new();
+	gtk_box_pack_start(GTK_BOX(hbox), instrumentFrequency, false, false, 5);
 	gtk_box_pack_start(GTK_BOX(voiceProgressBox), hbox, false, false, 5);
 
 	hbox = gtk_hbox_new(false, 0);
 	label = gtk_label_new("Tempo (bbm):");
 	gtk_box_pack_start(GTK_BOX(hbox), label, false, false, 5);
-	temp = gtk_entry_new();
-	gtk_box_pack_start(GTK_BOX(hbox), temp, false, false, 5);
+	instrumentTempo = gtk_entry_new();
+	gtk_box_pack_start(GTK_BOX(hbox), instrumentTempo, false, false, 5);
 	gtk_box_pack_start(GTK_BOX(voiceProgressBox), hbox, false, false, 5);
 
+	/*VOICE*/
 	hbox = gtk_hbox_new(false, 0);
 	label = gtk_label_new("Intensity (dB):");
 	gtk_box_pack_start(GTK_BOX(hbox), label, false, false, 5);
 	temp = gtk_entry_new();
 	gtk_box_pack_start(GTK_BOX(hbox), temp, false, false, 5);
 	gtk_box_pack_start(GTK_BOX(songProgressBox), hbox, false, false, 5);
-
+	
 	hbox = gtk_hbox_new(false, 0);
 	label = gtk_label_new("Pitch (kHz):");
 	gtk_box_pack_start(GTK_BOX(hbox), label, false, false, 5);

@@ -227,7 +227,7 @@ void InputChannelReader::analyseBuffer(paData *data)
 	}
 
 	OptiAlgo::receive_audio_input_sample(audioSamples);	//Send to OptiAlgo
-	JamBot::signalNewAnalysisValues();
+	JamBot::updateSongValues(frequency, average, tempo.estimateTempo());
 
 	data->recordedSamples.clear();	//Empty recordedSamples
 }

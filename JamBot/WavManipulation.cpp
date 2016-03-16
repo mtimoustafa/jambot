@@ -271,7 +271,7 @@ void WavManipulation::startanalysis(){
 	//dataStore("Hey Jude VCV", secs, "C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VCV.wav", 
 	//	"C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VCV.txt");
 	//freqSnip("Hey Jude VCV.csv");
-	start();
+	//start();
 	//parseTxt("testlyrics");
 }
 /////////////////////////////////////////

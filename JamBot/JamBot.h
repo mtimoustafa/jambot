@@ -6,5 +6,5 @@ using namespace std;
 class JamBot{
 public:
 	static void updateLyrics(string);
-	static void signalNewAnalysisValues();
+	static void updateSongValues(float, double, double);
 };
