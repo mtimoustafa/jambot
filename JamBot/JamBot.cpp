@@ -55,7 +55,8 @@ deque<string> csvList;
 GtkListStore *liststore;
 bool songSelectedFlag = false;
 bool graphWaveFlag = false;
-GtkWidget *drawArea;
+GtkWidget *drawArea, *sectionDialog;
+bool songSectionFlag = false;
 
 // Functions to run components in threads
 DWORD WINAPI AudioInputThread(LPVOID lpParam) { inputChannelReader = InputChannelReader(); Helpers::print_debug("START audio input.\n"); inputChannelReader.start(songSelectedFlag); return 0; }
@@ -77,7 +78,7 @@ static void changeProgressBar(GtkWidget *widget, gpointer data)
 }
 
 void JamBot::updateLyrics(string text) {
-	lyrics += text;
+	lyrics = text;
 	lyrics += "\n";
 	gtk_text_buffer_set_text(lyricsBuffer, lyrics.c_str(), -1);
 }
@@ -85,6 +86,17 @@ void JamBot::updateLyrics(string text) {
 static void testFunction(GtkWidget *widget) {
 	//g_signal_new("pitch-data", G_TYPE_OBJECT, G_SIGNAL_RUN_FIRST, 0, NULL, NULL, NULL, G_TYPE_NONE, 0);
 	g_signal_emit_by_name(window, "button_press_event");
+}
+
+
+static void dialog_result(GtkWidget *dialog, gint resp, gpointer data) {
+	if (resp != GTK_RESPONSE_OK) {
+		songSectionFlag = false;
+		/*clears to free up membory and prevent cross referencing*/
+		sectionNameDetails.clear();
+		sectionTimeDetails.clear();
+		gtk_widget_destroy(dialog);
+	}
 }
 
 static void graphWave() {
@@ -159,6 +171,106 @@ static void graphWave() {
 	}
 }
 
+static void addNewSection(GtkWidget *widget)
+{
+	GtkWidget *hbox, *tempEntry;
+	
+	hbox = gtk_hbox_new(false, 0);
+
+	tempEntry = gtk_entry_new();
+	sectionNameDetails.push_back(tempEntry);
+	gtk_box_pack_start(GTK_BOX(hbox), tempEntry, false, false, 5);
+
+	tempEntry = gtk_entry_new();
+	sectionTimeDetails.push_back(tempEntry);
+	gtk_box_pack_start(GTK_BOX(hbox), tempEntry, false, false, 5);
+
+	gtk_box_pack_start(GTK_BOX(GTK_DIALOG(sectionDialog)->vbox), hbox, false, false, 5);
+
+	gtk_widget_show_all(sectionDialog);
+}
+
+static void submitSongSection() {
+	GtkWidget *sectionTime, *sectionName;
+	const gchar *name, *time;
+
+	if (!lyricsPath.empty() && !waveFilePath.empty()) {
+		vector<SongSection> section = vector<SongSection>();
+
+		for (int i = 0; i < sectionNameDetails.size(); i++) {
+			name = gtk_entry_get_text(GTK_ENTRY(sectionNameDetails[i]));
+			time = gtk_entry_get_text(GTK_ENTRY(sectionTimeDetails[i]));
+			section.push_back(SongSection(name, atoi((char*)time)));
+		}
+		int position = lyricsPath.find_last_of('/\\');
+		string fileName = lyricsPath.substr(position + 1);
+		fileName = fileName.substr(0, fileName.size() - 4);
+		wavmanipulation.dataStore(fileName, section, waveFilePath, lyricsPath);
+
+		masterCSV.open("CSV\\masterCSV.csv", ios_base::app);
+		masterCSV << fileName + "\n";
+		masterCSV.close();
+
+		gtk_list_store_insert_with_values(liststore, NULL, -1, 0, "red", 1, (char*)fileName.c_str(), -1);
+		songSelectBox = gtk_combo_box_new_with_model(GTK_TREE_MODEL(liststore));
+		gtk_widget_show_all(songSelectBox);
+	}
+}
+
+static void displaySectionModal(GtkWidget *widget, gint resp, gpointer *data)
+{
+	if (!songSectionFlag)
+	{
+		GtkWidget *hbox, *label, *tempEntry, *addSectionButton, *submitButton;
+		sectionDialog = gtk_dialog_new_with_buttons("Nonmodal dialog", GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, NULL,
+			NULL, NULL, NULL);
+		g_signal_connect(sectionDialog, "response", G_CALLBACK(dialog_result), NULL);
+
+		hbox = gtk_hbox_new(false, 0);
+		addSectionButton = gtk_button_new_with_label("Add Section");
+		g_signal_connect(GTK_OBJECT(addSectionButton), "clicked", G_CALLBACK(addNewSection), NULL);
+		gtk_box_pack_start(GTK_BOX(hbox), addSectionButton, false, false, 5);
+
+		submitButton = gtk_button_new_with_label("Submit");
+		g_signal_connect(GTK_OBJECT(submitButton), "clicked", G_CALLBACK(submitSongSection), (gpointer)sectionNameBox, (gpointer)sectionTimeBox);
+		gtk_box_pack_start(GTK_BOX(hbox), submitButton, false, false, 5);
+		gtk_box_pack_start(GTK_BOX(GTK_DIALOG(sectionDialog)->vbox), hbox, false, false, 5);
+
+		hbox = gtk_hbox_new(false, 0);
+		label = gtk_label_new("Section Name");
+		gtk_box_pack_start(GTK_BOX(hbox), label, false, false, 5);
+		label = gtk_label_new("Section Time");
+		gtk_box_pack_start(GTK_BOX(hbox), label, false, false, 85);
+		gtk_box_pack_start(GTK_BOX(GTK_DIALOG(sectionDialog)->vbox), hbox, false, false, 5);
+
+		hbox = gtk_hbox_new(false, 0);
+
+		tempEntry = gtk_entry_new();
+		sectionNameDetails.push_back(tempEntry);
+		gtk_box_pack_start(GTK_BOX(hbox), tempEntry, false, false, 5);
+
+		tempEntry = gtk_entry_new();
+		sectionTimeDetails.push_back(tempEntry);
+		gtk_box_pack_start(GTK_BOX(hbox), tempEntry, false, false, 5);
+		gtk_box_pack_start(GTK_BOX(GTK_DIALOG(sectionDialog)->vbox), hbox, false, false, 5);
+
+		hbox = gtk_hbox_new(false, 0);
+
+		tempEntry = gtk_entry_new();
+		sectionNameDetails.push_back(tempEntry);
+		gtk_box_pack_start(GTK_BOX(hbox), tempEntry, false, false, 5);
+
+		tempEntry = gtk_entry_new();
+		sectionTimeDetails.push_back(tempEntry);
+		gtk_box_pack_start(GTK_BOX(hbox), tempEntry, false, false, 5);
+		gtk_box_pack_start(GTK_BOX(GTK_DIALOG(sectionDialog)->vbox), hbox, false, false, 5);
+
+		gtk_widget_show_all(sectionDialog);
+
+		songSectionFlag = true;
+	}
+}
+
 static void selectWaveFile(GtkWidget *widget) {
 	GtkWidget *dialog;
 	dialog = gtk_file_chooser_dialog_new("Choose a file", GTK_WINDOW(window), GTK_FILE_CHOOSER_ACTION_OPEN, GTK_STOCK_OK,
@@ -175,32 +287,6 @@ static void selectWaveFile(GtkWidget *widget) {
 	}
 	gtk_widget_destroy(dialog);
 }
-
-static void addNewSection(GtkWidget *widget)
-{
-	GtkWidget * tempEntry;
-	tempEntry = gtk_entry_new();
-	gtk_box_pack_start(GTK_BOX(sectionNameBox), tempEntry, false, false, 5);
-	sectionNameDetails.push_back(tempEntry);
-
-	tempEntry = gtk_entry_new();
-	gtk_box_pack_start(GTK_BOX(sectionTimeBox), tempEntry, false, false, 5);
-	sectionTimeDetails.push_back(tempEntry);
-
-	gtk_widget_show_all(sectionNameBox);
-	gtk_widget_show_all(sectionTimeBox);
-}
-
-static void dialog_result(GtkWidget *dialog, gint resp, gpointer data) {
-	if (resp == GTK_RESPONSE_OK) {
-		g_print("OK");
-
-	}
-	else {
-		gtk_widget_destroy(dialog);
-	}
-}
-
 
 static void displayLyricsNonmodal(GtkWidget *widget, gpointer window)
 {
@@ -269,33 +355,6 @@ static void displayLyrics(GtkWidget *widget, gpointer window)
 		g_print("The cancel was pressed");
 	}
 	gtk_widget_destroy(dialog);
-}
-
-static void submitSongSection() {
-	GtkWidget *sectionTime, *sectionName;
-	const gchar *name, *time;
-
-	if (!lyricsPath.empty() && !waveFilePath.empty()) {
-		vector<SongSection> section = vector<SongSection>();
-
-		for (int i = 0; i < sectionNameDetails.size(); i++) {
-			name = gtk_entry_get_text(GTK_ENTRY(sectionNameDetails[i]));
-			time = gtk_entry_get_text(GTK_ENTRY(sectionTimeDetails[i]));
-			section.push_back(SongSection(name, atoi((char*)time)));
-		}
-		int position = lyricsPath.find_last_of('/\\');
-		string fileName = lyricsPath.substr(position + 1);
-		fileName = fileName.substr(0, fileName.size() - 4);
-		wavmanipulation.dataStore(fileName, section, waveFilePath, lyricsPath);
-
-		masterCSV.open("CSV\\masterCSV.csv", ios_base::app);
-		masterCSV << fileName + "\n";
-		masterCSV.close();
-
-		gtk_list_store_insert_with_values(liststore, NULL, -1, 0, "red", 1, (char*)fileName.c_str(), -1);
-		songSelectBox = gtk_combo_box_new_with_model(GTK_TREE_MODEL(liststore));
-		gtk_widget_show_all(songSelectBox);
-	}
 }
 
 static void selectLyrics(GtkWidget *button, gpointer window) {
@@ -492,45 +551,15 @@ int gtkStart(int argc, char* argv[])
 	sectionTimeBox = gtk_hbox_new(false, 0);
 
 	/*sectionButtonBox*/
-	addSectionButton = gtk_button_new_with_label("Add Section");
-	g_signal_connect(GTK_OBJECT(addSectionButton), "clicked", G_CALLBACK(addNewSection), (gpointer)sectionNameBox, (gpointer)sectionTimeBox);
+	addSectionButton = gtk_button_new_with_label("Section");
+	g_signal_connect(GTK_OBJECT(addSectionButton), "clicked", G_CALLBACK(displaySectionModal), NULL, NULL);
 	gtk_box_pack_start(GTK_BOX(sectionButtonBox), addSectionButton, false, false, 5);
-
-	submitSectionButton = gtk_button_new_with_label("Submit");
-	g_signal_connect(GTK_OBJECT(submitSectionButton), "clicked", G_CALLBACK(submitSongSection), (gpointer)sectionNameBox, (gpointer)sectionTimeBox);
-	gtk_box_pack_start(GTK_BOX(sectionButtonBox), submitSectionButton, false, false, 5);
 
 	fileSelectDialog = gtk_button_new_with_label("Select Audio File");
 	g_signal_connect(GTK_OBJECT(fileSelectDialog), "clicked", G_CALLBACK(selectWaveFile), (gpointer)sectionNameBox, (gpointer)sectionTimeBox);
 	gtk_box_pack_start(GTK_BOX(sectionButtonBox), fileSelectDialog, false, false, 5);
 
-	/*add sectionNameBox contents*/
-	sectionLabelName = gtk_label_new("Section Name: ");
-	gtk_box_pack_start(GTK_BOX(sectionNameBox), sectionLabelName, false, false, 5);
-
-	tempEntry = gtk_entry_new();
-	sectionNameDetails.push_back(tempEntry);
-	gtk_box_pack_start(GTK_BOX(sectionNameBox), tempEntry, false, false, 5);
-
-	tempEntry = gtk_entry_new();
-	sectionNameDetails.push_back(tempEntry);
-	gtk_box_pack_start(GTK_BOX(sectionNameBox), tempEntry, false, false, 5);
-
-	/*add sectionTimeBox contents*/
-	sectionLabelTime = gtk_label_new("Section Time:  ");
-	gtk_box_pack_start(GTK_BOX(sectionTimeBox), sectionLabelTime, false, false, 5);
-
-	tempEntry = gtk_entry_new();
-	sectionTimeDetails.push_back(tempEntry);
-	gtk_box_pack_start(GTK_BOX(sectionTimeBox), tempEntry, false, false, 5);
-
-	tempEntry = gtk_entry_new();
-	sectionTimeDetails.push_back(tempEntry);
-	gtk_box_pack_start(GTK_BOX(sectionTimeBox), tempEntry, false, false, 5);
-
 	gtk_box_pack_start(GTK_BOX(sectionBox), sectionButtonBox, false, false, 5);
-	gtk_box_pack_start(GTK_BOX(sectionBox), sectionNameBox, false, false, 5);
-	gtk_box_pack_start(GTK_BOX(sectionBox), sectionTimeBox, false, false, 5);
 
 	/*configure draw area*/
 	gtk_box_pack_start(GTK_BOX(graphBox), sectionBox, false, false, 5);
