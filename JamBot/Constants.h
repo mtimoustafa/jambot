@@ -46,10 +46,19 @@ const double DIM_LB = 0.0;
 
 // TODO: tweak these parameters
 const unsigned int IN_HIST_BUF_SIZE = 5;
-const unsigned int OUT_HIST_BUF_SIZE = 20;
+const unsigned int OUT_HIST_BUF_SIZE = 15;
 
-const double BEATINESS_THRESH = 1000.0; // Remove this and use class
-const double SILENCE_THRESH = 100.0; //TODO: tweak this
+const double BEATINESS_THRESH = 1000.0;
+const double SILENCE_THRESH = 40.0;
+const double FREQ_HARMONIC_DETECT_THRESH = 30.0;
+const double FREQ_ANOMALY_DETECT_THRESH = 200.0;
+const int FREQ_NUDGES_TO_CHANGE = 5;
+const double TEMPO_CLOSENESS_THRESH = 10.0;
+const double OUTPUT_TOO_LOW_THRESH = 10.0;
+const int OUTPUT_ANOMALY_DETECT_THRESH = 50;
+const int OUTPUT_NUDGES_TO_CHANGE = 7;
+
+const int NUDGES_TO_SILENCE = 6;
 
 const enum SECTION { chorus, verse };
 
