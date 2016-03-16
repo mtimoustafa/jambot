@@ -201,18 +201,19 @@ void InputChannelReader::analyseBuffer(paData *data)
 
 	frequency = maxIndex * SAMPLE_RATE / FFT_SIZE;
 	//Helpers::print_debug(("Frequency peak [guitar] (Hz): " + to_string(frequency) + "\n").c_str());
+	audioSamples.set_frequency((float)frequency);
+
 	if (NUM_CHANNELS > 1)
 	{
-		frequency = maxIndex * SAMPLE_RATE / OUTPUT_SIZE;
-		audioSamples.set_frequency((float)frequency);
 		frequency2 = maxIndex2 * SAMPLE_RATE / FFT_SIZE;
 		Helpers::print_debug(("Frequency peak [voice] (Hz): " + to_string(frequency2) + "\n").c_str());
+
+		// Initiate frequency reads
+		WavManipulation::startReading(average > 42.0);
 
 		// Send frequency to WavManipulation
 		WavManipulation::pushFrequency(frequency2);
 
-		// Initiate frequency reads
-		WavManipulation::startReading(average > 10.0);
 	}
 
 	// Measure average tempo every 1.5s
@@ -289,7 +290,7 @@ int InputChannelReader::main(void)
 
 	err = Pa_StartStream(stream);
 	if (err != paNoError) goto done;
-	//Helpers::print_debug("\n============= Now recording! =============\n");
+	Helpers::print_debug("\n============= Now recording! =============\n");
 
 	while (!stopStream)
 	{
