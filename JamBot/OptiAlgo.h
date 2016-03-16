@@ -26,20 +26,24 @@ class OptiAlgo
 		double silence = 1;
 
 		double freq_avg;
+		double delta_freq_avg;
 		double tempo_avg;
 		double loudness_avg;
 		double loudness_nomax_avg;
 		double loudness_max_avg;
 
 		deque<double> freq_hist = deque<double>();
+		deque<double> delta_freq_hist = deque<double>();
 		deque<double> tempo_hist = deque<double>();
 		deque<double> loudness_hist = deque<double>();
 		deque<double> loudness_nomax_hist = deque<double>();
 		deque<double> loudness_max_hist = deque<double>();
 
 		AudioProps();
+		void ClearProps();
 
 		double freq_add_and_avg(double val);
+		double delta_freq_add_and_avg(double val);
 		double tempo_add_and_avg(double val);
 		double loudness_hist_add_and_avg(double val);
 		double loudness_nomax_hist_add_and_avg(double val);
@@ -81,12 +85,11 @@ class OptiAlgo
 
 		// Fuzzy operators
 		double Tnorm(vector<double> inputs);
-		double DefuzzifyRGB(RGBClassIDs classID);
-		double DefuzzifyW(WClassIDs classID);
+		double Defuzzify(OutParams outparam);
 
 		// Local helper functions
-		template <typename T>
-		T GetHighestCutoff(map <T, double> cutoff);
+		double Integrate(OutParams outparam, double lb, double ub, double step);
+		double (OptiAlgo::FLSystem::*OutClass)(double, RGBClassIDs); // acompannying function pointer to Integrate()
 
 	public:
 		FLSystem();

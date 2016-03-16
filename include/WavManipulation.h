@@ -68,7 +68,7 @@ public:
 	static void inputData(vector<float>);
 	float freqAnalysis(vector<float>);
 	void startanalysis();
-	void start();
+	void start(string);
 	void stop();
 	void parseTxt(string);
 	static bool pushFrequency(float);

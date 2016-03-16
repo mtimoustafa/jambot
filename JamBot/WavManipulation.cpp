@@ -9,6 +9,7 @@
 #include "Constants.h"
 #include "fftw3.h"
 #include "JamBot.h"
+#include "OptiAlgo.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string>
@@ -208,7 +209,7 @@ void WavManipulation::snipAudio(vector<string> names, vector<double> startTimes,
 void WavManipulation::comparisonPolling(){
 	//Queue pull
 	vector<float> indata;
-	std::deque<Helpers::SongStructure>  structurequeue;
+	//std::deque<Helpers::SongStructure>  structurequeue;
 	//
 	while (true){
 		if (realTimeBuffer.empty()){
@@ -249,12 +250,27 @@ void WavManipulation::startanalysis(){
 	//time_t startTime;
 	//time_t endTime;
 	//double exectime;
+	//VCC
+	//secs.push_back(SongSection("Verse", 0.8));
+	//secs.push_back(SongSection("Chorus1", 25.2));
+	//secs.push_back(SongSection("Chorus2", 53.4));
+	//dataStore("Hey Jude VCC", secs, "C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VCC.wav",
+	//	"C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VCC.txt");
+	//freqSnip("Hey Jude VCC.csv");
+	//VVC
 	secs.push_back(SongSection("Verse1", 0.8));
-	secs.push_back(SongSection("Chorus1", 24.8));
-	secs.push_back(SongSection("Chorus2", 53.4));
-	dataStore("Hey Jude VCC", secs, "C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VCC.wav", 
-		"C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VCC.txt");
-	freqSnip("Hey Jude VCC.csv");
+	secs.push_back(SongSection("Verse2", 24));
+	secs.push_back(SongSection("Chorus", 47.8));	
+	dataStore("Hey Jude VVC", secs, "C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VVC.wav",
+		"C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VVC.txt");
+	freqSnip("Hey Jude VVC.csv");
+	//VCV
+	//secs.push_back(SongSection("Verse1", 0.8));
+	//secs.push_back(SongSection("Chorus", 24.8));
+	//secs.push_back(SongSection("Verse2", 53.6));
+	//dataStore("Hey Jude VCV", secs, "C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VCV.wav", 
+	//	"C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VCV.txt");
+	//freqSnip("Hey Jude VCV.csv");
 	start();
 	//parseTxt("testlyrics");
 }
@@ -328,7 +344,7 @@ float WavManipulation::freqAnalysis(vector<float> data){
 	float magnitude;
 	short fileSamples;
 	float maxDensity = 0.0;
-	float frequency;
+	float freq;
 	int maxIndex;
 	in = (float*)fftwf_malloc(sizeof(float)* FFT_SIZE);
 	out = (fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex)* OUTPUT_SIZE);
@@ -355,10 +371,10 @@ float WavManipulation::freqAnalysis(vector<float> data){
 				maxIndex = i;
 			}
 	}
-	frequency = maxIndex * SAMPLE_RATE / FFT_SIZE;
+	freq = maxIndex * SAMPLE_RATE / FFT_SIZE;
 	fftwf_free(in);
 	fftwf_free(out);
-	return frequency;
+	return freq;
 }
 void WavManipulation::freqcomparison(){
 	float inFreq = 0.0;
@@ -366,32 +382,43 @@ void WavManipulation::freqcomparison(){
 	float diff2 = 0.0;
 	int choruscount = 0;
 	int versecount = 0;
-	int c = 1;
-	int v = 1;
+	int c = -1;
+	int v = -1;
 	int chorusdiffcount = 0;
 	int versediffcount = 0;
-	int index = 0;
 	int j = 0;
 	int ticks = 0;
 	int duration = 0;
-	vector<float> chorus, verse,chorusdiff, versediff,freqdiff, freq;
+	int noseccount = 0;
+	vector<float> chorus, verse, chorusdiff, versediff, freqdiff, freq, cdiff, vdiff;
+	vector<int> sectioncount;
 	char * err_str;
 	Helpers::SongElement element = Helpers::NIL;
 
-	for (int k = 0; k < freqList.size(); k++){
-		if (lowercase(freqList[k].name) == "chorus1")
-			chorus = freqList[k].pitch;
-		if (lowercase(freqList[k].name) == "verse1")
-			verse = freqList[k].pitch;
+	if (freqList.empty()){
+		Helpers::print_debug("No song Selected or Analysed, Run freqSnip before this function");
+		return;
 	}
-	chorusdiff.push_back(abs(0.0 - chorus[0]));
-	chorusdiff.push_back(abs(chorus[0] - chorus[1]));
-	chorusdiff.push_back(abs(chorus[1] - chorus[2]));
-	//chorusdiff.push_back(abs(0.0 - chorus[2]));
-	versediff.push_back(abs(0.0 - verse[0]));
-	versediff.push_back(abs(verse[0] - verse[1]));
-	versediff.push_back(abs(verse[1] - verse[2]));
-	//versediff.push_back(abs(0.0 - verse[2]));
+	for (int k = 0; k < freqList.size(); k++){
+		if (lowercase(freqList[k].name).find("chorus") != string::npos){
+			chorus = freqList[k].pitch;
+			break;
+		}
+	}
+	for (int k = 0; k < freqList.size(); k++){
+		if (lowercase(freqList[k].name).find("verse") != string::npos){
+			verse = freqList[k].pitch;
+			break;
+		}
+	}
+	for (int y = 0; y < chorus.size() - 1; y++){
+		chorusdiff.push_back((chorus[y+1] - chorus[y]));
+	}
+
+	for (int y = 0; y < verse.size() - 1; y++){
+		versediff.push_back((verse[y + 1] - verse[y]));
+	}
+
 
 	while (!terminate){
 		while (ticks < duration || !checkfrequency){
@@ -412,17 +439,26 @@ void WavManipulation::freqcomparison(){
 						return; 
 					} 
 				}
-				freqdiff.push_back(abs(inFreq - frequency.front()));
+				if (inFreq != 0.0)
+					freqdiff.push_back((frequency.front() -  inFreq));
+
 				inFreq = frequency.front();
 				freq.push_back(inFreq);
 				frequency.pop();
+
 				diff1 = abs(inFreq - chorus[j]);
 				diff2 = abs(inFreq - verse[j]);
 
-				if (diff1 < diff2)
+				cdiff.push_back(diff1);
+				vdiff.push_back(diff2);
+
+				if (diff1 < diff2){
 					choruscount++;
+				}
+				else if (diff2 < diff1){
+					versecount++;
+				}
 				else
-					versecount++;	
 					
 
 				ticks++;
@@ -430,8 +466,7 @@ void WavManipulation::freqcomparison(){
 			}
 
 			j = 0;
-
-			for (int i = 0; i < 3; i++){
+			for (int i = 0; i < NUM_FREQ - 1; i++){
 				
 				if (abs(chorusdiff[i] - freqdiff[i]) 
 					< abs(versediff[i] - freqdiff[i]))
@@ -439,44 +474,83 @@ void WavManipulation::freqcomparison(){
 				else
 					versecount++;
 			}
-			if (choruscount > versecount){
-				//send info to mohamed here, was causing some kind of warning message
+			freqdiff.clear();
+			freq.clear();
+			cdiff.clear();
+			vdiff.clear();
+   			if (choruscount > versecount){
 				for (int k = 0; k < freqList.size(); k++){
 					if (lowercase(freqList[k].name).find("chorus") != string::npos){
-						if (k != index){
-							index = k;
+						if (k != c){
+							c = k; 
 							break;
 						}
 					}
 				}
-				JamBot::updateLyrics(lyrics[index].lyric);
-				//TODO: Push section to Mohammed: Call receive_song_section()
-				Helpers::print_debug(freqList[index].name.c_str());
-				Helpers::print_debug("\n");
-				ticks = 0;
-				duration = freqList[index].duration;
-			}
-			else if (versecount > choruscount){
-				//send info to mohamed here, was causing some kindof warning message
-				for (int k = 0; k < freqList.size(); k++){ 
-					if (lowercase(freqList[k].name).find("verse") != string::npos){
-						index = k;
+				for (int k = 0; k < freqList.size(); k++){
+					if (lowercase(freqList[k].name).find("chorus") != string::npos){
+						if (k != c){
+							chorus = freqList[k].pitch;	
+							for (int y = 0; y < chorus.size() - 1; y++){
+								chorusdiff[y] = (chorus[y + 1] - chorus[y]);
+							}
+							break;
+						}
+					}
+				}
+				for (int k = 0; k < lyrics.size(); k++){
+					if (lowercase(lyrics[k].name).find(lowercase(freqList[c].name)) != string::npos){
+						JamBot::updateLyrics(lyrics[k].lyric);
 						break;
 					}
 				}
-				JamBot::updateLyrics(lyrics[index].lyric);
-				//TODO: Push section to Mohammed: Call receive_song_section()
-				Helpers::print_debug(freqList[index].name.c_str());
+				OptiAlgo::receive_song_section(SECTION::chorus);
+				Helpers::print_debug(freqList[c].name.c_str());
 				Helpers::print_debug("\n");
 				ticks = 0;
-				duration = freqList[index].duration;
-				freqList.erase(freqList.begin() + index);
+				duration = freqList[c].duration - 3 - (3*noseccount);
+				noseccount = 0;
+			}
+			else if (versecount > choruscount){
+				for (int k = 0; k < freqList.size(); k++){ 
+					if (lowercase(freqList[k].name).find("verse") != string::npos){
+						if (k != v){
+							v = k;
+							break;
+						}
+					}
+				}			
+				for (int k = 0; k < freqList.size(); k++){
+					if (lowercase(freqList[k].name).find("verse") != string::npos){
+						if (k != v){
+							verse = freqList[k].pitch;
+							for (int y = 0; y < verse.size() - 1; y++){
+								versediff[y] = (verse[y + 1] - verse[y]);
+							}
+							break;
+						}
+					}
+				}
+				for (int k = 0; k < lyrics.size(); k++){
+					if (lowercase(lyrics[k].name).find(lowercase(freqList[v].name)) != string::npos){
+						JamBot::updateLyrics(lyrics[k].lyric);
+						break;
+					}
+				}
+				OptiAlgo::receive_song_section(SECTION::verse);
+				Helpers::print_debug(freqList[v].name.c_str());
+				Helpers::print_debug("\n");
+				ticks = 0;
+				duration = freqList[v].duration - 3 - (3 * noseccount);
+				noseccount = 0;
 			}
 			else{
 				Helpers::print_debug("No Section Found");
 				Helpers::print_debug("\n");
+				noseccount++;
 			}
 			choruscount = versecount = 0;
+			inFreq = 0.0;
 		}
 		catch (exception e){
 			err_str = "";
@@ -519,7 +593,7 @@ void WavManipulation::parseTxt(string filename){
 //This function is meant to be called before live play is started, this collects the data 
 //from the wav file to be compared to while live playing
 void WavManipulation::freqSnip(string csvname){
-	ifstream file(csvname);
+	ifstream file("CSV\\" + csvname);
 	vector<string> names;
 	vector<double> times;
 	string value = "";
@@ -573,6 +647,9 @@ void WavManipulation::freqSnip(string csvname){
 					insound.incrementSample();
 			}
 			freq = freqAnalysis(snippet);
+			if (freq >= 2000.0){
+				freq = freqAnalysis(snippet);
+			}
 			list.push_back(freq);
 			snippet.clear();
 		}
@@ -591,7 +668,8 @@ void WavManipulation::freqSnip(string csvname){
 	parseTxt(lyricfile);
 	
 }
-void WavManipulation::start(){
+void WavManipulation::start(string fileName){
+	freqSnip(fileName);
 	freqcomparison();
 }
 void WavManipulation::stop(){
