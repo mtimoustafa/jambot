@@ -38,11 +38,13 @@ WavManipulation wavmanipulation = WavManipulation();
 OptiAlgo optiAlgo = OptiAlgo();
 DMXOutput lightsTest = DMXOutput();
 
+double sampleDiff[10000];
+double sampleValue[10000], multiplier;
 void CloseThread(int id);
 void CloseAllThreads();
 void ErrorHandler(LPTSTR lpszFunction);
 const gchar *textInput;
-GtkWidget *window, *lyricsEntry, *lyricsLabel;
+GtkWidget *window, *lyricsEntry, *lyricsLabel, *intensityProgressBar, *freqLabel;
 GtkWidget *textEntry, *songSelectBox;
 GList *songList = NULL;
 string waveFilePath, lyricsPath;
@@ -59,7 +61,7 @@ GtkWidget *drawArea, *sectionDialog, *valueDrawArea;
 bool songSectionFlag = false;
 bool alreadyJamming = false;
 bool waveSavedFlag = false;
-int songListPosition = 0;
+int songListPosition = 0, songLength, graph_x, graph_y;
 GtkWidget *instrumentFrequency, *instrumentLoudness, *instrumentTempo;
 int counter = 0;
 cairo_t *crWave;
@@ -77,21 +79,16 @@ BOOL				InitInstance(HINSTANCE, int);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
-
-static void changeProgressBar(GtkWidget *widget, gpointer data)
-{
-	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(data), 0.8);
-}
-
 void JamBot::updateLyrics(string text) {
 	lyrics = text + "\n";
 	gtk_label_set_text(GTK_LABEL(lyricsLabel), lyrics.c_str());
 	gtk_widget_show_all(lyricsLabel);
 }
 
-static void sendLyrics()
+static void changeProgressBar(double loudness, double freq)
 {
-	JamBot::updateLyrics("HI THERE");
+	/*gtk_progress_bar_update(GTK_PROGRESS_BAR(intensityProgressBar), loudness);
+	gtk_progress_bar_update(GTK_PROGRESS_BAR(freqProgressBar), freq);*/
 }
 
 static void testFunction(GtkWidget *widget) {
@@ -112,63 +109,38 @@ static void graphWave() {
 
 	if (graphWaveFlag)
 	{
-		/*if (waveSavedFlag)
-		{
-		cairo_restore(crWave);
-		cairo_stroke(crWave);
-		cairo_save(crWave);
-		}
-		else
-		{*/
-		SoundFileRead insound((waveFilePath).c_str());
-		SoundHeader header = insound;
-		int sampleAmount = header.getSamples();
-		int length = floor((double)insound.getSamples() / (double)insound.getSrate());
-		/*getting how many samples we are going to take for this graph*/
-		int sampleRate = sampleAmount / 10000;
-		/*first sample*/
-		int currentSample = sampleRate;
-		double sampleDiff[10000];
-		double sampleValue[10000];
-		int i = 1;
-
 		/*setting up where the graph will be displayed*/
-		crWave = gdk_cairo_create(drawArea->window);
+		cairo_t *crWave = gdk_cairo_create(drawArea->window);
 		cairo_set_source_rgba(crWave, 1, 0.4, 0.3, 0.8);
 		cairo_set_line_width(crWave, 1.3);
+		double halfHeight = (graph_y / 2);
 		/*setting the starting point of the graph*/
-		cairo_move_to(crWave, 0.0, 150.0);
-		/*getting the value of the beginning sample*/
-		insound.gotoSample(0);
-		sampleValue[0] = insound.getCurrentSampleDouble(0) * 0x100;
-		sampleDiff[0] = 0.00;
+		cairo_move_to(crWave, 0.0, halfHeight);
+		double interval = graph_x/10000.00;
 		for (int i = 1; i < 10000; i++)
 		{
-			/*go to the next sample*/
-			insound.gotoSample(currentSample);
-			sampleValue[i] = insound.getCurrentSampleDouble(0) * 0x100;
-			sampleDiff[i] = sampleValue[i] - sampleValue[i - 1];
-			cairo_rel_line_to(crWave, 0.049, sampleDiff[i]);
-			currentSample += sampleRate;
+			cairo_rel_line_to(crWave, interval, sampleDiff[i]*multiplier);
 		}
+
 		cairo_stroke(crWave);
 
-		cairo_move_to(crWave, 0.0, 150.0);
+		cairo_move_to(crWave, 0.0, halfHeight);
 		cairo_set_source_rgba(crWave, 0, 0, 0, 1.0);
-		cairo_rel_line_to(crWave, 500, 0);
+		cairo_rel_line_to(crWave, graph_x, 0);
 
-		cairo_move_to(crWave, 0.0, 150.0);
-		cairo_rel_line_to(crWave, 0, 150);
+		cairo_move_to(crWave, 0.0, halfHeight);
+		cairo_rel_line_to(crWave, 0, halfHeight);
 
-		cairo_move_to(crWave, 0.0, 150.0);
-		cairo_rel_line_to(crWave, 0, -150.0);
+		cairo_move_to(crWave, 0.0, halfHeight);
+		cairo_rel_line_to(crWave, 0, -1*halfHeight);
 
 		/*move back to origin*/
 		int tick;
 		double x;
-		cairo_move_to(crWave, 0.0, 150.0);
-		for (int i = 0; i < 16; i++) {
-			x = 31.25*i;
+		int numOfTicks = floor(songLength / 5);
+		cairo_move_to(crWave, 0.0, (graph_y/2));
+		for (int i = 0; i < numOfTicks; i++) {
+			x = (graph_x/numOfTicks)*i;
 			/*determine the "tick" length based on 5's or 10's*/
 			if (i % 2)
 			{
@@ -178,21 +150,24 @@ static void graphWave() {
 			{
 				tick = 10;
 			}
-			cairo_move_to(crWave, x, 150.0);
+			cairo_move_to(crWave, x, halfHeight);
 			cairo_rel_line_to(crWave, 0, tick);
 			cairo_rel_line_to(crWave, 0, (-2 * tick));
-			cairo_move_to(crWave, x, 150.0);
+			cairo_move_to(crWave, x, halfHeight);
 		}
 		cairo_stroke(crWave);
-		cairo_save(crWave);
 		waveSavedFlag = true;
-		//}
 	}
 }
 
 static void graphValues()
 {
-	cairo_t *cr = gdk_cairo_create(valueDrawArea->window);
+	if (graphWaveFlag)
+	{
+		
+	}
+
+	/*cairo_t *cr = gdk_cairo_create(valueDrawArea->window);
 	cairo_set_line_width(cr, 1.3);
 
 	cairo_move_to(cr, 0.0, 100.0);
@@ -213,7 +188,7 @@ static void graphValues()
 	cairo_move_to(crFreq, 0.0, 100.0);
 	cairo_rel_line_to(crFreq, 230, 70);
 	cairo_rel_line_to(crFreq, 50, -170);
-	cairo_stroke(crFreq);
+	cairo_stroke(crFreq);*/
 }
 
 static void updateGraph()
@@ -256,7 +231,7 @@ static void submitSongSection() {
 		for (int i = 0; i < sectionNameDetails.size(); i++) {
 			name = gtk_entry_get_text(GTK_ENTRY(sectionNameDetails[i]));
 			time = gtk_entry_get_text(GTK_ENTRY(sectionTimeDetails[i]));
-			section.push_back(SongSection(name, atoi((char*)time)));
+			section.push_back(SongSection(name, strtod((char*)time, NULL)));
 		}
 		int position = lyricsPath.find_last_of('/\\');
 		string fileName = lyricsPath.substr(position + 1);
@@ -338,8 +313,48 @@ static void selectWaveFile(GtkWidget *widget) {
 	gint resp = gtk_dialog_run(GTK_DIALOG(dialog));
 	if (resp == GTK_RESPONSE_OK) {
 		waveFilePath = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+		SoundFileRead insound((waveFilePath).c_str());
+		SoundHeader header = insound;
+		
+		int sampleAmount = header.getSamples();
+		songLength = floor((double)insound.getSamples() / (double)insound.getSrate());
+		/*getting how many samples we are going to take for this graph*/
+		int sampleRate = sampleAmount / 10000;
+		/*first sample*/
+		int currentSample = sampleRate;
+		/*getting the value of the beginning sample*/
+		insound.gotoSample(0);
+		sampleValue[0] = insound.getCurrentSampleDouble(0);
+		sampleDiff[0] = 0.00;
+		double max = 0.00;
+		double min = 0.00;
+		multiplier = 0.00;
+		for (int i = 1; i < 10000; i++)
+		{
+			/*go to the next sample*/
+			insound.gotoSample(currentSample);
+			sampleValue[i] = insound.getCurrentSampleDouble(0);
+			sampleDiff[i] = sampleValue[i] - sampleValue[i - 1];
+			if (sampleDiff[i] > max)
+			{
+				max = sampleDiff[i];
+			}
+			else if (sampleDiff[i] < min)
+			{
+				min = sampleDiff[i];
+			}
+			currentSample += sampleRate;
+		}
+
+		if (max > abs(min))
+		{
+			multiplier = ceil(graph_y / 2) / max;
+		}
+		else
+		{
+			multiplier = ceil(graph_y / 2) / abs(min);
+		}
 		graphWaveFlag = true;
-		//graphWave();
 	}
 	else {
 		g_print("You Pressed the cancel button");
@@ -361,7 +376,6 @@ static void displayLyricsNonmodal(GtkWidget *widget, gpointer window)
 	gtk_widget_modify_font(lyricsLabel, font_desc);
 	pango_font_description_free(font_desc);
 
-	//gtk_text_view_set_border_window_size(GTK_TEXT_VIEW(lyricsEntry), GTK_TEXT_WINDOW_TEXT, 30);
 	gtk_box_pack_start(GTK_BOX(GTK_DIALOG(lyricsDialog)->vbox), lyricsLabel, false, false, 5);
 
 	gtk_widget_show_all(lyricsDialog);
@@ -512,13 +526,15 @@ static void updateProgress()
 
 void JamBot::updateSongValues(float frequency, double loudness, double tempo)
 {
-	string freq = to_string(frequency);
-	string loud = to_string(loudness);
-	string temp = to_string(tempo);
-
-	if (counter % 1000000000000)
+	double loud = (int)((loudness / 7000) / 0.01) * 0.01;
+	if (counter% 3 == 1)
 	{
-
+		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgressBar), loud);
+	}
+	if (counter == 10)
+	{
+		gtk_label_set_text(GTK_LABEL(freqLabel), to_string(frequency).c_str());
+		counter = 0;
 	}
 	counter++;
 }
@@ -629,6 +645,8 @@ int gtkStart(int argc, char* argv[])
 	/*configure draw area*/
 	drawArea = gtk_drawing_area_new();
 	gtk_widget_set_size_request(GTK_WIDGET(drawArea), 550, 300);
+	graph_x = 500;
+	graph_y = 300;
 	gtk_window_set_resizable(GTK_WINDOW(drawArea), FALSE);
 	gtk_box_pack_start(GTK_BOX(graphBox), drawArea, true, true, 0);
 
@@ -645,6 +663,7 @@ int gtkStart(int argc, char* argv[])
 
 	ifstream file("CSV\\masterCSV.csv");
 	string line, text;
+
 	if (file.is_open())
 	{
 		gtk_list_store_insert_with_values(liststore, NULL, songListPosition, 0, "red", 1, "None", -1);
@@ -659,6 +678,7 @@ int gtkStart(int argc, char* argv[])
 		}
 		file.close();
 	}
+
 	songSelectBox = gtk_combo_box_new_with_model(GTK_TREE_MODEL(liststore));
 
 	column = gtk_cell_renderer_text_new();
@@ -681,12 +701,23 @@ int gtkStart(int argc, char* argv[])
 	gtk_notebook_append_page(GTK_NOTEBOOK(tabs), voiceProgressBox, label_voice);
 
 	/*drawing area*/
-	valueDrawArea = gtk_drawing_area_new();
+	/*valueDrawArea = gtk_drawing_area_new();
 	gtk_box_pack_start(GTK_BOX(songProgressBox), valueDrawArea, false, false, 5);
 	gtk_widget_set_size_request(GTK_WIDGET(valueDrawArea), 500, 200);
-	g_signal_connect(valueDrawArea, "expose-event", G_CALLBACK(graphValues), NULL, NULL);
+	g_signal_connect(valueDrawArea, "expose-event", G_CALLBACK(graphValues), NULL, NULL);*/
 
-	gtk_widget_set_size_request(GTK_WIDGET(tabs), 500, 250);
+	/*progress bar*/
+
+	/*intensity bar*/
+	intensityProgressBar = gtk_progress_bar_new();
+	gtk_widget_set_size_request(GTK_WIDGET(intensityProgressBar), 100, 20);
+	gtk_box_pack_start(GTK_BOX(songProgressBox), intensityProgressBar, false, false, 5);
+	
+	/*frequency label*/
+	freqLabel = gtk_label_new("");
+	gtk_box_pack_start(GTK_BOX(songProgressBox), freqLabel, false, false, 5);
+
+	gtk_widget_set_size_request(GTK_WIDGET(tabs), 200, 250);
 	gtk_window_set_resizable(GTK_WINDOW(tabs), FALSE);
 	gtk_box_pack_start(GTK_BOX(tabBox), tabs, false, false, 5);
 
@@ -705,8 +736,8 @@ int gtkStart(int argc, char* argv[])
 
 	/*test button*/
 	testButton = gtk_button_new_with_label("Test");
-	//gtk_box_pack_start(GTK_BOX(songControlBox), testButton, false, false, 5);
-	g_signal_connect(GTK_OBJECT(testButton), "clicked", G_CALLBACK(sendLyrics), NULL);
+	gtk_box_pack_start(GTK_BOX(songControlBox), testButton, false, false, 5);
+	g_signal_connect(GTK_OBJECT(testButton), "clicked", G_CALLBACK(changeProgressBar), NULL);
 	gtk_widget_show(testButton);
 
 	/*select lyrics*/
