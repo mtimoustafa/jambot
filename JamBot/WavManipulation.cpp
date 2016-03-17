@@ -606,16 +606,27 @@ void WavManipulation::parseTxt(string filename){
 	ifstream file(filename);
 	string value;
 	SecAnlys section;
-	getline(file, value, '[');
-	while (!file.eof()){
-		getline(file, value, ']');
-		checklyricrepeats(value);
-		section.name = value;
+	try(){
 		getline(file, value, '[');
-		section.lyric = value;
-		lyrics.push_back(section);
+		while (!file.eof()){
+			getline(file, value, ']');
+			checklyricrepeats(value);
+			section.name = value;
+			getline(file, value, '[');
+			section.lyric = value;
+			lyrics.push_back(section);
+		}
+		file.close();
 	}
-	file.close();
+	catch (exception e){
+		char * err_str;
+		err_str = "";
+		strcat(err_str, "ERROR: WavManipulation: ");
+		strcat(err_str, e.what());
+		strcat(err_str, "\n");
+		Helpers::print_debug(err_str);
+	}
+
 }
 
 //freqSnip(string, string, string)
