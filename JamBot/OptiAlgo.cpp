@@ -34,7 +34,8 @@ stringstream out_str;
 OptiAlgo::AudioProps::AudioProps()
 {
 	freq_avg = 0.0;
-	delta_freq_avg = 0.0;
+	delta_harmonic_freq_avg = 0.0;
+	delta_anomaly_freq_avg = 0.0;
 	tempo_avg = 0.0;
 	loudness_avg = 0.0;
 	loudness_nomax_avg = 0.0;
@@ -44,14 +45,16 @@ OptiAlgo::AudioProps::AudioProps()
 void OptiAlgo::AudioProps::ClearProps()
 {
 	freq_avg = 0.0;
-	delta_freq_avg = 0.0;
+	delta_harmonic_freq_avg = 0.0;
+	delta_anomaly_freq_avg = 0.0;
 	tempo_avg = 0.0;
 	loudness_avg = 0.0;
 	loudness_nomax_avg = 0.0;
 	loudness_max_avg = 0.0;
 
 	freq_hist.clear();
-	delta_freq_hist.clear();
+	delta_harmonic_freq_hist.clear();
+	delta_anomaly_freq_hist.clear();
 	tempo_hist.clear();
 	loudness_hist.clear();
 	loudness_max_hist.clear();
@@ -69,15 +72,26 @@ double OptiAlgo::AudioProps::freq_add_and_avg(double val)
 	freq_avg = avg;
 	return avg;
 }
-double OptiAlgo::AudioProps::delta_freq_add_and_avg(double val)
+double OptiAlgo::AudioProps::delta_harmonic_freq_add_and_avg(double val)
 {
 	double avg = 0.0;
-	delta_freq_hist.push_front(val);
-	if (delta_freq_hist.size() > IN_HIST_BUF_SIZE) delta_freq_hist.pop_back();
-	for each (double val in delta_freq_hist)
+	delta_harmonic_freq_hist.push_front(val);
+	if (delta_harmonic_freq_hist.size() > IN_HIST_BUF_SIZE) delta_harmonic_freq_hist.pop_back();
+	for each (double val in delta_harmonic_freq_hist)
 		avg += val;
-	avg /= (double)delta_freq_hist.size();
-	delta_freq_avg = avg;
+	avg /= (double)delta_harmonic_freq_hist.size();
+	delta_harmonic_freq_avg = avg;
+	return avg;
+}
+double OptiAlgo::AudioProps::delta_anomaly_freq_add_and_avg(double val)
+{
+	double avg = 0.0;
+	delta_anomaly_freq_hist.push_front(val);
+	if (delta_anomaly_freq_hist.size() > IN_HIST_BUF_SIZE) delta_anomaly_freq_hist.pop_back();
+	for each (double val in delta_anomaly_freq_hist)
+		avg += val;
+	avg /= (double)delta_anomaly_freq_hist.size();
+	delta_anomaly_freq_avg = avg;
 	return avg;
 }
 double OptiAlgo::AudioProps::tempo_add_and_avg(double val)
@@ -89,6 +103,17 @@ double OptiAlgo::AudioProps::tempo_add_and_avg(double val)
 		avg += val;
 	avg /= (double)tempo_hist.size();
 	tempo_avg = avg;
+	return avg;
+}
+double OptiAlgo::AudioProps::delta_tempo_add_and_avg(double val)
+{
+	double avg = 0.0;
+	delta_tempo_hist.push_front(val);
+	if (delta_tempo_hist.size() > IN_HIST_BUF_SIZE) delta_tempo_hist.pop_back();
+	for each (double val in delta_tempo_hist)
+		avg += val;
+	avg /= (double)delta_tempo_hist.size();
+	delta_tempo_avg = avg;
 	return avg;
 }
 double OptiAlgo::AudioProps::loudness_hist_add_and_avg(double val)
@@ -170,12 +195,12 @@ double OptiAlgo::FLSystem::FreqInClass(double input, FreqClassIDs flClass) {
 		if (input <= 100.0) mu = 0.0;
 		else if (input <= 150.0) mu = (input - 100.0) / (150.0 - 100.0);
 		else if (input <= 200.0) mu = 1.0;
-		else if (input < 250.0) mu = 1.0 - (input - 200.0) / (250.0 - 200.0);
+		else if (input < 225.0) mu = 1.0 - (input - 200.0) / (225.0 - 200.0);
 		else mu = 0.0;
 		break;
 	case high:
 		if (input <= 200.0) mu = 0.0;
-		else if (input <= 250.0) mu = (input - 200.0) / (250.0 - 200.0);
+		else if (input <= 225.0) mu = (input - 200.0) / (225.0 - 200.0);
 		else if (input <= 300.0) mu = 1.0;
 		else if (input < 350.0) mu = 1.0 - (input - 300.0) / (350.0 - 300.0);
 		else mu = 0.0;
@@ -197,32 +222,34 @@ double OptiAlgo::FLSystem::TempoInClass(double input, TempoClassIDs flClass) {
 	double mu;
 	switch (flClass) {
 	case vslow:
-		if (input <= 30.0) mu = 1.0;
-		else if (input < 50.0) mu = 1.0 - (input - 30.0) / (50.0 - 30.0);
+		if (input <= 80.0) mu = 1.0;
+		else if (input < 90.0) mu = 1.0 - (input - 80.0) / (90.0 - 80.0);
 		else mu = 0.0;
 		break;
 	case slow:
-		if (input <= 35.0) mu = 0.0;
-		else if (input <= 50.0) mu = (input - 35.0) / (50.0 - 35.0);
-		else if (input < 70.0) mu = 1.0 - (input - 50.0) / (70.0 - 50.0);
+		if (input <= 80.0) mu = 0.0;
+		else if (input <= 90.0) mu = (input - 80.0) / (90.0 - 80.0);
+		else if (input <= 100.0) mu = 1.0;
+		else if (input < 110.0) mu = 1.0 - (input - 100.0) / (110.0 - 100.0);
 		else mu = 0.0;
 		break;
 	case moderate:
-		if (input <= 62.5) mu = 0.0;
-		else if (input <= 80.0) mu = (input - 62.5) / (80.0 - 62.5);
-		else if (input < 110.0) mu = 1.0 - (input - 80.0) / (110.0 - 80.0);
+		if (input <= 100.0) mu = 0.0;
+		else if (input <= 110.0) mu = (input - 100.0) / (110.0 - 100.0);
+		else if (input <= 120.0) mu = 1.0;
+		else if (input < 130.0) mu = 1.0 - (input - 120.0) / (130.0 - 120.0);
 		else mu = 0.0;
 		break;
 	case fast:
-		if (input <= 80.0) mu = 0.0;
-		else if (input < 110.0) mu = (input - 80.0) / (110.0 - 80.0);
-		else if (input <= 125.0) mu = 1.0;
-		else if (input < 150.0) mu = 1.0 - (input - 125.0) / (150.0 - 125.0);
+		if (input <= 120.0) mu = 0.0;
+		else if (input < 130.0) mu = (input - 120.0) / (130.0 - 120.0);
+		else if (input <= 140.0) mu = 1.0;
+		else if (input < 150.0) mu = 1.0 - (input - 140.0) / (150.0 - 140.0);
 		else mu = 0.0;
 		break;
 	case vfast:
-		if (input <= 125.0) mu = 0.0;
-		else if (input < 150.0) mu = (input - 125.0) / (150.0 - 125.0);
+		if (input <= 140.0) mu = 0.0;
+		else if (input < 150.0) mu = (input - 140.0) / (150.0 - 140.0);
 		else mu = 1.0;
 		break;
 	default:
@@ -366,64 +393,39 @@ double OptiAlgo::FLSystem::BOutClass(double input, RGBClassIDs flClass) {
 }
 
 double OptiAlgo::FLSystem::GOutClass(double input, RGBClassIDs flClass) {
+	double none[] = { 0.0 - 42.5, 0.0, 42.5 };
+	double dark[] = { 0.0, 42.5, 85.0 };
+	double medium[] = { 42.5, 85.0, 127.5 };
+	double strong[] = { 85.0, 127.5, 127.5 + 42.5 };
 	double mu;
+
+	double * points;
 	switch (flClass) {
-	case none:
-		if (input <= 0.0) mu = 1.0;
-		else if (input < 64.0) mu = 1.0 - (input - 0.0) / (64.0 - 0.0);
-		else mu = 0.0;
+	case RGBClassIDs::none:
+		points = none;
 		break;
-	case dark:
-		if (input <= 0.0) mu = 0.0;
-		else if (input <= 64.0) mu = (input - 0.0) / (64.0 - 0.0);
-		else if (input < 128.0) mu = 1.0 - (input - 64.0) / (128.0 - 64.0);
-		else mu = 0.0;
+	case RGBClassIDs::dark:
+		points = dark;
 		break;
-	case medium:
-		if (input <= 64.0) mu = 0.0;
-		else if (input <= 128.0) mu = (input - 64.0) / (128.0 - 64.0);
-		else if (input < 192.0) mu = 1.0 - (input - 128.0) / (192.0 - 128.0);
-		else mu = 0.0;
+	case RGBClassIDs::medium:
+		points = medium;
 		break;
-	case strong:
-		if (input <= 128.0) mu = 0.0;
-		else if (input < 192.0) mu = (input - 128.0) / (192.0 - 128.0);
-		else mu = 1.0;
+	case RGBClassIDs::strong:
+		points = strong;
 		break;
 	default:
 		Helpers::print_debug("ERROR: undefined G class requested.\n");
-		mu = 0.0;
+		points = new double [] { 0.0, 0.0, 0.0 };
 		break;
 	}
+
+	if (input <= points[0]) mu = 0.0;
+	else if (input <= points[1]) mu = (input - points[0]) / (points[1] - points[0]);
+	else if (input < points[2]) mu = 1.0 - (input - points[1]) / (points[2] - points[1]);
+	else mu = 0.0;
+
 	return (mu < Gcutoff[flClass]) ? mu : Gcutoff[flClass];
 }
-
-//double OptiAlgo::FLSystem::WOutClass(double input, WClassIDs flClass) {
-//	double mu;
-//	switch (flClass) {
-//	case none:
-//		if (input <= 50.0) mu = 1.0;
-//		else if (input < 75.0) mu = 1.0 - (input - 50.0) / (75.0 - 50.0);
-//		else mu = 0.0;
-//		break;
-//	case WClassIDs::normal:
-//		if (input <= 50.0) mu = 0.0;
-//		else if (input <= 75.0) mu = (input - 50.0) / (75.0 - 50.0);
-//		else if (input < 100.0) mu = 1.0 - (input - 75.0) / (100.0 - 75.0);
-//		else mu = 0.0;
-//		break;
-//	case WClassIDs::bright:
-//		if (input <= 75.0) mu = 0.0;
-//		else if (input < 100.0) mu = (input - 75.0) / (100.0 - 75.0);
-//		else mu = 1.0;
-//		break;
-//	default:
-//		Helpers::print_debug("ERROR: undefined W class requested.\n");
-//		mu = 0.0;
-//		break;
-//	}
-//	return (mu < Wcutoff[flClass]) ? mu : Wcutoff[flClass];
-//}
 
 #pragma endregion
 
@@ -496,12 +498,12 @@ LightsInfo OptiAlgo::FLSystem::Infer(AudioProps input) {
 	double strobe_speed;
 	LightsInfo out_crisp;
 	vector<double> tnorm_temp;
+	double temp;
 
 	// Reset cutoffs before doing anything
 	ResetCutoffs();
 
 	// Use generic inference rules for testing
-	// TODO: for intensity: should I use loudness_avg or loudness_nomax_avg?
 	// RED
 	tnorm_temp.clear();
 	tnorm_temp.push_back(FreqInClass(input.freq_avg, vlow));
@@ -558,47 +560,56 @@ LightsInfo OptiAlgo::FLSystem::Infer(AudioProps input) {
 	out_str << "\n";
 
 
-	//// GREEN
-	//tnorm_temp.clear();
-	//tnorm_temp.push_back(FreqInClass(input.freq_avg, vhigh));
-	//tnorm_temp.push_back(TempoInClass(input.tempo_avg, vfast));
-	//tnorm_temp.push_back(IntensInClass(input.loudness_avg, loud));
-	//Gcutoff[strong] = Tnorm(tnorm_temp);
+	// GREEN
+	tnorm_temp.clear();
+	tnorm_temp.push_back(FreqInClass(input.freq_avg, vhigh));
+	tnorm_temp.push_back(TempoInClass(input.tempo_avg, vfast));
+	tnorm_temp.push_back(IntensInClass(input.loudness_avg, loud));
+	Gcutoff[strong] = Tnorm(tnorm_temp);
 
-	//tnorm_temp.clear();
-	//tnorm_temp.push_back(FreqInClass(input.freq_avg, high));
-	//tnorm_temp.push_back(TempoInClass(input.tempo_avg, fast));
-	//tnorm_temp.push_back(IntensInClass(input.loudness_avg, loud));
-	//Gcutoff[medium] = Tnorm(tnorm_temp);
+	tnorm_temp.clear();
+	tnorm_temp.push_back(max(FreqInClass(input.freq_avg, high), FreqInClass(input.freq_avg, vhigh)));
+	tnorm_temp.push_back(TempoInClass(input.tempo_avg, fast));
+	tnorm_temp.push_back(IntensInClass(input.loudness_avg, loud));
+	temp = Tnorm(tnorm_temp);
+	tnorm_temp.clear();
+	tnorm_temp.push_back(FreqInClass(input.freq_avg, high));
+	tnorm_temp.push_back(TempoInClass(input.tempo_avg, vfast));
+	tnorm_temp.push_back(IntensInClass(input.loudness_avg, loud));
+	temp = max(temp, Tnorm(tnorm_temp));
+	tnorm_temp.clear();
+	tnorm_temp.push_back(max(FreqInClass(input.freq_avg, low), FreqInClass(input.freq_avg, vlow)));
+	tnorm_temp.push_back(max(TempoInClass(input.tempo_avg, fast), TempoInClass(input.tempo_avg, vfast)));
+	tnorm_temp.push_back(IntensInClass(input.loudness_avg, loud));
+	Gcutoff[medium] = max(temp, Tnorm(tnorm_temp));
 
-	//tnorm_temp.clear();
-	//tnorm_temp.push_back(max(FreqInClass(input.freq_avg, high), FreqInClass(input.freq_avg, vhigh)));
-	//tnorm_temp.push_back(max(TempoInClass(input.tempo_avg, fast), TempoInClass(input.tempo_avg, vfast)));
-	//tnorm_temp.push_back(IntensInClass(input.loudness_avg, mid));
-	//temp = Tnorm(tnorm_temp);
+	tnorm_temp.clear();
+	tnorm_temp.push_back(max(FreqInClass(input.freq_avg, high), FreqInClass(input.freq_avg, vhigh)));
+	tnorm_temp.push_back(max(TempoInClass(input.tempo_avg, fast), TempoInClass(input.tempo_avg, vfast)));
+	tnorm_temp.push_back(IntensInClass(input.loudness_avg, mid));
+	temp = Tnorm(tnorm_temp);
+	tnorm_temp.clear();
+	tnorm_temp.push_back(max(FreqInClass(input.freq_avg, low), FreqInClass(input.freq_avg, vlow)));
+	tnorm_temp.push_back(max(TempoInClass(input.tempo_avg, fast), TempoInClass(input.tempo_avg, vfast)));
+	tnorm_temp.push_back(IntensInClass(input.loudness_avg, mid));
+	Gcutoff[dark] = max(temp, Tnorm(tnorm_temp));
 
-	//tnorm_temp.clear();
-	//tnorm_temp.push_back(max(FreqInClass(input.freq_avg, low), FreqInClass(input.freq_avg, vlow)));
-	//tnorm_temp.push_back(max(TempoInClass(input.tempo_avg, fast), TempoInClass(input.tempo_avg, vfast)));
-	//tnorm_temp.push_back(IntensInClass(input.loudness_avg, mid));
-	//Gcutoff[dark] = max(temp, Tnorm(tnorm_temp));
+	tnorm_temp.clear();
+	tnorm_temp.push_back(max(max(max(TempoInClass(input.tempo_avg, vslow), TempoInClass(input.tempo_avg, slow)), TempoInClass(input.tempo_avg, moderate)),
+		IntensInClass(input.loudness_avg, quiet)));
+	Gcutoff[none] = Tnorm(tnorm_temp);
 
-	//tnorm_temp.clear();
-	//tnorm_temp.push_back(max(max(max(TempoInClass(input.freq_avg, vslow), TempoInClass(input.freq_avg, slow)), TempoInClass(input.freq_avg, moderate)),
-	//	IntensInClass(input.loudness_avg, quiet)));
-	//Gcutoff[none] = Tnorm(tnorm_temp);
-
-	//out_str << "Gcutoff: ";
-	//for (int i = 0; i < 4; i++) {
-	//	out_str << to_string((RGBClassIDs)i) << ": " << Gcutoff[(RGBClassIDs)i] << "; ";
-	//}
-	//out_str << "\n";
+	out_str << "Gcutoff: ";
+	for (int i = 0; i < 4; i++) {
+		out_str << to_string((RGBClassIDs)i) << ": " << Gcutoff[(RGBClassIDs)i] << "; ";
+	}
+	out_str << "\n";
 
 
 	// Defuzzify each output parameter
 	out_crisp.red_intensity = (int)Defuzzify(r);
 	out_crisp.blue_intensity = (int)Defuzzify(b);
-	out_crisp.green_intensity = 0; //(int)DefuzzifyRGB(GetHighestCutoff<RGBClassIDs>(Gcutoff)); // hack
+	out_crisp.green_intensity = (int)Defuzzify(g);
 	out_crisp.white_intensity = 0;
 	out_crisp.dimness = 255;
 
@@ -698,7 +709,7 @@ void OptiAlgo::start_algo()
 	double cur_freq, cur_tempo, cur_loud;
 	bool got_freq, got_tempo, got_loud;
 	int nudges_to_silence = NUDGES_TO_SILENCE;
-	bool be_quiet = false;
+	bool starting_silence = true;
 	// Initialize solution variables
 	FLSystem flSystem = FLSystem();
 	LightsInfo cur_sol;
@@ -707,7 +718,8 @@ void OptiAlgo::start_algo()
 	deque<LightsInfo> delta_out_hist = deque<LightsInfo>();
 	LightsInfo avg_out = LightsInfo(true);
 	LightsInfo old_avg_out;
-	// Initialize print-loggers
+	// Initialize logging variables
+	bool harmonicDetected = false;
 	char * err_str;
 
 	// Start main execution loop
@@ -730,6 +742,7 @@ void OptiAlgo::start_algo()
 			audio_buffer.pop();
 
 			// Flush buffers if section changes
+			// TODO: test section change
 			if (!song_section_buffer.empty()) {
 				Helpers::print_debug("[FL] Section change!\n");
 				input.freq_hist.clear();
@@ -742,11 +755,14 @@ void OptiAlgo::start_algo()
 			// Are we still silent?
 			if (got_loud) {
 				if (cur_loud < SILENCE_THRESH) {
-					input.silence = (nudges_to_silence <= 0);
-					nudges_to_silence--;
+					if (!starting_silence) {
+						input.silence = (nudges_to_silence <= 0);
+						nudges_to_silence--;
+					}
 				}
 				else {
 					input.silence = false;
+					starting_silence = false;
 					nudges_to_silence = NUDGES_TO_SILENCE;
 				}
 			}
@@ -755,27 +771,51 @@ void OptiAlgo::start_algo()
 			if (!input.silence)
 			{
 				if (got_freq) {
-					// Check for harmonic frequency anomalies and correct them before inserting
-					if (input.freq_hist.size() >= IN_HIST_BUF_SIZE && (abs(cur_freq - input.freq_avg * 2) < FREQ_HARMONIC_DETECT_THRESH || abs(cur_freq - input.freq_avg) > FREQ_ANOMALY_DETECT_THRESH)) {
-						input.delta_freq_add_and_avg(cur_freq);
-						if (input.delta_freq_hist.size() >= FREQ_NUDGES_TO_CHANGE) {
-							input.freq_hist = input.delta_freq_hist;
-							input.freq_avg = input.delta_freq_avg;
-							input.delta_freq_hist.clear();
+					// Check for harmonic frequencies and correct them before inserting
+					harmonicDetected = false;
+					if (input.freq_hist.size() >= IN_HIST_BUF_SIZE && FREQ_ANOMALY_NUDGES_TO_CHANGE > 0 &&
+						(abs(cur_freq - input.freq_avg * 2) < FREQ_HARMONIC_DETECT_THRESH || abs(cur_freq - input.freq_avg / 2) < FREQ_HARMONIC_DETECT_THRESH))
+					{
+						harmonicDetected = true;
+						input.delta_harmonic_freq_add_and_avg(cur_freq);
+						if (input.delta_harmonic_freq_hist.size() >= FREQ_HARMONIC_NUDGES_TO_CHANGE) {
+							input.freq_hist = input.delta_harmonic_freq_hist;
+							input.freq_avg = input.delta_harmonic_freq_avg;
+							input.delta_harmonic_freq_hist.clear();
 						}
+						input.delta_anomaly_freq_hist.clear();
+					}
+					// Check for frequency anomalies and correct them before inserting
+					else if (input.freq_hist.size() >= IN_HIST_BUF_SIZE && FREQ_ANOMALY_NUDGES_TO_CHANGE > 0 &&
+							abs(cur_freq - input.freq_avg) > FREQ_ANOMALY_DETECT_THRESH)
+					{
+						input.delta_anomaly_freq_add_and_avg(cur_freq);
+						if (input.delta_anomaly_freq_hist.size() >= FREQ_ANOMALY_NUDGES_TO_CHANGE) {
+							input.freq_hist = input.delta_anomaly_freq_hist;
+							input.freq_avg = input.delta_anomaly_freq_avg;
+							input.delta_anomaly_freq_hist.clear();
+						}
+						input.delta_harmonic_freq_hist.clear();
 					}
 					else {
 						input.freq_add_and_avg(cur_freq);
-						input.delta_freq_hist.clear();
+						input.delta_harmonic_freq_hist.clear();
+						input.delta_anomaly_freq_hist.clear();
 					}
 				}
 
 				if (got_tempo) {
-					if ((input.tempo_avg != 0.0 || (input.tempo_avg >= TEMPO_LB && input.tempo_avg <= TEMPO_UB)) &&
-						(abs(cur_tempo / 2 - input.tempo_avg) <= TEMPO_CLOSENESS_THRESH) || (abs(cur_tempo * 2 - input.tempo_avg) <= TEMPO_CLOSENESS_THRESH)) {
-						cur_tempo /= 2; // TODO: don't just halve it
+					if (input.tempo_hist.size() >= IN_HIST_BUF_SIZE && abs(cur_tempo - input.tempo_avg) > TEMPO_CLOSENESS_THRESH) {
+						input.delta_tempo_add_and_avg(cur_tempo);
+						if (input.delta_tempo_hist.size() >= TEMPO_NUDGES_TO_CHANGE) {
+							input.tempo_hist = input.delta_tempo_hist;
+							input.tempo_avg = input.delta_tempo_avg;
+							input.delta_tempo_hist.clear();
+						}
 					}
-					input.tempo_add_and_avg(cur_tempo);
+					else {
+						input.tempo_add_and_avg(cur_tempo);
+					}
 				}
 
 				if (got_loud)
@@ -808,7 +848,7 @@ void OptiAlgo::start_algo()
 						abs(cur_sol.green_intensity - old_avg_out.green_intensity) > OUTPUT_ANOMALY_DETECT_THRESH)) {
 					delta_out_hist.push_front(cur_sol);
 					if (delta_out_hist.size() >= OUTPUT_NUDGES_TO_CHANGE) {
-						delta_out_hist.pop_front(); // TODO: pop_back and push_front that into out_hist? 
+						delta_out_hist.pop_front();
 						out_hist.push_front(cur_sol);
 						if (out_hist.size() > OUT_HIST_BUF_SIZE) out_hist.pop_back();
 					}
@@ -831,8 +871,10 @@ void OptiAlgo::start_algo()
 
 			// Log smoothed input
 			out_str << "[FL] S=" << input.silence << " ";
-			out_str << "in_avg:[F, T, L(nm, m)]=["
-				<< input.freq_avg << ", " << input.tempo_avg << ", "
+			out_str << "in_avg:[F, T, L (beat)]=["
+				<< input.freq_avg;
+			if (harmonicDetected) out_str << "*";
+			out_str << ", " << cur_tempo << "->" << input.tempo_avg << ", "
 				<< input.loudness_avg << " (" << input.loudness_nomax_avg << ", " << input.loudness_max_avg << ")]";
 
 			// Log current output
