@@ -22,7 +22,7 @@ const double FREQ_UB = 20000.0;
 const double FREQ_LB = 0.0;
 const double LOUD_UB = 18000.0;
 const double LOUD_LB = 0.0;
-const double TEMPO_UB = 200.0;
+const double TEMPO_UB = 150.0;
 const double TEMPO_LB = 60.0;
 
 // AudioInfo thresholds
@@ -45,18 +45,21 @@ const double DIM_UB = 255.0;
 const double DIM_LB = 0.0;
 
 // TODO: tweak these parameters
-const unsigned int IN_HIST_BUF_SIZE = 5;
-const unsigned int OUT_HIST_BUF_SIZE = 15;
+const unsigned int IN_HIST_BUF_SIZE = 10;
+const unsigned int OUT_HIST_BUF_SIZE = 10;
 
 const double BEATINESS_THRESH = 1000.0;
 const double SILENCE_THRESH = 40.0;
-const double FREQ_HARMONIC_DETECT_THRESH = 30.0;
-const double FREQ_ANOMALY_DETECT_THRESH = 200.0;
-const int FREQ_NUDGES_TO_CHANGE = 5;
+const double FREQ_VALUES_DISTANCE_THRESH = 50.0;
+const double FREQ_HARMONIC_DETECT_THRESH = 10.0;
+const double FREQ_ANOMALY_DETECT_THRESH = 100.0;
+const int FREQ_HARMONIC_NUDGES_TO_CHANGE = 0;
+const int FREQ_ANOMALY_NUDGES_TO_CHANGE = 0;
 const double TEMPO_CLOSENESS_THRESH = 10.0;
+const int TEMPO_NUDGES_TO_CHANGE = 20;
 const double OUTPUT_TOO_LOW_THRESH = 10.0;
 const int OUTPUT_ANOMALY_DETECT_THRESH = 50;
-const int OUTPUT_NUDGES_TO_CHANGE = 7;
+const int OUTPUT_NUDGES_TO_CHANGE = 5;
 
 const int NUDGES_TO_SILENCE = 6;
 
