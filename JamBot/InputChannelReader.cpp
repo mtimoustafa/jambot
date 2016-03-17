@@ -210,7 +210,7 @@ void InputChannelReader::analyseBuffer(paData *data)
 		Helpers::print_debug(("Frequency peak [voice] (Hz): " + to_string(frequency2) + "\n").c_str());
 
 		// Initiate frequency reads
-		WavManipulation::startReading(average > 42.0);
+		WavManipulation::startReading(average > 30.0);
 
 		// Send frequency to WavManipulation
 		WavManipulation::pushFrequency(frequency2);
