@@ -38,7 +38,9 @@ private:
 	vector<short> durations;
 	vector<string> filenames;
 	vector<SecAnlys> analysis;
-	bool terminate;
+	//queue<float> input;
+	//queue<string> section;
+	//bool terminate;
 	int durationCounter;
 	string directoryPath;
 	static vector<float> realTimeBuffer;

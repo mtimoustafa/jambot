@@ -788,12 +788,14 @@ void CloseAllThreads()
 			else { Helpers::print_debug("FAILED stopping optimization algorithm.\n"); }
 		}
 
-		/*Helpers::print_debug("Stopping wav manip...\n");
-		wavmanipulation.stop();
-		result = WaitForSingleObject(hThreadArray[WAVGEN_THREAD_ARR_ID], 500);
-		if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP wav manip.\n"); }
-		else if (result == WAIT_FAILED) { ErrorHandler(TEXT("WaitForSingleObject")); }
-		else { Helpers::print_debug("FAILED stopping wav manip.\n"); }*/
+		if (hThreadArray[WAVGEN_THREAD_ARR_ID] != NULL){
+			Helpers::print_debug("Stopping wav manip...\n");
+			wavmanipulation.stop();
+			result = WaitForSingleObject(hThreadArray[WAVGEN_THREAD_ARR_ID], 500);
+			if (result == WAIT_OBJECT_0) { Helpers::print_debug("STOP wav manip.\n"); }
+			else if (result == WAIT_FAILED) { ErrorHandler(TEXT("WaitForSingleObject")); }
+			else { Helpers::print_debug("FAILED stopping wav manip.\n"); }
+		}
 
 		if (hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID] != NULL) {
 			Helpers::print_debug("Stopping audio output...\n");

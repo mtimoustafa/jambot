@@ -40,9 +40,10 @@ using namespace std;
 vector<float> WavManipulation::realTimeBuffer = vector<float>();
 vector<SecAnlys> WavManipulation::freqList = vector<SecAnlys>();
 vector<SecAnlys> WavManipulation::lyrics = vector<SecAnlys>();
-static queue<float> frequency = queue<float>();
+static queue<float> input = queue<float>();
 static queue<string> section = queue<string>();
 static bool checkfrequency;
+static bool kill;
 
 SongSection::SongSection(string n, double t){
 	Name = n;
@@ -69,10 +70,10 @@ SecAnlys::~SecAnlys(){
 WavManipulation::WavManipulation(){
 	durations = vector<short>();
 	filenames = vector<string>();
-	frequency = queue<float>();
+	input = queue<float>();
 	section = queue<string>();
 	checkfrequency = false;
-	terminate = false;
+	kill = false;
 	durationCounter = 0;
 	directoryPath = "";
 }
@@ -242,7 +243,7 @@ void WavManipulation::startSnip(){
 
 void clearqueue(){
 	queue<float> empty;
-	swap(frequency, empty);
+	swap(input, empty);
 }
 //This is a testing function for now
 void WavManipulation::startanalysis(){
@@ -251,12 +252,12 @@ void WavManipulation::startanalysis(){
 	//time_t endTime;
 	//double exectime;
 	//VCC
-	secs.push_back(SongSection("Verse", 0.8));
-	secs.push_back(SongSection("Chorus1", 24.8));
-	secs.push_back(SongSection("Chorus2", 53.4));
-	dataStore("Hey Jude VCC", secs, "C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VCC.wav",
-		"C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VCC.txt");
-	freqSnip("Hey Jude VCC.csv");
+	//secs.push_back(SongSection("Verse", 0.8));
+	//secs.push_back(SongSection("Chorus1", 24.8));
+	//secs.push_back(SongSection("Chorus2", 53.4));
+	//dataStore("Hey Jude VCC", secs, "C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VCC.wav",
+	//	"C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VCC.txt");
+	//freqSnip("Hey Jude VCC.csv");
 	//VVC
 	//secs.push_back(SongSection("Verse1", 0.8));
 	//secs.push_back(SongSection("Verse2", 24));
@@ -265,12 +266,12 @@ void WavManipulation::startanalysis(){
 	//	"C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VVC.txt");
 	//freqSnip("Hey Jude VVC.csv");
 	////VCV
-	//secs.push_back(SongSection("Verse1", 0.8));
-	//secs.push_back(SongSection("Chorus", 24.8));
-	//secs.push_back(SongSection("Verse2", 53.6));
-	//dataStore("Hey Jude VCV", secs, "C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VCV.wav", 
-	//	"C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VCV.txt");
-	//freqSnip("Hey Jude VCV.csv");
+	secs.push_back(SongSection("Verse1", 0.8));
+	secs.push_back(SongSection("Chorus", 24.8));
+	secs.push_back(SongSection("Verse2", 53.6));
+	dataStore("Hey Jude VCV", secs, "C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VCV.wav", 
+		"C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VCV.txt");
+	freqSnip("Hey Jude VCV.csv");
 	start("Test");
 	//parseTxt("testlyrics");
 }
@@ -278,9 +279,9 @@ void WavManipulation::startanalysis(){
 ///		Frequency Fingerprint Functions
 //Brandon Function that is used to push the frequencies
 bool WavManipulation::pushFrequency(float in){
-	if (frequency.size() < AUDIO_BUF_SIZE)
-		frequency.push(in);
-	return frequency.size() < AUDIO_BUF_SIZE;
+	if (input.size() < AUDIO_BUF_SIZE)
+		input.push(in);
+	return input.size() < AUDIO_BUF_SIZE;
 }
 
 void WavManipulation::startReading(bool in){
@@ -424,32 +425,34 @@ void WavManipulation::freqcomparison(){
 	}
 
 
-	while (!terminate){
+	while (!kill){
 		while (ticks < duration || !checkfrequency){
-			if (!frequency.empty())
+			if (!input.empty())
 			{
 				if (ticks >= duration && checkfrequency)
 					break;
 				ticks++;
-				frequency.pop();
+				input.pop();
 			}
 			//checkfrequency = false;
+			if (kill)
+				break;
 		}
 		//clearqueue();
 		//checkfrequency = true;
 		try{
 			while (j < NUM_FREQ){
-				while (frequency.empty()){ 
-					if (terminate){ 
+				while (input.empty()){
+					if (kill){
 						return; 
 					} 
 				}
 				if (inFreq != 0.0)
-					freqdiff.push_back((frequency.front() -  inFreq));
+					freqdiff.push_back((input.front() - inFreq));
 
-				inFreq = frequency.front();
+				inFreq = input.front();
 				freq.push_back(inFreq);
-				frequency.pop();
+				input.pop();
 
 				diff1 = abs(inFreq - chorus[j]);
 				diff2 = abs(inFreq - verse[j]);
@@ -585,8 +588,8 @@ void WavManipulation::freqcomparison(){
 			Helpers::print_debug(err_str);
 		}
 
-	}	
-	if (terminate) Helpers::print_debug("WavManipulation: terminated.\n");
+	}
+	if (kill) Helpers::print_debug("WavManipulation: terminated.\n");
 	else Helpers::print_debug("WavManipulation: stopped.\n");
 }
 bool WavManipulation::checklyricrepeats(string name){
@@ -672,9 +675,6 @@ void WavManipulation::freqSnip(string csvname){
 					insound.incrementSample();
 			}
 			freq = freqAnalysis(snippet);
-			if (freq >= 2000.0){
-				freq = freqAnalysis(snippet);
-			}
 			list.push_back(freq);
 			snippet.clear();
 		}
@@ -691,12 +691,11 @@ void WavManipulation::freqSnip(string csvname){
 		}
 	}
 	parseTxt(lyricfile);
-	
 }
 void WavManipulation::start(string fileName){
-	//freqSnip(fileName);
+	freqSnip(fileName);
 	freqcomparison();
 }
 void WavManipulation::stop(){
-	terminate = true;
+	kill = true;
 }
