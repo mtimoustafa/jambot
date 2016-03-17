@@ -42,7 +42,7 @@ void CloseThread(int id);
 void CloseAllThreads();
 void ErrorHandler(LPTSTR lpszFunction);
 const gchar *textInput;
-GtkWidget *window, *lyricsEntry;
+GtkWidget *window, *lyricsEntry, *lyricsLabel;
 GtkWidget *textEntry, *songSelectBox;
 GList *songList = NULL;
 string waveFilePath, lyricsPath;
@@ -84,9 +84,14 @@ static void changeProgressBar(GtkWidget *widget, gpointer data)
 }
 
 void JamBot::updateLyrics(string text) {
-	lyrics = text;
-	lyrics += "\n";
-	gtk_text_buffer_set_text(lyricsBuffer, lyrics.c_str(), -1);
+	lyrics = text + "\n";
+	gtk_label_set_text(GTK_LABEL(lyricsLabel), lyrics.c_str());
+	gtk_widget_show_all(lyricsLabel);
+}
+
+static void sendLyrics()
+{
+	JamBot::updateLyrics("HI THERE");
 }
 
 static void testFunction(GtkWidget *widget) {
@@ -344,39 +349,29 @@ static void selectWaveFile(GtkWidget *widget) {
 
 static void displayLyricsNonmodal(GtkWidget *widget, gpointer window)
 {
-	GtkWidget *dialog, *label, *image;
-	dialog = gtk_dialog_new_with_buttons("Nonmodal dialog", GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, NULL,
+	GtkWidget *lyricsDialog, *image;
+	lyricsDialog = gtk_dialog_new_with_buttons("Nonmodal dialog", GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, NULL,
 		NULL, NULL, NULL);
+	gtk_window_set_decorated(GTK_WINDOW(lyricsDialog), false);
+	gtk_window_fullscreen(GTK_WINDOW(lyricsDialog));
+
+	lyricsLabel = gtk_label_new(lyrics.c_str());
 	PangoFontDescription *font_desc;
-
-	label = gtk_label_new("The button was clicked");
-
-	lyricsEntry = gtk_text_view_new();
-	lyricsBuffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(lyricsEntry));
-	gtk_text_buffer_set_text(lyricsBuffer, lyrics.c_str(), -1);
-	GtkTextIter start, end;
-
-	gtk_text_buffer_get_start_iter(lyricsBuffer, &start);
-	gtk_text_buffer_get_end_iter(lyricsBuffer, &end);
-
-	gtk_text_buffer_create_tag(lyricsBuffer, "italic", "style", PANGO_STYLE_ITALIC, NULL);
-	gtk_text_buffer_create_tag(lyricsBuffer, "bold", "weight", PANGO_WEIGHT_BOLD, NULL);
-
-	font_desc = pango_font_description_from_string("Serif 35");
-	gtk_widget_modify_font(lyricsEntry, font_desc);
+	font_desc = pango_font_description_from_string("Ariel Bold 35");
+	gtk_widget_modify_font(lyricsLabel, font_desc);
 	pango_font_description_free(font_desc);
 
-	gtk_text_view_set_border_window_size(GTK_TEXT_VIEW(lyricsEntry), GTK_TEXT_WINDOW_TEXT, 30);
-	gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), lyricsEntry, false, false, 5);
+	//gtk_text_view_set_border_window_size(GTK_TEXT_VIEW(lyricsEntry), GTK_TEXT_WINDOW_TEXT, 30);
+	gtk_box_pack_start(GTK_BOX(GTK_DIALOG(lyricsDialog)->vbox), lyricsLabel, false, false, 5);
 
-	gtk_widget_show_all(dialog);
+	gtk_widget_show_all(lyricsDialog);
 }
 
 static void displayLyrics(GtkWidget *widget, gpointer window)
 {
-	GtkWidget *dialog, *label;
+	GtkWidget *lyricsDialog, *label;
 	PangoFontDescription *font_desc;
-	dialog = gtk_dialog_new_with_buttons("Lyrics Display", GTK_WINDOW(window), GTK_DIALOG_MODAL, NULL, NULL,
+	lyricsDialog = gtk_dialog_new_with_buttons("Lyrics Display", GTK_WINDOW(window), GTK_DIALOG_MODAL, NULL, NULL,
 		NULL, NULL);
 
 	lyricsEntry = gtk_text_view_new();
@@ -398,17 +393,17 @@ static void displayLyrics(GtkWidget *widget, gpointer window)
 	gtk_text_buffer_apply_tag_by_name(lyricsBuffer, "italic", &start, &end);
 
 	gtk_text_view_set_border_window_size(GTK_TEXT_VIEW(lyricsEntry), GTK_TEXT_WINDOW_TEXT, 30);
-	gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), lyricsEntry, false, false, 5);
+	gtk_box_pack_start(GTK_BOX(GTK_DIALOG(lyricsDialog)->vbox), lyricsEntry, false, false, 5);
 
-	gtk_widget_show_all(dialog);
-	gint response = gtk_dialog_run(GTK_DIALOG(dialog));
+	gtk_widget_show_all(lyricsDialog);
+	gint response = gtk_dialog_run(GTK_DIALOG(lyricsDialog));
 	if (response == GTK_RESPONSE_OK){
 		g_print("The OK is pressed");
 	}
 	else {
 		g_print("The cancel was pressed");
 	}
-	gtk_widget_destroy(dialog);
+	gtk_widget_destroy(lyricsDialog);
 }
 
 static void selectLyrics(GtkWidget *button, gpointer window) {
@@ -565,7 +560,7 @@ int gtkStart(int argc, char* argv[])
 	GtkWidget *label;
 
 	gtk_init(&argc, &argv);
-	lyrics = "Hi there";
+	lyrics = "";
 	/*=========================== Window ===========================*/
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	g_signal_connect(window, "delete-event", G_CALLBACK(delete_event), NULL);
@@ -711,7 +706,7 @@ int gtkStart(int argc, char* argv[])
 	/*test button*/
 	testButton = gtk_button_new_with_label("Test");
 	//gtk_box_pack_start(GTK_BOX(songControlBox), testButton, false, false, 5);
-	g_signal_connect(GTK_OBJECT(playButton), "clicked", G_CALLBACK(graphValues), NULL);
+	g_signal_connect(GTK_OBJECT(testButton), "clicked", G_CALLBACK(sendLyrics), NULL);
 	gtk_widget_show(testButton);
 
 	/*select lyrics*/
