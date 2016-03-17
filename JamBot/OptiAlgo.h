@@ -112,7 +112,7 @@ public:
 
 	void test_lights();
 	void start_algo();
-	void start();
+	void start(bool);
 	void stop();
 };
 

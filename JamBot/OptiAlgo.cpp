@@ -911,7 +911,7 @@ void OptiAlgo::start_algo()
 }
 
 
-void OptiAlgo::start()
+void OptiAlgo::start(bool songSelected)
 {
 	start_algo();
 	//test_lights();
