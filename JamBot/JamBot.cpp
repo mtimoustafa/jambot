@@ -44,7 +44,7 @@ void CloseThread(int id);
 void CloseAllThreads();
 void ErrorHandler(LPTSTR lpszFunction);
 const gchar *textInput;
-GtkWidget *window, *lyricsEntry, *lyricsLabel, *intensityProgressBar, *freqLabel, *statusLabel;
+GtkWidget *window, *lyricsEntry, *lyricsLabel, *intensityProgBarInstru, *intensityProgBarVoice, *freqLabelInstru, *freqLabelVoice, *statusLabel;
 GtkWidget *textEntry, *songSelectBox, *numChannelBox;
 GList *songList = NULL;
 string waveFilePath, lyricsPath;
@@ -566,17 +566,28 @@ static void updateProgress()
 
 void JamBot::updateSongValues(float frequency, double loudness, double tempo)
 {
-	/*double loud = (int)((loudness / 7000) / 0.01) * 0.01;
-	if (counter% 3 == 1)
+	double loud = (loudness / 5000.00);
+	if (counter% 5 == 1)
 	{
-		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgressBar), loud);
+		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 1 * loud);
+		Sleep(400);
+		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.66*loud);
+		Sleep(25);
+		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.33*loud);
+		Sleep(25);
+		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.15*loud);
+		Sleep(25);
+		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.10*loud);
+		Sleep(25);
+		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.08*loud);
+
 	}
 	if (counter == 10)
 	{
-		gtk_label_set_text(GTK_LABEL(freqLabel), to_string(frequency).c_str());
+		gtk_label_set_text(GTK_LABEL(freqLabelInstru), to_string(frequency).c_str());
 		counter = 0;
 	}
-	counter++;*/
+	counter++;
 }
 
 static gboolean delete_event(GtkWidget *widget, GdkEvent *event, gpointer data)
@@ -602,6 +613,15 @@ static void destroy(GtkWidget *widget,
 {
 	CloseAllThreads();
 	gtk_main_quit();
+}
+
+static void stopUpdating()
+{
+	/*clear out the lyrics*/
+	lyrics.clear();
+	gtk_label_set_text(GTK_LABEL(lyricsLabel), lyrics.c_str());
+	/*dumb the data from InputChannelReader*/
+
 }
 
 int gtkStart(int argc, char* argv[])
@@ -765,13 +785,13 @@ int gtkStart(int argc, char* argv[])
 	/*getting the second vbox*/
 	vbox = gtk_vbox_new(false, 0);
 	/*intensity bar*/
-	intensityProgressBar = gtk_progress_bar_new();
+	intensityProgBarInstru = gtk_progress_bar_new();
 	//gtk_widget_set_size_request(GTK_WIDGET(intensityProgressBar), 100, 20);
-	gtk_box_pack_start(GTK_BOX(vbox), intensityProgressBar, false, false, 5);
+	gtk_box_pack_start(GTK_BOX(vbox), intensityProgBarInstru, false, false, 5);
 	
 	/*frequency label*/
-	freqLabel = gtk_label_new("");
-	gtk_box_pack_start(GTK_BOX(vbox), freqLabel, false, false, 5);
+	freqLabelInstru = gtk_label_new("");
+	gtk_box_pack_start(GTK_BOX(vbox), freqLabelInstru, false, false, 5);
 	gtk_box_pack_start(GTK_BOX(songProgressBox), vbox, false, false, 5);
 
 	/*Voice Tab*/
@@ -787,13 +807,13 @@ int gtkStart(int argc, char* argv[])
 	/*getting the second vbox*/
 	vbox = gtk_vbox_new(false, 0);
 	/*intensity bar*/
-	intensityProgressBar = gtk_progress_bar_new();
+	intensityProgBarVoice = gtk_progress_bar_new();
 	//gtk_widget_set_size_request(GTK_WIDGET(intensityProgressBar), 100, 20);
-	gtk_box_pack_start(GTK_BOX(vbox), intensityProgressBar, false, false, 5);
+	gtk_box_pack_start(GTK_BOX(vbox), intensityProgBarVoice, false, false, 5);
 
 	/*frequency label*/
-	freqLabel = gtk_label_new("");
-	gtk_box_pack_start(GTK_BOX(vbox), freqLabel, false, false, 5);
+	freqLabelVoice = gtk_label_new("");
+	gtk_box_pack_start(GTK_BOX(vbox), freqLabelVoice, false, false, 5);
 	gtk_box_pack_start(GTK_BOX(voiceProgressBox), vbox, false, false, 5);
 
 
@@ -926,6 +946,8 @@ void CloseAllThreads()
 		}
 		alreadyJamming = false;
 		gtk_label_set_text(GTK_LABEL(statusLabel), "Idle");
+
+		stopUpdating();
 	}
 }
 
