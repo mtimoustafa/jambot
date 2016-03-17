@@ -69,7 +69,7 @@ cairo_t *crWave;
 // Functions to run components in threads
 DWORD WINAPI AudioInputThread(LPVOID lpParam) { inputChannelReader = InputChannelReader(); Helpers::print_debug("START audio input.\n"); inputChannelReader.start(songSelectedFlag); return 0; }
 DWORD WINAPI WavGenThread(LPVOID lpParam) { wavmanipulation = WavManipulation(); Helpers::print_debug("START wav manip.\n"); wavmanipulation.start(csvFileName); return 0; }
-DWORD WINAPI OptiAlgoThread(LPVOID lpParam) { optiAlgo = OptiAlgo(); Helpers::print_debug("START opti algo.\n"); optiAlgo.start(); return 0; }
+DWORD WINAPI OptiAlgoThread(LPVOID lpParam) { optiAlgo = OptiAlgo(); Helpers::print_debug("START opti algo.\n"); optiAlgo.start(songSelectedFlag); return 0; }
 DWORD WINAPI AudioOutputThread(LPVOID lpParam) { lightsTest = DMXOutput(); Helpers::print_debug("START audio output.\n"); lightsTest.start(); return 0; }
 
 
@@ -526,7 +526,7 @@ static void updateProgress()
 
 void JamBot::updateSongValues(float frequency, double loudness, double tempo)
 {
-	double loud = (int)((loudness / 7000) / 0.01) * 0.01;
+	/*double loud = (int)((loudness / 7000) / 0.01) * 0.01;
 	if (counter% 3 == 1)
 	{
 		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgressBar), loud);
@@ -536,7 +536,7 @@ void JamBot::updateSongValues(float frequency, double loudness, double tempo)
 		gtk_label_set_text(GTK_LABEL(freqLabel), to_string(frequency).c_str());
 		counter = 0;
 	}
-	counter++;
+	counter++;*/
 }
 
 static gboolean delete_event(GtkWidget *widget, GdkEvent *event, gpointer data)
