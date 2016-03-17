@@ -43,7 +43,7 @@ void CloseAllThreads();
 void ErrorHandler(LPTSTR lpszFunction);
 const gchar *textInput;
 GtkWidget *window, *lyricsEntry;
-GtkWidget *textEntry, *sectionNameBox, *sectionTimeBox, *songSelectBox;
+GtkWidget *textEntry, *songSelectBox;
 GList *songList = NULL;
 string waveFilePath, lyricsPath;
 string lyrics, csvFileName;
@@ -55,12 +55,14 @@ deque<string> csvList;
 GtkListStore *liststore;
 bool songSelectedFlag = false;
 bool graphWaveFlag = false;
-GtkWidget *drawArea, *sectionDialog;
+GtkWidget *drawArea, *sectionDialog, *valueDrawArea;
 bool songSectionFlag = false;
 bool alreadyJamming = false;
+bool waveSavedFlag = false;
 int songListPosition = 0;
 GtkWidget *instrumentFrequency, *instrumentLoudness, *instrumentTempo;
 int counter = 0;
+cairo_t *crWave;
 
 // Functions to run components in threads
 DWORD WINAPI AudioInputThread(LPVOID lpParam) { inputChannelReader = InputChannelReader(); Helpers::print_debug("START audio input.\n"); inputChannelReader.start(songSelectedFlag); return 0; }
@@ -102,8 +104,17 @@ static void dialog_result(GtkWidget *dialog, gint resp, gpointer data) {
 }
 
 static void graphWave() {
+
 	if (graphWaveFlag)
 	{
+		/*if (waveSavedFlag)
+		{
+		cairo_restore(crWave);
+		cairo_stroke(crWave);
+		cairo_save(crWave);
+		}
+		else
+		{*/
 		SoundFileRead insound((waveFilePath).c_str());
 		SoundHeader header = insound;
 		int sampleAmount = header.getSamples();
@@ -117,11 +128,11 @@ static void graphWave() {
 		int i = 1;
 
 		/*setting up where the graph will be displayed*/
-		cairo_t *cr = gdk_cairo_create(drawArea->window);
-		cairo_set_source_rgba(cr, 1, 0.4, 0.3, 0.8);
-		cairo_set_line_width(cr, 1.3);
+		crWave = gdk_cairo_create(drawArea->window);
+		cairo_set_source_rgba(crWave, 1, 0.4, 0.3, 0.8);
+		cairo_set_line_width(crWave, 1.3);
 		/*setting the starting point of the graph*/
-		cairo_move_to(cr, 0.0, 150.0);
+		cairo_move_to(crWave, 0.0, 150.0);
 		/*getting the value of the beginning sample*/
 		insound.gotoSample(0);
 		sampleValue[0] = insound.getCurrentSampleDouble(0) * 0x100;
@@ -132,25 +143,25 @@ static void graphWave() {
 			insound.gotoSample(currentSample);
 			sampleValue[i] = insound.getCurrentSampleDouble(0) * 0x100;
 			sampleDiff[i] = sampleValue[i] - sampleValue[i - 1];
-			cairo_rel_line_to(cr, 0.049, sampleDiff[i]);
+			cairo_rel_line_to(crWave, 0.049, sampleDiff[i]);
 			currentSample += sampleRate;
 		}
-		cairo_stroke(cr);
+		cairo_stroke(crWave);
 
-		cairo_move_to(cr, 0.0, 150.0);
-		cairo_set_source_rgba(cr, 0, 0, 0, 1.0);
-		cairo_rel_line_to(cr, 500, 0);
+		cairo_move_to(crWave, 0.0, 150.0);
+		cairo_set_source_rgba(crWave, 0, 0, 0, 1.0);
+		cairo_rel_line_to(crWave, 500, 0);
 
-		cairo_move_to(cr, 0.0, 150.0);
-		cairo_rel_line_to(cr, 0, 150);
+		cairo_move_to(crWave, 0.0, 150.0);
+		cairo_rel_line_to(crWave, 0, 150);
 
-		cairo_move_to(cr, 0.0, 150.0);
-		cairo_rel_line_to(cr, 0, -150.0);
+		cairo_move_to(crWave, 0.0, 150.0);
+		cairo_rel_line_to(crWave, 0, -150.0);
 
 		/*move back to origin*/
 		int tick;
 		double x;
-		cairo_move_to(cr, 0.0, 150.0);
+		cairo_move_to(crWave, 0.0, 150.0);
 		for (int i = 0; i < 16; i++) {
 			x = 31.25*i;
 			/*determine the "tick" length based on 5's or 10's*/
@@ -162,21 +173,58 @@ static void graphWave() {
 			{
 				tick = 10;
 			}
-
-			cairo_move_to(cr, x, 150.0);
-			cairo_rel_line_to(cr, 0, tick);
-			cairo_rel_line_to(cr, 0, (-2*tick));
-			cairo_move_to(cr, x, 150.0);
+			cairo_move_to(crWave, x, 150.0);
+			cairo_rel_line_to(crWave, 0, tick);
+			cairo_rel_line_to(crWave, 0, (-2 * tick));
+			cairo_move_to(crWave, x, 150.0);
 		}
-		cairo_stroke(cr);
+		cairo_stroke(crWave);
+		cairo_save(crWave);
+		waveSavedFlag = true;
+		//}
+	}
+}
 
+static void graphValues()
+{
+	cairo_t *cr = gdk_cairo_create(valueDrawArea->window);
+	cairo_set_line_width(cr, 1.3);
+
+	cairo_move_to(cr, 0.0, 100.0);
+	cairo_set_source_rgba(cr, 0, 0, 0, 1.0);
+	cairo_rel_line_to(cr, 500, 0);
+
+	cairo_move_to(cr, 0.0, 100.0);
+	cairo_rel_line_to(cr, 0, 100);
+
+	cairo_move_to(cr, 0.0, 100.0);
+	cairo_rel_line_to(cr, 0, -100.0);
+	cairo_stroke(cr);
+
+	cairo_t *crFreq = gdk_cairo_create(valueDrawArea->window);
+	cairo_set_source_rgba(crFreq, 0.7, 0.7, 0.8, 0.8);
+	cairo_set_line_width(cr, 1.3);
+
+	cairo_move_to(crFreq, 0.0, 100.0);
+	cairo_rel_line_to(crFreq, 230, 70);
+	cairo_rel_line_to(crFreq, 50, -170);
+	cairo_stroke(crFreq);
+}
+
+static void updateGraph()
+{
+	if (crWave != NULL)
+	{
+		cairo_restore(crWave);
+		cairo_stroke(crWave);
+		cairo_save(crWave);
 	}
 }
 
 static void addNewSection(GtkWidget *widget)
 {
 	GtkWidget *hbox, *tempEntry;
-	
+
 	hbox = gtk_hbox_new(false, 0);
 
 	tempEntry = gtk_entry_new();
@@ -238,7 +286,7 @@ static void displaySectionModal(GtkWidget *widget, gint resp, gpointer *data)
 		gtk_box_pack_start(GTK_BOX(hbox), addSectionButton, false, false, 5);
 
 		submitButton = gtk_button_new_with_label("Submit");
-		g_signal_connect(GTK_OBJECT(submitButton), "clicked", G_CALLBACK(submitSongSection), (gpointer)sectionNameBox, (gpointer)sectionTimeBox);
+		g_signal_connect(GTK_OBJECT(submitButton), "clicked", G_CALLBACK(submitSongSection), NULL, NULL);
 		gtk_box_pack_start(GTK_BOX(hbox), submitButton, false, false, 5);
 		gtk_box_pack_start(GTK_BOX(GTK_DIALOG(sectionDialog)->vbox), hbox, false, false, 5);
 
@@ -286,7 +334,7 @@ static void selectWaveFile(GtkWidget *widget) {
 	if (resp == GTK_RESPONSE_OK) {
 		waveFilePath = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
 		graphWaveFlag = true;
-		graphWave();
+		//graphWave();
 	}
 	else {
 		g_print("You Pressed the cancel button");
@@ -388,17 +436,17 @@ static void startJamming(GtkWidget *button) {
 		{
 			songSelectedFlag = true;
 			/*hThreadArray[WAVGEN_THREAD_ARR_ID] = CreateThread(
-				NULL,
-				0,
-				WavGenThread,
-				NULL,
-				0,
-				&dwThreadArray[WAVGEN_THREAD_ARR_ID]);
+			NULL,
+			0,
+			WavGenThread,
+			NULL,
+			0,
+			&dwThreadArray[WAVGEN_THREAD_ARR_ID]);
 			if (hThreadArray[WAVGEN_THREAD_ARR_ID] == NULL)
 			{
-				ErrorHandler(TEXT("CreateThread"));
-				CloseAllThreads();
-				ExitProcess(3);
+			ErrorHandler(TEXT("CreateThread"));
+			CloseAllThreads();
+			ExitProcess(3);
 			}*/
 		}
 		hThreadArray[AUDIOOUTPUT_THREAD_ARR_ID] = CreateThread(
@@ -473,12 +521,9 @@ void JamBot::updateSongValues(float frequency, double loudness, double tempo)
 	string loud = to_string(loudness);
 	string temp = to_string(tempo);
 
-	if (counter % 5)
+	if (counter % 1000000000000)
 	{
 
-		gtk_entry_set_text(GTK_ENTRY(instrumentFrequency), freq.c_str());
-		gtk_entry_set_text(GTK_ENTRY(instrumentLoudness), loud.c_str());
-		gtk_entry_set_text(GTK_ENTRY(instrumentTempo), temp.c_str());
 	}
 	counter++;
 }
@@ -510,8 +555,11 @@ static void destroy(GtkWidget *widget,
 
 int gtkStart(int argc, char* argv[])
 {
-	GtkWidget *window;
-	GtkWidget *windowBox, *songProgressBox, *songControlBox, *songLyricsBox, *songInputBox, *jambox, *windowBox2, *windowBox3, *voiceProgressBox;
+	GtkWidget *window, *overAllWindowBox;
+	GtkWidget *emersonButtonBox;
+	GtkWidget *firstLayerBox, *lyricsBox, *songProgressBox, *songControlBox, *songInputBox, *windowBox3, *voiceProgressBox, *outputLyrics, *testButton;
+	GtkWidget *secondLayerBox, *tabBox;
+	GtkWidget *thirdLayerBox, *sectionBox;
 	GtkWidget *playButton, *progressBar, *progressBarTest, *showModalDialog, *showNonmodalDialog, *fileSelectDialog, *emersonButton;
 	GtkWidget *startJambot, *graphBox;
 	GtkWidget *label;
@@ -528,157 +576,75 @@ int gtkStart(int argc, char* argv[])
 
 	g_signal_connect(window, "dontcallthis", G_CALLBACK(changeProgressBar), NULL);
 	/*=========================== Widget boxes ===========================*/
-	windowBox2 = gtk_vbox_new(false, 0);
-	//gtk_widget_set_size_request(windowBox2, 200, 30);
+	/*start of the window box*/
+	overAllWindowBox = gtk_vbox_new(false, 0);
 
-	jambox = gtk_hbox_new(false, 0);
-	gtk_box_pack_start(GTK_BOX(windowBox2), jambox, false, false, 5);
-
-	startJambot = gtk_button_new_with_label("Start system as normal");
-	//gtk_box_pack_start(GTK_BOX(jambox), startJambot, false, false, 5);
-	g_signal_connect(GTK_OBJECT(startJambot), "clicked", G_CALLBACK(startJamming), window);
+	/*emerson button box*/
+	emersonButtonBox = gtk_hbox_new(false, 0);
+	gtk_box_pack_start(GTK_BOX(overAllWindowBox), emersonButtonBox, false, false, 5);
 
 	emersonButton = gtk_button_new_with_label("Emerson Button");
-	gtk_box_pack_start(GTK_BOX(jambox), emersonButton, false, false, 5);
+	gtk_box_pack_start(GTK_BOX(emersonButtonBox), emersonButton, false, false, 5);
 	g_signal_connect(GTK_OBJECT(emersonButton), "clicked", G_CALLBACK(startEmerson), window);
 
-	windowBox = gtk_hbox_new(false, 0);
-	//gtk_widget_set_size_request(windowBox, 80, 30);
-	gtk_box_pack_start(GTK_BOX(windowBox2), windowBox, false, false, 5);
+	/*first layer box, contains lyrics and play buttons*/
+	firstLayerBox = gtk_hbox_new(false, 0);
+	gtk_box_pack_start(GTK_BOX(overAllWindowBox), firstLayerBox, false, false, 5);
 
-	windowBox3 = gtk_hbox_new(false, 0);
-	//gtk_widget_set_size_request(windowBox, 150, 30);
-	gtk_box_pack_start(GTK_BOX(windowBox2), windowBox3, false, false, 5);
+	/*lyrics box*/
+	lyricsBox = gtk_hbox_new(false, 0);
+	gtk_box_pack_start(GTK_BOX(firstLayerBox), lyricsBox, false, false, 5);
 
+	/*song control box*/
+	songControlBox = gtk_hbox_new(false, 0);
+	gtk_box_pack_start(GTK_BOX(firstLayerBox), songControlBox, false, false, 5);
+
+	/*second layer box, contains song value tab box*/
+	secondLayerBox = gtk_hbox_new(false, 0);
+	gtk_box_pack_start(GTK_BOX(overAllWindowBox), secondLayerBox, false, false, 5);
+
+	/*tab box*/
+	tabBox = gtk_vbox_new(false, 0);
+	gtk_box_pack_start(GTK_BOX(secondLayerBox), tabBox, false, false, 5);
+
+	/*third layer box, contains section buttons and graph*/
+	thirdLayerBox = gtk_vbox_new(false, 0);
+	gtk_box_pack_start(GTK_BOX(overAllWindowBox), thirdLayerBox, false, false, 5);
+
+	/*section box*/
+	sectionBox = gtk_hbox_new(false, 0);
+	gtk_box_pack_start(GTK_BOX(thirdLayerBox), sectionBox, false, false, 5);
+
+	/*graph box, this containts the combo box part*/
 	graphBox = gtk_vbox_new(false, 0);
-	gtk_box_pack_start(GTK_BOX(windowBox3), graphBox, false, false, 5);
+	gtk_box_pack_start(GTK_BOX(thirdLayerBox), graphBox, false, false, 5);
 
-	songLyricsBox = gtk_vbox_new(false, 0);
-	//gtk_widget_set_size_request(songLyricsBox, 200, 30);
-	gtk_box_pack_start(GTK_BOX(windowBox), songLyricsBox, false, false, 5);
-
-	songInputBox = gtk_vbox_new(false, 0);
-	gtk_box_pack_start(GTK_BOX(windowBox), songInputBox, false, false, 5);
-
-	songControlBox = gtk_hbox_new(true, 0);
-	//gtk_widget_set_size_request(songControlBox, 80, 30);
-	gtk_box_pack_start(GTK_BOX(songInputBox), songControlBox, false, false, 5);
-
-	voiceProgressBox = gtk_vbox_new(false, 0);
-	//gtk_widget_set_size_request(voiceProgressBox, 100, 30);
-
-	songProgressBox = gtk_vbox_new(false, 0);
-	//gtk_widget_set_size_request(songProgressBox, 100, 30);
-
-	/*=========================== Graph Part ===========================*/
-	GtkWidget *sectionBox, *sectionLabelName, *sectionLabelTime, *addSectionButton, *submitSectionButton,
-		*sectionButtonBox, *tempEntry;
-	void *data[2];
-
-	sectionButtonBox = gtk_hbox_new(false, 0);
-	sectionBox = gtk_vbox_new(false, 0);
-	sectionNameBox = gtk_hbox_new(false, 0);
-	sectionTimeBox = gtk_hbox_new(false, 0);
+	/*=========================== third layer Part ===========================*/
+	GtkWidget *sectionLabelName, *sectionLabelTime, *addSectionButton, *submitSectionButton, *tempEntry;
 
 	/*sectionButtonBox*/
 	addSectionButton = gtk_button_new_with_label("Section");
 	g_signal_connect(GTK_OBJECT(addSectionButton), "clicked", G_CALLBACK(displaySectionModal), NULL, NULL);
-	gtk_box_pack_start(GTK_BOX(sectionButtonBox), addSectionButton, false, false, 5);
+	gtk_box_pack_start(GTK_BOX(sectionBox), addSectionButton, false, false, 5);
 
 	fileSelectDialog = gtk_button_new_with_label("Select Audio File");
-	g_signal_connect(GTK_OBJECT(fileSelectDialog), "clicked", G_CALLBACK(selectWaveFile), (gpointer)sectionNameBox, (gpointer)sectionTimeBox);
-	gtk_box_pack_start(GTK_BOX(sectionButtonBox), fileSelectDialog, false, false, 5);
-
-	gtk_box_pack_start(GTK_BOX(sectionBox), sectionButtonBox, false, false, 5);
+	g_signal_connect(GTK_OBJECT(fileSelectDialog), "clicked", G_CALLBACK(selectWaveFile), NULL, NULL);
+	gtk_box_pack_start(GTK_BOX(sectionBox), fileSelectDialog, false, false, 5);
 
 	/*configure draw area*/
-	gtk_box_pack_start(GTK_BOX(graphBox), sectionBox, false, false, 5);
 	drawArea = gtk_drawing_area_new();
-
 	gtk_widget_set_size_request(GTK_WIDGET(drawArea), 550, 300);
 	gtk_window_set_resizable(GTK_WINDOW(drawArea), FALSE);
-
 	gtk_box_pack_start(GTK_BOX(graphBox), drawArea, true, true, 0);
 
 	g_signal_connect(drawArea, "expose-event", G_CALLBACK(graphWave), NULL);
 
-	/*=========================== Progress bar ===========================*/
-	GtkWidget * tabs;
-	tabs = gtk_notebook_new();
-
-	GtkWidget *label_voice;
-	label_voice = gtk_label_new("Voice");
-
-	GtkWidget *label_song;
-	label_song = gtk_label_new("Song");
-
-	GtkWidget *hbox, *temp, *tempButton;
-	tempButton = gtk_button_new_with_label("TEMP");
-
-	gtk_notebook_append_page(GTK_NOTEBOOK(tabs), voiceProgressBox, label_voice);
-	gtk_notebook_append_page(GTK_NOTEBOOK(tabs), songProgressBox, label_song);
-	gtk_box_pack_start(GTK_BOX(windowBox), tabs, false, false, 5);
-
-	hbox = gtk_hbox_new(false, 0);
-	label = gtk_label_new("Loudness (dB):");
-	gtk_box_pack_start(GTK_BOX(hbox), label, false, false, 5);
-	instrumentLoudness = gtk_entry_new();
-	gtk_box_pack_start(GTK_BOX(hbox), instrumentLoudness, false, false, 5);
-	gtk_box_pack_start(GTK_BOX(voiceProgressBox), hbox, false, false, 5);
-
-	hbox = gtk_hbox_new(false, 0);
-	label = gtk_label_new("Frequency (kHz):");
-	gtk_box_pack_start(GTK_BOX(hbox), label, false, false, 5);
-	instrumentFrequency = gtk_entry_new();
-	gtk_box_pack_start(GTK_BOX(hbox), instrumentFrequency, false, false, 5);
-	gtk_box_pack_start(GTK_BOX(voiceProgressBox), hbox, false, false, 5);
-
-	hbox = gtk_hbox_new(false, 0);
-	label = gtk_label_new("Tempo (bbm):");
-	gtk_box_pack_start(GTK_BOX(hbox), label, false, false, 5);
-	instrumentTempo = gtk_entry_new();
-	gtk_box_pack_start(GTK_BOX(hbox), instrumentTempo, false, false, 5);
-	gtk_box_pack_start(GTK_BOX(voiceProgressBox), hbox, false, false, 5);
-
-	/*VOICE*/
-	hbox = gtk_hbox_new(false, 0);
-	label = gtk_label_new("Intensity (dB):");
-	gtk_box_pack_start(GTK_BOX(hbox), label, false, false, 5);
-	temp = gtk_entry_new();
-	gtk_box_pack_start(GTK_BOX(hbox), temp, false, false, 5);
-	gtk_box_pack_start(GTK_BOX(songProgressBox), hbox, false, false, 5);
-	
-	hbox = gtk_hbox_new(false, 0);
-	label = gtk_label_new("Pitch (kHz):");
-	gtk_box_pack_start(GTK_BOX(hbox), label, false, false, 5);
-	temp = gtk_entry_new();
-	gtk_box_pack_start(GTK_BOX(hbox), temp, false, false, 5);
-	gtk_box_pack_start(GTK_BOX(songProgressBox), hbox, false, false, 5);
-
-	hbox = gtk_hbox_new(false, 0);
-	label = gtk_label_new("Tempo (bbm):");
-	gtk_box_pack_start(GTK_BOX(hbox), label, false, false, 5);
-	temp = gtk_entry_new();
-	gtk_box_pack_start(GTK_BOX(hbox), temp, false, false, 5);
-	gtk_box_pack_start(GTK_BOX(songProgressBox), hbox, false, false, 5);
-
-	playButton = gtk_button_new_with_label("Play");
-	gtk_widget_set_double_buffered(playButton, (gboolean)false);
-	gtk_box_pack_start(GTK_BOX(songControlBox), playButton, false, false, 5);
-	g_signal_connect(GTK_OBJECT(playButton), "clicked", G_CALLBACK(startJamming), window);
-	gtk_widget_show(playButton);
-
-	playButton = gtk_button_new_with_label("Stop");
-	gtk_box_pack_start(GTK_BOX(songControlBox), playButton, false, false, 5);
-	g_signal_connect(GTK_OBJECT(playButton), "clicked", G_CALLBACK(CloseAllThreads), NULL);
-	gtk_widget_show(playButton);
-
-	/*============================== COMBO  ========================================*/
 	songSelectBox = gtk_combo_box_new();
 	g_signal_connect(GTK_OBJECT(songSelectBox), "move-active", G_CALLBACK(testFunction), NULL);
-	GtkCellRenderer *column;
 
-	gtk_init(&argc, &argv);
+	/*combo box part*/
+	GtkCellRenderer *column;
+	//gtk_init(&argc, &argv);
 
 	liststore = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_STRING);
 
@@ -700,59 +666,66 @@ int gtkStart(int argc, char* argv[])
 	}
 	songSelectBox = gtk_combo_box_new_with_model(GTK_TREE_MODEL(liststore));
 
-	//g_object_unref(liststore);
-
 	column = gtk_cell_renderer_text_new();
 	gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(songSelectBox), column, TRUE);
-
-	/* column does not need to be g_object_unref()ed because it
-	* is GInitiallyUnowned and the floating reference has been
-	* passed to combo by the gtk_cell_layout_pack_start() call. */
-
 	gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(songSelectBox), column, "cell-background", 0, "text", 1, NULL);
 
 	gtk_combo_box_set_active(GTK_COMBO_BOX(songSelectBox), 0);
 	gtk_box_pack_start(GTK_BOX(graphBox), songSelectBox, false, false, 5);
 
-	GtkWidget *temphBox;
-	temphBox = gtk_hbox_new(false, 0);
+	/*=========================== Second Layer Part ===========================*/
+	GtkWidget * tabs, *label_voice, *label_song;
+	tabs = gtk_notebook_new();
+	label_voice = gtk_label_new("Voice");
+	label_song = gtk_label_new("Song");
 
+	songProgressBox = gtk_vbox_new(false, 0);
+	voiceProgressBox = gtk_vbox_new(false, 0);
+
+	gtk_notebook_append_page(GTK_NOTEBOOK(tabs), songProgressBox, label_song);
+	gtk_notebook_append_page(GTK_NOTEBOOK(tabs), voiceProgressBox, label_voice);
+
+	/*drawing area*/
+	valueDrawArea = gtk_drawing_area_new();
+	gtk_box_pack_start(GTK_BOX(songProgressBox), valueDrawArea, false, false, 5);
+	gtk_widget_set_size_request(GTK_WIDGET(valueDrawArea), 500, 200);
+	g_signal_connect(valueDrawArea, "expose-event", G_CALLBACK(graphValues), NULL, NULL);
+
+	gtk_widget_set_size_request(GTK_WIDGET(tabs), 500, 250);
+	gtk_window_set_resizable(GTK_WINDOW(tabs), FALSE);
+	gtk_box_pack_start(GTK_BOX(tabBox), tabs, false, false, 5);
+
+	/*========================================== First Layer Part ==========================================*/
+	/*play button*/
+	playButton = gtk_button_new_with_label("Play");
+	gtk_box_pack_start(GTK_BOX(songControlBox), playButton, false, false, 5);
+	g_signal_connect(GTK_OBJECT(playButton), "clicked", G_CALLBACK(startJamming), window);
+	gtk_widget_show(playButton);
+
+	/*pause button*/
+	playButton = gtk_button_new_with_label("Stop");
+	gtk_box_pack_start(GTK_BOX(songControlBox), playButton, false, false, 5);
+	g_signal_connect(GTK_OBJECT(playButton), "clicked", G_CALLBACK(CloseAllThreads), NULL);
+	gtk_widget_show(playButton);
+
+	/*test button*/
+	testButton = gtk_button_new_with_label("Test");
+	gtk_box_pack_start(GTK_BOX(songControlBox), testButton, false, false, 5);
+	g_signal_connect(GTK_OBJECT(playButton), "clicked", G_CALLBACK(graphValues), NULL);
+	gtk_widget_show(testButton);
+
+	/*select lyrics*/
 	fileSelectDialog = gtk_button_new_with_label("Select Lyrics");
-	gtk_box_pack_start(GTK_BOX(temphBox), fileSelectDialog, false, false, 5);
+	gtk_box_pack_start(GTK_BOX(lyricsBox), fileSelectDialog, false, false, 5);
 	g_signal_connect(GTK_OBJECT(fileSelectDialog), "clicked", G_CALLBACK(selectLyrics), window);
 
-	GtkWidget *outputLyrics;
+	/*display lyrics*/
 	outputLyrics = gtk_button_new_with_label("Display Lyrics");
 	g_signal_connect(GTK_OBJECT(outputLyrics), "clicked", G_CALLBACK(displayLyricsNonmodal), window);
-	gtk_box_pack_start(GTK_BOX(temphBox), outputLyrics, false, false, 5);
+	gtk_box_pack_start(GTK_BOX(lyricsBox), outputLyrics, false, false, 5);
 
-	gtk_box_pack_start(GTK_BOX(songLyricsBox), temphBox, false, false, 5);
-
-	/*progressBarTest = gtk_button_new_with_label("Test");
-	gtk_box_pack_start(GTK_BOX(songProgressBox), progressBarTest, false, false, 5);
-	g_signal_connect(GTK_OBJECT(progressBarTest), "clicked", G_CALLBACK(testFunction), (gpointer)progressBar);*/
-
-	/*=========================== Text entry ===========================*/
-	textEntry = gtk_text_view_new();
-	GtkTextBuffer *buffer;
-	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textEntry));
-	gtk_text_buffer_set_text(buffer, "Hello this is some text\n hello", -1);
-	gtk_text_view_set_border_window_size(GTK_TEXT_VIEW(textEntry), GTK_TEXT_WINDOW_TEXT, 30);
-	gtk_box_pack_start(GTK_BOX(songLyricsBox), textEntry, false, false, 5);
-
-	GtkWidget *scroll;
-	GtkWidget *table;
-
-	table = gtk_table_new(2, 2, FALSE);
-
-	scroll = gtk_vscrollbar_new(gtk_text_view_get_vadjustment(GTK_TEXT_VIEW(textEntry)));
-
-	gtk_table_attach(GTK_TABLE(table), textEntry, 0, 1, 0, 1, GTK_EXPAND, GTK_EXPAND, 0, 0);
-	gtk_table_attach(GTK_TABLE(table), scroll, 1, 2, 0, 1, GTK_FILL, GTK_EXPAND, 0, 0);
-
-	gtk_box_pack_start(GTK_BOX(songLyricsBox), scroll, false, false, 5);
-	/*=========================== the rest ===========================*/
-	gtk_container_add(GTK_CONTAINER(window), windowBox2);
+	/*================================== the rest =====================================*/
+	gtk_container_add(GTK_CONTAINER(window), overAllWindowBox);
 
 	gtk_widget_show_all(window);
 	gtk_main();
