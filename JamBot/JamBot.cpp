@@ -584,7 +584,7 @@ int gtkStart(int argc, char* argv[])
 	gtk_box_pack_start(GTK_BOX(overAllWindowBox), emersonButtonBox, false, false, 5);
 
 	emersonButton = gtk_button_new_with_label("Emerson Button");
-	gtk_box_pack_start(GTK_BOX(emersonButtonBox), emersonButton, false, false, 5);
+	//gtk_box_pack_start(GTK_BOX(emersonButtonBox), emersonButton, false, false, 5);
 	g_signal_connect(GTK_OBJECT(emersonButton), "clicked", G_CALLBACK(startEmerson), window);
 
 	/*first layer box, contains lyrics and play buttons*/
@@ -710,7 +710,7 @@ int gtkStart(int argc, char* argv[])
 
 	/*test button*/
 	testButton = gtk_button_new_with_label("Test");
-	gtk_box_pack_start(GTK_BOX(songControlBox), testButton, false, false, 5);
+	//gtk_box_pack_start(GTK_BOX(songControlBox), testButton, false, false, 5);
 	g_signal_connect(GTK_OBJECT(playButton), "clicked", G_CALLBACK(graphValues), NULL);
 	gtk_widget_show(testButton);
 
