@@ -201,7 +201,7 @@ static void submitSongSection() {
 		for (int i = 0; i < sectionNameDetails.size(); i++) {
 			name = gtk_entry_get_text(GTK_ENTRY(sectionNameDetails[i]));
 			time = gtk_entry_get_text(GTK_ENTRY(sectionTimeDetails[i]));
-			section.push_back(SongSection(name, atoi((char*)time)));
+			section.push_back(SongSection(name, strtod((char*)time, NULL)));
 		}
 		int position = lyricsPath.find_last_of('/\\');
 		string fileName = lyricsPath.substr(position + 1);
