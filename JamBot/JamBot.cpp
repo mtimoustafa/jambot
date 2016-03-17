@@ -671,7 +671,12 @@ int gtkStart(int argc, char* argv[])
 
 	ifstream file("CSV\\masterCSV.csv");
 	string line, text;
-	if (file.is_open())
+	if (!file)
+	{
+		ofstream ofile("CSV\\masterCSV.csv");
+	}
+	ifstream ifile("CSV\\masterCSV.csv");
+	if (ifile.is_open())
 	{
 		gtk_list_store_insert_with_values(liststore, NULL, songListPosition, 0, "red", 1, "None", -1);
 		csvList.push_back("None");
