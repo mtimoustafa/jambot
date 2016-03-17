@@ -744,7 +744,7 @@ void OptiAlgo::start_algo()
 			// Flush buffers if section changes
 			// TODO: test section change
 			if (!song_section_buffer.empty()) {
-				Helpers::print_debug("[FL] Section change!\n");
+				//Helpers::print_debug("[FL] Section change!\n");
 				input.freq_hist.clear();
 				input.tempo_hist.clear();
 				input.loudness_hist.clear();
@@ -891,7 +891,7 @@ void OptiAlgo::start_algo()
 
 			// Print log to output window!
 			out_str << "\n";
-			Helpers::print_debug(out_str.str().c_str());
+			//Helpers::print_debug(out_str.str().c_str());
 
 			// Send solution to output controller
 			DMXOutput::updateLightsOutputQueue(avg_out);

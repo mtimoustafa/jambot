@@ -174,7 +174,7 @@ void InputChannelReader::analyseBuffer(paData *data)
 	}
 	average = average / (double)FRAMES_PER_BUFFER;
 	audioSamples.set_loudness(average);
-	Helpers::print_debug(("Average sample LOUDNESS (dB): " + to_string(average) + "\n").c_str());
+	//Helpers::print_debug(("Average sample LOUDNESS (dB): " + to_string(average) + "\n").c_str());
 
 	// Get frequency of wave
 	fftwf_execute(fft);
@@ -207,7 +207,7 @@ void InputChannelReader::analyseBuffer(paData *data)
 	if (NUM_CHANNELS > 1)
 	{
 		frequency2 = maxIndex2 * SAMPLE_RATE / FFT_SIZE;
-		Helpers::print_debug(("Frequency peak [voice] (Hz): " + to_string(frequency2) + "\n").c_str());
+		//Helpers::print_debug(("Frequency peak [voice] (Hz): " + to_string(frequency2) + "\n").c_str());
 
 		// Initiate frequency reads
 		WavManipulation::startReading(average > 35.0);

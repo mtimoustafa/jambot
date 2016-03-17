@@ -338,24 +338,25 @@ string lowercase(string str){
 }
 float WavManipulation::freqAnalysis(vector<float> data){
 
-	float *in;
-	fftwf_complex *out;
-	fftwf_plan frequencyPlan;
+
 	InputChannelReader inchannel;
 	float magnitude;
 	short fileSamples;
-	float maxDensity = 0.0;
+	float maxDensity = 0.0; 
+	float *in_wav_manip;
+	fftwf_complex *out_wav_manip;
+	fftwf_plan frequencyPlan;
 	float freq;
 	int maxIndex;
-	in = (float*)fftwf_malloc(sizeof(float)* FFT_SIZE);
-	out = (fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex)* OUTPUT_SIZE);
-	frequencyPlan = fftwf_plan_dft_r2c_1d(FFT_SIZE, in, out, FFTW_ESTIMATE);
+	in_wav_manip = (float*)fftwf_malloc(sizeof(float)* FFT_SIZE);
+	out_wav_manip = (fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex)* OUTPUT_SIZE);
+	frequencyPlan = fftwf_plan_dft_r2c_1d(FFT_SIZE, in_wav_manip, out_wav_manip, FFTW_ESTIMATE);
 	for (int i = 0; i < data.size(); i++)
 	{
 		// Use every-other sample
 		if (i < FFT_SIZE)
 		{
-			in[i] = data[i] * hannFunction(i);
+			in_wav_manip[i] = data[i] * hannFunction(i);
 		}
 
 	}
@@ -364,7 +365,7 @@ float WavManipulation::freqAnalysis(vector<float> data){
 
 	for (int i = 0; i < 605; i++)
 	{
-		magnitude = (float)sqrt(pow(out[i][0], 2) + pow(out[i][1], 2));
+		magnitude = (float)sqrt(pow(out_wav_manip[i][0], 2) + pow(out_wav_manip[i][1], 2));
 
 			if (magnitude > maxDensity)
 			{
@@ -373,8 +374,9 @@ float WavManipulation::freqAnalysis(vector<float> data){
 			}
 	}
 	freq = maxIndex * SAMPLE_RATE / FFT_SIZE;
-	fftwf_free(in);
-	fftwf_free(out);
+	fftwf_free(in_wav_manip);
+	fftwf_free(out_wav_manip);
+	fftwf_destroy_plan(frequencyPlan);
 	return freq;
 }
 void WavManipulation::freqcomparison(){
@@ -505,7 +507,7 @@ void WavManipulation::freqcomparison(){
 			}
 			else{}
 
-			freqdiff.clear();
+ 			freqdiff.clear();
 			freq.clear();
 			cdiff.clear();
 			vdiff.clear();
