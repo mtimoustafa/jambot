@@ -26,15 +26,19 @@ class OptiAlgo
 		double silence = 1;
 
 		double freq_avg;
-		double delta_freq_avg;
+		double delta_harmonic_freq_avg;
+		double delta_anomaly_freq_avg;
 		double tempo_avg;
+		double delta_tempo_avg;
 		double loudness_avg;
 		double loudness_nomax_avg;
 		double loudness_max_avg;
 
 		deque<double> freq_hist = deque<double>();
-		deque<double> delta_freq_hist = deque<double>();
+		deque<double> delta_harmonic_freq_hist = deque<double>();
+		deque<double> delta_anomaly_freq_hist = deque<double>();
 		deque<double> tempo_hist = deque<double>();
+		deque<double> delta_tempo_hist = deque<double>();
 		deque<double> loudness_hist = deque<double>();
 		deque<double> loudness_nomax_hist = deque<double>();
 		deque<double> loudness_max_hist = deque<double>();
@@ -43,8 +47,10 @@ class OptiAlgo
 		void ClearProps();
 
 		double freq_add_and_avg(double val);
-		double delta_freq_add_and_avg(double val);
+		double delta_harmonic_freq_add_and_avg(double val);
+		double delta_anomaly_freq_add_and_avg(double val);
 		double tempo_add_and_avg(double val);
+		double delta_tempo_add_and_avg(double val);
 		double loudness_hist_add_and_avg(double val);
 		double loudness_nomax_hist_add_and_avg(double val);
 		double loudness_max_hist_add_and_avg(double val);
