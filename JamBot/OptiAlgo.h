@@ -33,6 +33,7 @@ class OptiAlgo
 		double loudness_avg;
 		double loudness_nomax_avg;
 		double loudness_max_avg;
+		double beatiness_avg;
 
 		deque<double> freq_hist = deque<double>();
 		deque<double> delta_harmonic_freq_hist = deque<double>();
@@ -42,6 +43,7 @@ class OptiAlgo
 		deque<double> loudness_hist = deque<double>();
 		deque<double> loudness_nomax_hist = deque<double>();
 		deque<double> loudness_max_hist = deque<double>();
+		deque<double> beatiness_hist = deque<double>();
 
 		AudioProps();
 		void ClearProps();
@@ -54,6 +56,7 @@ class OptiAlgo
 		double loudness_hist_add_and_avg(double val);
 		double loudness_nomax_hist_add_and_avg(double val);
 		double loudness_max_hist_add_and_avg(double val);
+		double beatiness_hist_add_and_avg(double val);
 	};
 
 	class FLSystem
@@ -96,6 +99,10 @@ class OptiAlgo
 		// Local helper functions
 		double Integrate(OutParams outparam, double lb, double ub, double step);
 		double (OptiAlgo::FLSystem::*OutClass)(double, RGBClassIDs); // acompannying function pointer to Integrate()
+
+		// Strobing variables
+		int isStrobing = STROBING_COOLDOWN;
+		int strobing_speed = 0;
 
 	public:
 		FLSystem();

@@ -40,6 +40,7 @@ OptiAlgo::AudioProps::AudioProps()
 	loudness_avg = 0.0;
 	loudness_nomax_avg = 0.0;
 	loudness_max_avg = 0.0;
+	beatiness_avg = 0.0;
 }
 
 void OptiAlgo::AudioProps::ClearProps()
@@ -51,6 +52,7 @@ void OptiAlgo::AudioProps::ClearProps()
 	loudness_avg = 0.0;
 	loudness_nomax_avg = 0.0;
 	loudness_max_avg = 0.0;
+	beatiness_avg = 0.0;
 
 	freq_hist.clear();
 	delta_harmonic_freq_hist.clear();
@@ -59,6 +61,7 @@ void OptiAlgo::AudioProps::ClearProps()
 	loudness_hist.clear();
 	loudness_max_hist.clear();
 	loudness_nomax_hist.clear();
+	beatiness_hist.clear();
 }
 
 double OptiAlgo::AudioProps::freq_add_and_avg(double val)
@@ -131,7 +134,7 @@ double OptiAlgo::AudioProps::loudness_nomax_hist_add_and_avg(double val)
 {
 	double avg = 0.0;
 	loudness_nomax_hist.push_front(val);
-	if (loudness_nomax_hist.size() > IN_HIST_BUF_SIZE) loudness_nomax_hist.pop_back();
+	if (loudness_nomax_hist.size() > LOUDNESS_MAX_DETECT_BUF_SIZE) loudness_nomax_hist.pop_back();
 	for each (double val in loudness_nomax_hist)
 		avg += val;
 	avg /= (double)loudness_nomax_hist.size();
@@ -142,11 +145,23 @@ double OptiAlgo::AudioProps::loudness_max_hist_add_and_avg(double val)
 {
 	double avg = 0.0;
 	loudness_max_hist.push_front(val);
-	if (loudness_max_hist.size() > IN_HIST_BUF_SIZE) loudness_max_hist.pop_back();
+	if (loudness_max_hist.size() > LOUDNESS_MAX_DETECT_BUF_SIZE) loudness_max_hist.pop_back();
 	for each (double val in loudness_max_hist)
 		avg += val;
 	avg /= (double)loudness_max_hist.size();
 	loudness_max_avg = avg;
+	return avg;
+}
+double OptiAlgo::AudioProps::beatiness_hist_add_and_avg(double val)
+{
+	double avg = 0.0;
+	if (val < 0) val = 0;
+	beatiness_hist.push_front(val);
+	if (beatiness_hist.size() > IN_HIST_BUF_SIZE) beatiness_hist.pop_back();
+	for each (double val in beatiness_hist)
+		avg += val;
+	avg /= (double)beatiness_hist.size();
+	beatiness_avg = avg;
 	return avg;
 }
 
@@ -288,39 +303,39 @@ double OptiAlgo::FLSystem::IntensInClass(double input, IntensClassIDs flClass) {
 	return mu;
 }
 
-// TODO: implement beatiness' values
-double OptiAlgo::FLSystem::BeatinessInClass(double input, BeatinessClassIDs flClass) {
-	double mu;
-	switch (flClass) {
-	case notbeaty:
-		if (input <= 3000) mu = 1.0;
-		else if (input < 3500) mu = 1.0 - (input - 3000) / (3500 - 3000);
-		else mu = 0.0;
-		break;
-	case sbeaty:
-		if (input <= 3150) mu = 0.0;
-		else if (input <= 4000) mu = (input - 3150) / (4000 - 3150);
-		else if (input < 4800) mu = 1.0 - (input - 4000) / (4800 - 4000);
-		else mu = 0.0;
-		break;
-	case beaty:
-		if (input <= 3150) mu = 0.0;
-		else if (input <= 4000) mu = (input - 3150) / (4000 - 3150);
-		else if (input < 4800) mu = 1.0 - (input - 4000) / (4800 - 4000);
-		else mu = 0.0;
-		break;
-	case vbeaty:
-		if (input <= 4200) mu = 0.0;
-		else if (input < 5000) mu = (input - 4200) / (5000 - 4200);
-		else mu = 1.0;
-		break;
-	default:
-		Helpers::print_debug("ERROR: undefined beatiness class requested.\n");
-		mu = 0.0;
-		break;
-	}
-	return mu;
-}
+//// TODO: implement beatiness' values
+//double OptiAlgo::FLSystem::BeatinessInClass(double input, BeatinessClassIDs flClass) {
+//	double mu;
+//	switch (flClass) {
+//	case notbeaty:
+//		if (input <= 3000) mu = 1.0;
+//		else if (input < 3500) mu = 1.0 - (input - 3000) / (3500 - 3000);
+//		else mu = 0.0;
+//		break;
+//	case sbeaty:
+//		if (input <= 3150) mu = 0.0;
+//		else if (input <= 4000) mu = (input - 3150) / (4000 - 3150);
+//		else if (input < 4800) mu = 1.0 - (input - 4000) / (4800 - 4000);
+//		else mu = 0.0;
+//		break;
+//	case beaty:
+//		if (input <= 3150) mu = 0.0;
+//		else if (input <= 4000) mu = (input - 3150) / (4000 - 3150);
+//		else if (input < 4800) mu = 1.0 - (input - 4000) / (4800 - 4000);
+//		else mu = 0.0;
+//		break;
+//	case vbeaty:
+//		if (input <= 4200) mu = 0.0;
+//		else if (input < 5000) mu = (input - 4200) / (5000 - 4200);
+//		else mu = 1.0;
+//		break;
+//	default:
+//		Helpers::print_debug("ERROR: undefined beatiness class requested.\n");
+//		mu = 0.0;
+//		break;
+//	}
+//	return mu;
+//}
 
 double OptiAlgo::FLSystem::ROutClass(double input, RGBClassIDs flClass) {
 	double none[] = { 0.0-85.0, 0.0, 85.0 };
@@ -494,8 +509,6 @@ double OptiAlgo::FLSystem::Defuzzify(OutParams outparam) {
 }
 
 LightsInfo OptiAlgo::FLSystem::Infer(AudioProps input) {
-	double beatiness = input.loudness_max_avg - input.loudness_nomax_avg;
-	double strobe_speed;
 	LightsInfo out_crisp;
 	vector<double> tnorm_temp;
 	double temp;
@@ -605,6 +618,23 @@ LightsInfo OptiAlgo::FLSystem::Infer(AudioProps input) {
 	}
 	out_str << "\n";
 
+	if (input.beatiness_avg > BEATINESS_LOUDNESS_THRESH && max(TempoInClass(input.tempo_avg, fast), TempoInClass(input.tempo_avg, vfast)) > BEATINESS_TEMPO_THRESH) {
+		if (isStrobing <= 0) {
+			// For strobing, just using speed as tempo_avg causes a lag of a 16th note (quarter of a beat)
+			// (instead of falling on the next 'ta', it falls on the 'ka' after that, in the ta-ka-di-mi system)
+			// Dividing by 5 gives you one 16th note; multiplying by 4 sets it for one quarter note (one beat)
+			strobing_speed = 4 * input.tempo_avg / 5;
+			while (strobing_speed <= 255) strobing_speed *= 2; // Double it to make strobing look nice
+			strobing_speed /= 2; // Compensate for overshoot
+		}
+		out_crisp.strobing_speed = (int)strobing_speed;
+		isStrobing = STROBING_COOLDOWN;
+	}
+	else {
+		if (isStrobing > 0) isStrobing--;
+		else strobing_speed = 0;
+	}
+
 
 	// Defuzzify each output parameter
 	out_crisp.red_intensity = (int)Defuzzify(r);
@@ -612,13 +642,6 @@ LightsInfo OptiAlgo::FLSystem::Infer(AudioProps input) {
 	out_crisp.green_intensity = (int)Defuzzify(g);
 	out_crisp.white_intensity = 0;
 	out_crisp.dimness = 255;
-
-	// For strobing, just using speed as tempo_avg causes a lag of a 16th note (quarter of a beat)
-	// (instead of falling on the next 'ta', it falls on the 'ka' after that, in the ta-ka-di-mi system)
-	// Dividing by 5 gives you one 16th note; multiplying by 4 sets it for one quarter note (one beat)
-	strobe_speed = 4 * input.tempo_avg / 5;
-	strobe_speed *= 2; // Double it to make strobing look nice
-	out_crisp.strobing_speed = 0;//(beatiness > BEATINESS_THRESH) ? (int)strobe_speed : 0;
 
 	// Done!
 	return out_crisp;
@@ -710,6 +733,7 @@ void OptiAlgo::start_algo()
 	bool got_freq, got_tempo, got_loud;
 	int nudges_to_silence = NUDGES_TO_SILENCE;
 	bool starting_silence = true;
+	int max_loud_insertion_cooldown = MAX_LOUD_INSERTION_COOLDOWN;
 	// Initialize solution variables
 	FLSystem flSystem = FLSystem();
 	LightsInfo cur_sol;
@@ -821,18 +845,18 @@ void OptiAlgo::start_algo()
 				if (got_loud)
 				{
 					input.loudness_hist_add_and_avg(cur_loud);
-					if (input.loudness_avg > 0.0 && cur_loud >= input.loudness_max_avg)
-						input.loudness_max_hist_add_and_avg(cur_loud); // TODO: should not be persistent
-					else
+					if (input.loudness_nomax_hist.size() > 0 && cur_loud - input.loudness_nomax_avg >= MAX_LOUDNESS_THRESH) {
+						input.loudness_max_hist_add_and_avg(cur_loud);
+						max_loud_insertion_cooldown = (max_loud_insertion_cooldown < MAX_LOUD_INSERTION_COOLDOWN) ? max_loud_insertion_cooldown + 1 : MAX_LOUD_INSERTION_COOLDOWN;
+					}
+					else {
+						if (max_loud_insertion_cooldown > 0) max_loud_insertion_cooldown--;
+						else {
+							input.loudness_max_hist_add_and_avg(input.loudness_avg);
+						}
 						input.loudness_nomax_hist_add_and_avg(cur_loud);
-
-					// Uncomment this if necessary // TODO: make loudness_max not persistent
-					/*if (abs(input.loudness_avg - input.loudness_max_avg) >= CHANGE_TO_MAX_LOUD_THRESH)
-					{
-						input.loudness_nomax_avg = input.loudness_avg;
-						input.loudness_nomax_hist = input.loudness_hist;
-						input.loudness_hist.clear();
-					}*/
+					}
+					input.beatiness_hist_add_and_avg(input.loudness_max_avg - input.loudness_nomax_avg);
 				}
 			}
 
@@ -875,7 +899,8 @@ void OptiAlgo::start_algo()
 				<< input.freq_avg;
 			if (harmonicDetected) out_str << "*";
 			out_str << ", " << cur_tempo << "->" << input.tempo_avg << ", "
-				<< input.loudness_avg << " (" << input.loudness_nomax_avg << ", " << input.loudness_max_avg << ")]";
+				<< input.loudness_avg << " (" << input.loudness_max_avg << " - " << input.loudness_nomax_avg << " = "
+				<< (input.loudness_max_avg - input.loudness_nomax_avg) << " -> " << input.beatiness_avg << ")]";
 
 			// Log current output
 			out_str << " => ";

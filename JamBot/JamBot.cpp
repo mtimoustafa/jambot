@@ -64,14 +64,14 @@ bool alreadyJamming = false;
 bool waveSavedFlag = false;
 bool onDefaultTab = false;
 int songListPosition = 0, songLength, graph_x, graph_y;
-static int numberOfChannels;
+int numberOfChannels = 1;
 GtkWidget *instrumentFrequency, *instrumentLoudness, *instrumentTempo;
 int counterInstru = 0;
 int counterVoice = 0;
 cairo_t *crWave;
 
 // Functions to run components in threads
-DWORD WINAPI AudioInputThread(LPVOID lpParam) { inputChannelReader = InputChannelReader(); Helpers::print_debug("START audio input.\n"); inputChannelReader.start(songSelectedFlag); return 0; }
+DWORD WINAPI AudioInputThread(LPVOID lpParam) { inputChannelReader = InputChannelReader(); Helpers::print_debug("START audio input.\n"); inputChannelReader.start(songSelectedFlag, numberOfChannels); return 0; }
 DWORD WINAPI WavGenThread(LPVOID lpParam) { wavmanipulation = WavManipulation(); Helpers::print_debug("START wav manip.\n"); wavmanipulation.start(csvFileName); return 0; }
 DWORD WINAPI OptiAlgoThread(LPVOID lpParam) { optiAlgo = OptiAlgo(); Helpers::print_debug("START opti algo.\n"); optiAlgo.start(songSelectedFlag); return 0; }
 DWORD WINAPI AudioOutputThread(LPVOID lpParam) { lightsTest = DMXOutput(); Helpers::print_debug("START audio output.\n"); lightsTest.start(); return 0; }
@@ -635,55 +635,55 @@ static void updateProgress()
 
 void JamBot::updateSongValues(float frequency, double loudness, double tempo)
 {
-	double loud = (loudness / 5000.00);
-	if (counterInstru % 5 == 1)
-	{
-		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 1 * loud);
-		Sleep(400);
-		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.66*loud);
-		Sleep(25);
-		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.33*loud);
-		Sleep(25);
-		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.15*loud);
-		Sleep(25);
-		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.10*loud);
-		Sleep(25);
-		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.08*loud);
-	}
+	//double loud = (loudness / 5000.00);
+	//if (counterInstru % 5 == 1)
+	//{
+	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 1 * loud);
+	//	Sleep(400);
+	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.66*loud);
+	//	Sleep(25);
+	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.33*loud);
+	//	Sleep(25);
+	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.15*loud);
+	//	Sleep(25);
+	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.10*loud);
+	//	Sleep(25);
+	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.08*loud);
+	//}
 
-	if (counterInstru == 10)
-	{
-		gtk_label_set_text(GTK_LABEL(freqLabelInstru), to_string(frequency).c_str());
-		counterInstru = 0;
-	}
-	counterInstru++;
+	//if (counterInstru == 10)
+	//{
+	//	gtk_label_set_text(GTK_LABEL(freqLabelInstru), to_string(frequency).c_str());
+	//	counterInstru = 0;
+	//}
+	//counterInstru++;
 }
 
 void JamBot::updateVoiceValues(float frequency, double loudness, double tempo)
 {
-	double loud = (loudness / 5000.00);
-	if (counterVoice % 5 == 1)
-	{
-		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarVoice), 1 * loud);
-		Sleep(400);
-		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarVoice), 0.66*loud);
-		Sleep(25);
-		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarVoice), 0.33*loud);
-		Sleep(25);
-		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarVoice), 0.15*loud);
-		Sleep(25);
-		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarVoice), 0.10*loud);
-		Sleep(25);
-		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarVoice), 0.08*loud);
+	//double loud = (loudness / 5000.00);
+	//if (counterVoice % 5 == 1)
+	//{
+	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarVoice), 1 * loud);
+	//	Sleep(400);
+	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarVoice), 0.66*loud);
+	//	Sleep(25);
+	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarVoice), 0.33*loud);
+	//	Sleep(25);
+	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarVoice), 0.15*loud);
+	//	Sleep(25);
+	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarVoice), 0.10*loud);
+	//	Sleep(25);
+	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarVoice), 0.08*loud);
 
-	}
+	//}
 
-	if (counterVoice == 10)
-	{
-		gtk_label_set_text(GTK_LABEL(freqLabelVoice), to_string(frequency).c_str());
-		counterVoice = 0;
-	}
-	counterVoice++;
+	//if (counterVoice == 10)
+	//{
+	//	gtk_label_set_text(GTK_LABEL(freqLabelVoice), to_string(frequency).c_str());
+	//	counterVoice = 0;
+	//}
+	//counterVoice++;
 }
 
 
