@@ -20,7 +20,7 @@ class InputChannelReader
 public:
 	InputChannelReader();
 
-	void start(bool);
+	void start(bool, int);
 
 	void stop();
 

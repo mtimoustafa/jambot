@@ -5,6 +5,8 @@
 
 using namespace std;
 
+enum OutParams { r, b, g };
+
 class AudioInfo
 {
 	double * _frequency;

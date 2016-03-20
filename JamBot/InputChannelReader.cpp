@@ -62,6 +62,8 @@ AudioInfo audioSamples = AudioInfo();
 SoundHeader header = SoundHeader();
 SoundHeader outHeader = SoundHeader();
 WavManipulation wav = WavManipulation();
+int num_samples;
+int num_channels;
 
 InputChannelReader::InputChannelReader() 
 {
@@ -78,7 +80,7 @@ int InputChannelReader::recordCallback(const void *inputBuffer, void *outputBuff
 	PaStreamCallbackFlags statusFlags,
 	void *userData)
 {
-	std::vector<float> recordedSamples(NUM_SAMPLES, 0.0);
+	std::vector<float> recordedSamples(num_samples, 0.0);
 	std::vector<float>::iterator it = recordedSamples.begin();
 	paData *data = (paData *)userData;
 	const short *rptr = (const short*)inputBuffer;
@@ -91,9 +93,9 @@ int InputChannelReader::recordCallback(const void *inputBuffer, void *outputBuff
 
 	if (inputBuffer == NULL)
 	{
-		for (int i = 0; i<FRAMES_PER_BUFFER; i += NUM_CHANNELS)
+		for (int i = 0; i<FRAMES_PER_BUFFER; i += num_channels)
 		{
-			for (int j = 0; j < NUM_CHANNELS; j++)
+			for (int j = 0; j < num_channels; j++)
 			{
 				// Skip two channels
 				it += 2;
@@ -102,9 +104,9 @@ int InputChannelReader::recordCallback(const void *inputBuffer, void *outputBuff
 	}
 	else
 	{
-		for (int i = 0; i < FRAMES_PER_BUFFER; i += NUM_CHANNELS)
+		for (int i = 0; i < FRAMES_PER_BUFFER; i += num_channels)
 		{
-			for (int j = 0; j < NUM_CHANNELS; j++)
+			for (int j = 0; j < num_channels; j++)
 			{
 				if (IS_STEREO)	//Left
 				{
@@ -136,32 +138,47 @@ float InputChannelReader::hannFunction(int n)
 void InputChannelReader::analyseBuffer(paData *data)
 {
 	float val = 0.0;
+	float val2 = 0.0;
 	float maxDensity = 0.0;
 	float maxDensity2 = 0.0;
 	float mag1, mag2;
 	int maxIndex, maxIndex2;
 	float frequency, frequency2;
 	double average = 0.0;
+	double average2 = 0.0;
 	short fileSamples;
 	int j = 0;
 
 	// Measure average peak amplitude
-	for (int i = 0; i < NUM_SAMPLES; i = i + (NUM_CHANNELS * 2))
+	for (int i = 0; i < num_samples; i = i + (num_channels * 2))
 	{
 		// Use every-other sample
 		if (j < FFT_SIZE)
 		{
 			in[j] = data->recordedSamples[i] * hannFunction(j);
-			if (NUM_CHANNELS > 1)
+			if (num_channels > 1)
 				in2[j] = data->recordedSamples[i+2] * hannFunction(j);
 			j++;
 		}
+
+		// Get average volume of guitar
 		val = data->recordedSamples[i];
 		if (val < 0)
 		{
 			val = -val;
 		}
 		average += val;
+
+		// Get average volume of voice
+		if (num_channels > 1)
+		{
+			val2 = data->recordedSamples[i+2];
+			if (val2 < 0)
+			{
+				val2 = -val2;
+			}
+			average2 += val2;
+		}
 
 #if WRITE_TO_FILE
 		{
@@ -173,12 +190,14 @@ void InputChannelReader::analyseBuffer(paData *data)
 #endif
 	}
 	average = average / (double)FRAMES_PER_BUFFER;
+	if (num_channels > 1)
+		average2 = average2 / (double)FRAMES_PER_BUFFER;
 	audioSamples.set_loudness(average);
-	//Helpers::print_debug(("Average sample LOUDNESS (dB): " + to_string(average) + "\n").c_str());
+	Helpers::print_debug(("[IN] Average sample LOUDNESS [guitar] (dB): " + to_string(average) + "\n").c_str());
 
 	// Get frequency of wave
 	fftwf_execute(fft);
-	if (NUM_CHANNELS > 1)
+	if (num_channels > 1)
 		fftwf_execute(fft2);
 
 	for (int i = MIN_I; i < MAX_I; i++)
@@ -189,7 +208,7 @@ void InputChannelReader::analyseBuffer(paData *data)
 			maxDensity = mag1;
 			maxIndex = i;
 		}
-		if (NUM_CHANNELS > 1)
+		if (num_channels > 1)
 		{
 			mag2 = (float)sqrt(out2[i][0]*out2[i][0] + out2[i][1]*out2[i][1]);
 			if (mag2 > maxDensity2)
@@ -201,16 +220,17 @@ void InputChannelReader::analyseBuffer(paData *data)
 	}
 
 	frequency = maxIndex * SAMPLE_RATE / FFT_SIZE;
-	//Helpers::print_debug(("Frequency peak [guitar] (Hz): " + to_string(frequency) + "\n").c_str());
+	Helpers::print_debug(("[IN] Frequency peak [guitar] (Hz): " + to_string(frequency) + "\n").c_str());
 	audioSamples.set_frequency((float)frequency);
 
-	if (NUM_CHANNELS > 1)
+	if (num_channels > 1)
 	{
 		frequency2 = maxIndex2 * SAMPLE_RATE / FFT_SIZE;
-		//Helpers::print_debug(("Frequency peak [voice] (Hz): " + to_string(frequency2) + "\n").c_str());
+		Helpers::print_debug(("[IN] Frequency peak [voice] (Hz): " + to_string(frequency2) + "\n").c_str());
+		Helpers::print_debug(("[IN] Average sample LOUDNESS [voice] (dB): " + to_string(average2) + "\n").c_str());
 
 		// Initiate frequency reads
-		WavManipulation::startReading(average > 35.0);
+		WavManipulation::startReading(average2 > 50.0);
 
 		// Send frequency to WavManipulation
 		WavManipulation::pushFrequency(frequency2);
@@ -218,7 +238,7 @@ void InputChannelReader::analyseBuffer(paData *data)
 	}
 
 	// Measure average tempo every 1.5s
-	tempo.process(const_cast<float*>(&data->recordedSamples[0]), NUM_SAMPLES);
+	tempo.process(const_cast<float*>(&data->recordedSamples[0]), num_samples);
 	if ((data->numBuffers % 15) == 0)
 	{
 		audioSamples.set_tempo(tempo.estimateTempo());
@@ -237,8 +257,10 @@ void InputChannelReader::stop()
 	stopStream = true;
 }
 
-void InputChannelReader::start(bool songSelected)
+void InputChannelReader::start(bool songSelected, int channels)
 {
+	num_channels = channels;
+	num_samples = FRAMES_PER_BUFFER * num_channels * 2;
 	main();
 }
 
@@ -259,7 +281,7 @@ int InputChannelReader::main(void)
 	in = (float*)fftwf_malloc(sizeof(float) * FFT_SIZE);
 	out = (fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex)* OUTPUT_SIZE);
 	fft = fftwf_plan_dft_r2c_1d(FFT_SIZE, in, out, FFTW_ESTIMATE);
-	if (NUM_CHANNELS > 1)
+	if (num_channels > 1)
 	{
 		in2 = (float*)fftwf_malloc(sizeof(float)* FFT_SIZE);
 		out2 = (fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex)* OUTPUT_SIZE);
@@ -273,7 +295,7 @@ int InputChannelReader::main(void)
 	if (inputParameters.device == paNoDevice) {
 		goto done;
 	}
-	inputParameters.channelCount = NUM_CHANNELS * (1 + IS_STEREO);
+	inputParameters.channelCount = num_channels * (1 + IS_STEREO);
 	inputParameters.sampleFormat = paInt16;
 	inputParameters.suggestedLatency = Pa_GetDeviceInfo(inputParameters.device)->defaultLowInputLatency;
 	inputParameters.hostApiSpecificStreamInfo = NULL;
@@ -322,11 +344,14 @@ done:
 	data.recordedSamples.clear();
 	recordedData.clear();
 	fftwf_destroy_plan(fft);
-	fftwf_destroy_plan(fft2);
 	fftwf_free(in);
 	fftwf_free(out);
-	fftwf_free(in2); 
-	fftwf_free(out2);
+
+	if (num_channels > 1) {
+		fftwf_destroy_plan(fft2);
+		fftwf_free(in2);
+		fftwf_free(out2);
+	}
 
 	if (err != paNoError)
 	{

@@ -62,14 +62,16 @@ GtkWidget *drawArea, *sectionDialog, *valueDrawArea, *sectionWarningLabel;
 bool songSectionFlag = false;
 bool alreadyJamming = false;
 bool waveSavedFlag = false;
+bool onDefaultTab = false;
 int songListPosition = 0, songLength, graph_x, graph_y;
-static int numberOfChannels;
+int numberOfChannels = 1;
 GtkWidget *instrumentFrequency, *instrumentLoudness, *instrumentTempo;
-int counter = 0;
+int counterInstru = 0;
+int counterVoice = 0;
 cairo_t *crWave;
 
 // Functions to run components in threads
-DWORD WINAPI AudioInputThread(LPVOID lpParam) { inputChannelReader = InputChannelReader(); Helpers::print_debug("START audio input.\n"); inputChannelReader.start(songSelectedFlag); return 0; }
+DWORD WINAPI AudioInputThread(LPVOID lpParam) { inputChannelReader = InputChannelReader(); Helpers::print_debug("START audio input.\n"); inputChannelReader.start(songSelectedFlag, numberOfChannels); return 0; }
 DWORD WINAPI WavGenThread(LPVOID lpParam) { wavmanipulation = WavManipulation(); Helpers::print_debug("START wav manip.\n"); wavmanipulation.start(csvFileName); return 0; }
 DWORD WINAPI OptiAlgoThread(LPVOID lpParam) { optiAlgo = OptiAlgo(); Helpers::print_debug("START opti algo.\n"); optiAlgo.start(songSelectedFlag); return 0; }
 DWORD WINAPI AudioOutputThread(LPVOID lpParam) { lightsTest = DMXOutput(); Helpers::print_debug("START audio output.\n"); lightsTest.start(); return 0; }
@@ -117,6 +119,7 @@ static void graphWave() {
 	if (graphWaveFlag)
 	{
 		/*setting up where the graph will be displayed*/
+		gdk_window_clear_area(drawArea->window, 0, 0, 550, graph_y);
 		cairo_t *crWave = gdk_cairo_create(drawArea->window);
 		cairo_set_source_rgba(crWave, 1, 0.4, 0.3, 0.8);
 		cairo_set_line_width(crWave, 1.3);
@@ -244,6 +247,10 @@ static void submitSongSection() {
 		string fileName = lyricsPath.substr(position + 1);
 		fileName = fileName.substr(0, fileName.size() - 4);
 
+		masterCSV.open("CSV\\masterCSV.csv", ios_base::app);
+		masterCSV << fileName + "\n";
+		masterCSV.close();
+
 		bool submit = true;
 		for (int i = 0; i < csvList.size(); i++)
 		{
@@ -255,11 +262,6 @@ static void submitSongSection() {
 		if (submit)
 		{
 			wavmanipulation.dataStore(fileName, section, waveFilePath, lyricsPath);
-
-			masterCSV.open("CSV\\masterCSV.csv", ios_base::app);
-			masterCSV << fileName + "\n";
-			masterCSV.close();
-
 			csvList.push_back(fileName);
 
 			gtk_list_store_insert_with_values(liststore, NULL, -1, 0, "red", 1, (char*)fileName.c_str(), -1);
@@ -301,6 +303,8 @@ static void displaySectionModal(GtkWidget *widget, gint resp, gpointer *data)
 		submitButton = gtk_button_new_with_label("Submit");
 		g_signal_connect(GTK_OBJECT(submitButton), "clicked", G_CALLBACK(submitSongSection), NULL, NULL);
 		gtk_box_pack_start(GTK_BOX(hbox), submitButton, false, false, 5);
+		gtk_box_pack_start(GTK_BOX(GTK_DIALOG(sectionDialog)->vbox), hbox, false, false, 5);
+
 
 		hbox = gtk_hbox_new(false, 0);
 		label = gtk_label_new("Section Name");
@@ -393,6 +397,71 @@ static void selectWaveFile(GtkWidget *widget) {
 		g_print("You Pressed the cancel button");
 	}
 	gtk_widget_destroy(dialog);
+}
+
+static void graphWaveFromCSV()
+{
+	gint position = gtk_combo_box_get_active(GTK_COMBO_BOX(songSelectBox));
+	string fileName = csvList[position] + ".csv";
+	if ((position > 0) && (fileName.compare("None.csv") != 0))
+	{
+		ifstream file("CSV\\"+fileName);
+		string line, text;
+
+		if (file.is_open())
+		{
+			getline(file, line);
+			getline(file, line);
+			int position = line.find_first_of(",");
+			waveFilePath = line.substr(0, position);
+			file.close();
+
+			SoundFileRead insound((waveFilePath).c_str());
+			SoundHeader header = insound;
+
+			int sampleAmount = header.getSamples();
+			songLength = floor((double)insound.getSamples() / (double)insound.getSrate());
+			/*getting how many samples we are going to take for this graph*/
+			int sampleRate = sampleAmount / 10000;
+			/*first sample*/
+			int currentSample = sampleRate;
+			/*getting the value of the beginning sample*/
+			insound.gotoSample(0);
+			sampleValue[0] = insound.getCurrentSampleDouble(0);
+			sampleDiff[0] = 0.00;
+			double max = 0.00;
+			double min = 0.00;
+			multiplier = 0.00;
+			for (int i = 1; i < 10000; i++)
+			{
+				/*go to the next sample*/
+				insound.gotoSample(currentSample);
+				sampleValue[i] = insound.getCurrentSampleDouble(0);
+				sampleDiff[i] = sampleValue[i] - sampleValue[i - 1];
+				if (sampleDiff[i] > max)
+				{
+					max = sampleDiff[i];
+				}
+				else if (sampleDiff[i] < min)
+				{
+					min = sampleDiff[i];
+				}
+				currentSample += sampleRate;
+			}
+
+			if (max > abs(min))
+			{
+				multiplier = ceil(graph_y / 2) / max;
+			}
+			else
+			{
+				multiplier = ceil(graph_y / 2) / abs(min);
+			}
+			graphWaveFlag = true;
+			graphWave();
+		}
+		
+	}
 }
 
 static void displayLyricsNonmodal(GtkWidget *widget, gpointer window)
@@ -566,28 +635,63 @@ static void updateProgress()
 
 void JamBot::updateSongValues(float frequency, double loudness, double tempo)
 {
-	double loud = (loudness / 5000.00);
-	if (counter% 5 == 1)
-	{
-		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 1 * loud);
-		Sleep(400);
-		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.66*loud);
-		Sleep(25);
-		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.33*loud);
-		Sleep(25);
-		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.15*loud);
-		Sleep(25);
-		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.10*loud);
-		Sleep(25);
-		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.08*loud);
+	//double loud = (loudness / 5000.00);
+	//if (counterInstru % 5 == 1)
+	//{
+	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 1 * loud);
+	//	Sleep(400);
+	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.66*loud);
+	//	Sleep(25);
+	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.33*loud);
+	//	Sleep(25);
+	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.15*loud);
+	//	Sleep(25);
+	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.10*loud);
+	//	Sleep(25);
+	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.08*loud);
+	//}
 
-	}
-	if (counter == 10)
-	{
-		gtk_label_set_text(GTK_LABEL(freqLabelInstru), to_string(frequency).c_str());
-		counter = 0;
-	}
-	counter++;
+	//if (counterInstru == 10)
+	//{
+	//	gtk_label_set_text(GTK_LABEL(freqLabelInstru), to_string(frequency).c_str());
+	//	counterInstru = 0;
+	//}
+	//counterInstru++;
+}
+
+void JamBot::updateVoiceValues(float frequency, double loudness, double tempo)
+{
+	//double loud = (loudness / 5000.00);
+	//if (counterVoice % 5 == 1)
+	//{
+	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarVoice), 1 * loud);
+	//	Sleep(400);
+	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarVoice), 0.66*loud);
+	//	Sleep(25);
+	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarVoice), 0.33*loud);
+	//	Sleep(25);
+	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarVoice), 0.15*loud);
+	//	Sleep(25);
+	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarVoice), 0.10*loud);
+	//	Sleep(25);
+	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarVoice), 0.08*loud);
+
+	//}
+
+	//if (counterVoice == 10)
+	//{
+	//	gtk_label_set_text(GTK_LABEL(freqLabelVoice), to_string(frequency).c_str());
+	//	counterVoice = 0;
+	//}
+	//counterVoice++;
+}
+
+
+static void tabSwitchPage()
+{
+	onDefaultTab = !onDefaultTab;
+	gtk_label_set_text(GTK_LABEL(freqLabelInstru), "");
+	gtk_label_set_text(GTK_LABEL(freqLabelVoice), "");
 }
 
 static gboolean delete_event(GtkWidget *widget, GdkEvent *event, gpointer data)
@@ -621,6 +725,7 @@ static void stopUpdating()
 	lyrics.clear();
 	gtk_label_set_text(GTK_LABEL(lyricsLabel), lyrics.c_str());
 	/*dumb the data from InputChannelReader*/
+	gtk_label_set_text(GTK_LABEL(freqLabelInstru), "");
 
 }
 
@@ -701,18 +806,22 @@ int gtkStart(int argc, char* argv[])
 	/*=========================== third layer Part ===========================*/
 	GtkWidget *sectionLabelName, *sectionLabelTime, *addSectionButton, *submitSectionButton, *tempEntry;
 
+	fileSelectDialog = gtk_button_new_with_label("Select Audio File");
+	g_signal_connect(GTK_OBJECT(fileSelectDialog), "clicked", G_CALLBACK(selectWaveFile), NULL, NULL);
+	gtk_box_pack_start(GTK_BOX(sectionBox), fileSelectDialog, false, false, 5);
+
+	/*select lyrics*/
+	fileSelectDialog = gtk_button_new_with_label("Select Lyrics");
+	gtk_box_pack_start(GTK_BOX(sectionBox), fileSelectDialog, false, false, 5);
+	g_signal_connect(GTK_OBJECT(fileSelectDialog), "clicked", G_CALLBACK(selectLyrics), window);
+
 	/*sectionButtonBox*/
 	addSectionButton = gtk_button_new_with_label("Section");
 	g_signal_connect(GTK_OBJECT(addSectionButton), "clicked", G_CALLBACK(displaySectionModal), NULL, NULL);
 	gtk_box_pack_start(GTK_BOX(sectionBox), addSectionButton, false, false, 5);
 
-	fileSelectDialog = gtk_button_new_with_label("Select Audio File");
-	g_signal_connect(GTK_OBJECT(fileSelectDialog), "clicked", G_CALLBACK(selectWaveFile), NULL, NULL);
-	gtk_box_pack_start(GTK_BOX(sectionBox), fileSelectDialog, false, false, 5);
-
 	/*combo box part*/
 	songSelectBox = gtk_combo_box_new();
-	//g_signal_connect(GTK_OBJECT(songSelectBox), "move-active", G_CALLBACK(testFunction), NULL);
 
 	GtkCellRenderer *column;
 	//gtk_init(&argc, &argv);
@@ -744,6 +853,7 @@ int gtkStart(int argc, char* argv[])
 
 	songSelectBox = gtk_combo_box_new_with_model(GTK_TREE_MODEL(liststore));
 
+	g_signal_connect(GTK_OBJECT(songSelectBox), "changed", G_CALLBACK(graphWaveFromCSV), NULL);
 	column = gtk_cell_renderer_text_new();
 	gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(songSelectBox), column, TRUE);
 	gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(songSelectBox), column, "cell-background", 0, "text", 1, NULL);
@@ -752,9 +862,9 @@ int gtkStart(int argc, char* argv[])
 
 	/*configure draw area*/
 	drawArea = gtk_drawing_area_new();
-	gtk_widget_set_size_request(GTK_WIDGET(drawArea), 550, 300);
+	gtk_widget_set_size_request(GTK_WIDGET(drawArea), 550, 200);
 	graph_x = 500;
-	graph_y = 300;
+	graph_y = 200;
 	gtk_window_set_resizable(GTK_WINDOW(drawArea), FALSE);
 	gtk_box_pack_start(GTK_BOX(graphBox), drawArea, true, true, 0);
 
@@ -771,6 +881,7 @@ int gtkStart(int argc, char* argv[])
 
 	gtk_notebook_append_page(GTK_NOTEBOOK(tabs), songProgressBox, label_song);
 	gtk_notebook_append_page(GTK_NOTEBOOK(tabs), voiceProgressBox, label_voice);
+	g_signal_connect(G_OBJECT(tabs), "switch-page", G_CALLBACK(tabSwitchPage), NULL);
 	
 	/*Instrument Tab*/
 	vbox = gtk_vbox_new(false, 0);
@@ -866,11 +977,6 @@ int gtkStart(int argc, char* argv[])
 	/*status label*/
 	statusLabel = gtk_label_new("Idle");
 	gtk_box_pack_start(GTK_BOX(songStatusBox), statusLabel, false, false, 5);
-
-	/*select lyrics*/
-	fileSelectDialog = gtk_button_new_with_label("Select Lyrics");
-	gtk_box_pack_start(GTK_BOX(lyricsBox), fileSelectDialog, false, false, 5);
-	g_signal_connect(GTK_OBJECT(fileSelectDialog), "clicked", G_CALLBACK(selectLyrics), window);
 
 	/*display lyrics*/
 	outputLyrics = gtk_button_new_with_label("Display Lyrics");

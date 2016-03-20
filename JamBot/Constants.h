@@ -4,8 +4,6 @@
 // InputChannelReader Parameters
 const int SAMPLE_RATE = 22050;
 const int FRAMES_PER_BUFFER = 4410;	//200ms of audio per buffer
-const int NUM_CHANNELS = 2;
-const int NUM_SAMPLES = FRAMES_PER_BUFFER * NUM_CHANNELS * 2;
 const int FFT_SIZE = 4096;
 const int OUTPUT_SIZE = (int)(FFT_SIZE / 2) + 1;
 const int HIGHEST_PITCH = 7000;
@@ -47,8 +45,13 @@ const double DIM_LB = 0.0;
 // TODO: tweak these parameters
 const unsigned int IN_HIST_BUF_SIZE = 10;
 const unsigned int OUT_HIST_BUF_SIZE = 10;
+const unsigned int LOUDNESS_MAX_DETECT_BUF_SIZE = 5;
 
-const double BEATINESS_THRESH = 1000.0;
+const double MAX_LOUDNESS_THRESH = 500.0;
+const double BEATINESS_LOUDNESS_THRESH = 300.0;
+const double BEATINESS_TEMPO_THRESH = 0.5;
+const int MAX_LOUD_INSERTION_COOLDOWN = 4;
+const int STROBING_COOLDOWN = 3;
 const double SILENCE_THRESH = 40.0;
 const double FREQ_VALUES_DISTANCE_THRESH = 50.0;
 const double FREQ_HARMONIC_DETECT_THRESH = 10.0;
@@ -56,7 +59,7 @@ const double FREQ_ANOMALY_DETECT_THRESH = 100.0;
 const int FREQ_HARMONIC_NUDGES_TO_CHANGE = 0;
 const int FREQ_ANOMALY_NUDGES_TO_CHANGE = 0;
 const double TEMPO_CLOSENESS_THRESH = 10.0;
-const int TEMPO_NUDGES_TO_CHANGE = 20;
+const int TEMPO_NUDGES_TO_CHANGE = 10;
 const double OUTPUT_TOO_LOW_THRESH = 10.0;
 const int OUTPUT_ANOMALY_DETECT_THRESH = 50;
 const int OUTPUT_NUDGES_TO_CHANGE = 5;

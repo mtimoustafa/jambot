@@ -33,6 +33,7 @@ class OptiAlgo
 		double loudness_avg;
 		double loudness_nomax_avg;
 		double loudness_max_avg;
+		double beatiness_avg;
 
 		deque<double> freq_hist = deque<double>();
 		deque<double> delta_harmonic_freq_hist = deque<double>();
@@ -42,6 +43,7 @@ class OptiAlgo
 		deque<double> loudness_hist = deque<double>();
 		deque<double> loudness_nomax_hist = deque<double>();
 		deque<double> loudness_max_hist = deque<double>();
+		deque<double> beatiness_hist = deque<double>();
 
 		AudioProps();
 		void ClearProps();
@@ -54,6 +56,7 @@ class OptiAlgo
 		double loudness_hist_add_and_avg(double val);
 		double loudness_nomax_hist_add_and_avg(double val);
 		double loudness_max_hist_add_and_avg(double val);
+		double beatiness_hist_add_and_avg(double val);
 	};
 
 	class FLSystem
@@ -67,8 +70,6 @@ class OptiAlgo
 		// Outputs
 		enum RGBClassIDs { none, dark, medium, strong };
 		enum WClassIDs { off, normal, bright };
-		// Output parameters
-		enum OutParams { r, g, b, w, dim, str };
 
 		// Membership function ...er, functions:
 		// Inputs
@@ -94,15 +95,22 @@ class OptiAlgo
 		double Defuzzify(OutParams outparam);
 
 		// Local helper functions
+		map<RGBClassIDs, double> SetCutoff(OutParams color);
+		void ReassignCutoff(OutParams color, map<RGBClassIDs, double> cutoff_val);
 		double Integrate(OutParams outparam, double lb, double ub, double step);
 		double (OptiAlgo::FLSystem::*OutClass)(double, RGBClassIDs); // acompannying function pointer to Integrate()
 
+		// Strobing variables
+		int isStrobing = STROBING_COOLDOWN;
+		int strobing_speed = 0;
+
 	public:
 		FLSystem();
-		LightsInfo Infer(AudioProps input); // Runs the fuzzy logic system
+		LightsInfo Infer(AudioProps input, array<OutParams, 3> colorMapping); // Runs the fuzzy logic system
 	};
 
 	bool terminate;
+	array<OutParams, 3> color_scheme; // Set by GUI to tell FL algorithms how to map colors to inputs
 
 public:
 	OptiAlgo();
@@ -113,6 +121,7 @@ public:
 	void test_lights();
 	void start_algo();
 	void start(bool);
+	void start(bool, array<OutParams, 3>);
 	void stop();
 };
 
