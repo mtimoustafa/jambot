@@ -82,9 +82,49 @@ ATOM				MyRegisterClass(HINSTANCE hInstance);
 BOOL				InitInstance(HINSTANCE, int);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
+#include "wtypes.h"
+#include <iostream>
+using namespace std;
+
+// Get the horizontal and vertical screen sizes in pixel
+void GetDesktopResolution(int& horizontal, int& vertical)
+{
+	RECT desktop;
+	// Get a handle to the desktop window
+	const HWND hDesktop = GetDesktopWindow();
+	// Get the size of screen to the variable desktop
+	GetWindowRect(hDesktop, &desktop);
+	// The top left corner will have coordinates (0,0)
+	// and the bottom right corner will have coordinates
+	// (horizontal, vertical)
+	horizontal = desktop.right;
+	vertical = desktop.bottom;
+}
 
 void JamBot::updateLyrics(string text) {
+	int font_size = 35;
+	int max_size = 0;
+	//int horizontal = 0;
+	//int vertical = 0;
+	//GetDesktopResolution(horizontal, vertical);
 	lyrics = text + "\n";
+	//istringstream iss(text); 
+	//vector<string> tokens;
+	//copy(istream_iterator<string>(iss),
+	//	istream_iterator<string>(),
+	//	back_inserter(tokens));
+	//for (int i = 0; i < tokens.size(); i++){
+	//	if (tokens[i].length() > max_size)
+	//		max_size = tokens[i].length();
+	//}
+	//if (max_size >= 50){
+	//	font_size = max_size/2 + 20;
+	//}
+	//PangoFontDescription *font_desc = pango_font_description_new();
+	//pango_font_description_set_family(font_desc, "Ariel Bold");
+	//pango_font_description_set_size(font_desc, font_size);
+	////font_desc = pango_font_description_from_string("Ariel Bold 35");
+	//gtk_widget_modify_font(lyricsLabel, font_desc);
 	gtk_label_set_text(GTK_LABEL(lyricsLabel), lyrics.c_str());
 	gtk_widget_show_all(lyricsLabel);
 }

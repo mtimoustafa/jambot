@@ -64,7 +64,7 @@ public:
 	void comparisonPolling();
 	void startSnip();
 	void realTimePush(vector<float>);
-	void freqSnip(string);
+	int freqSnip(string);
 	void dataStore(string, vector<SongSection>, string, string);
 	void freqcomparison();
 	static void inputData(vector<float>);
