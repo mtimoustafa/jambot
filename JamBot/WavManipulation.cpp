@@ -759,10 +759,8 @@ int WavManipulation::freqSnip(string csvname){
 	return 0;
 }
 void WavManipulation::start(string fileName){
-	int err = freqSnip(fileName);
-	while (err > 0){
-		err = freqSnip(fileName);
-	}
+	freqSnip(fileName);
+	JamBot::initialReading(true);	//Tell JamBot to start other threads
 	freqcomparison();
 }
 void WavManipulation::stop(){
