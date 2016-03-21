@@ -76,12 +76,10 @@ class OptiAlgo
 		double FreqInClass(double input, FreqClassIDs flClass);
 		double TempoInClass(double input, TempoClassIDs flClass);
 		double IntensInClass(double input, IntensClassIDs flClass);
-		double BeatinessInClass(double input, BeatinessClassIDs flClass);
 		// Outputs
 		double ROutClass(double input, RGBClassIDs flClass);
 		double GOutClass(double input, RGBClassIDs flClass);
 		double BOutClass(double input, RGBClassIDs flClass);
-		//double WOutClass(double input, WClassIDs flClass);
 
 		// Cutoffs for computing modified output classes
 		map <RGBClassIDs, double> Rcutoff;
@@ -106,22 +104,25 @@ class OptiAlgo
 
 	public:
 		FLSystem();
-		LightsInfo Infer(AudioProps input, array<OutParams, 3> colorMapping); // Runs the fuzzy logic system
+		LightsInfo Infer(AudioProps, array<OutParams, 3>); // Runs the fuzzy logic system
 	};
 
 	bool terminate;
 	array<OutParams, 3> color_scheme; // Set by GUI to tell FL algorithms how to map colors to inputs
+	SECTION current_section;
+	static bool song_selected;
+	static bool auto_strobe;
 
 public:
 	OptiAlgo();
 
-	static bool receive_audio_input_sample(AudioInfo audio_sample); // returns false if internal buffer is full
-	static bool receive_song_section(SECTION audio_sample); // returns false if internal buffer is full
+	static bool receive_audio_input_sample(AudioInfo); // returns false if internal buffer is full
+	static bool receive_song_section(SECTION); // returns false if internal buffer is full
 
 	void test_lights();
 	void start_algo();
-	void start(bool);
-	void start(bool, array<OutParams, 3>);
+	void start(bool song_selected, bool auto_strobe);
+	void start(bool, array<OutParams, 3>, bool);
 	void stop();
 };
 

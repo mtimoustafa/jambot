@@ -49,6 +49,7 @@ void OptiAlgo::AudioProps::ClearProps()
 	delta_harmonic_freq_avg = 0.0;
 	delta_anomaly_freq_avg = 0.0;
 	tempo_avg = 0.0;
+	delta_tempo_avg = 0.0;
 	loudness_avg = 0.0;
 	loudness_nomax_avg = 0.0;
 	loudness_max_avg = 0.0;
@@ -58,9 +59,10 @@ void OptiAlgo::AudioProps::ClearProps()
 	delta_harmonic_freq_hist.clear();
 	delta_anomaly_freq_hist.clear();
 	tempo_hist.clear();
+	delta_tempo_hist.clear();
 	loudness_hist.clear();
-	loudness_max_hist.clear();
 	loudness_nomax_hist.clear();
+	loudness_max_hist.clear();
 	beatiness_hist.clear();
 }
 
@@ -302,40 +304,6 @@ double OptiAlgo::FLSystem::IntensInClass(double input, IntensClassIDs flClass) {
 	}
 	return mu;
 }
-
-//// TODO: implement beatiness' values
-//double OptiAlgo::FLSystem::BeatinessInClass(double input, BeatinessClassIDs flClass) {
-//	double mu;
-//	switch (flClass) {
-//	case notbeaty:
-//		if (input <= 3000) mu = 1.0;
-//		else if (input < 3500) mu = 1.0 - (input - 3000) / (3500 - 3000);
-//		else mu = 0.0;
-//		break;
-//	case sbeaty:
-//		if (input <= 3150) mu = 0.0;
-//		else if (input <= 4000) mu = (input - 3150) / (4000 - 3150);
-//		else if (input < 4800) mu = 1.0 - (input - 4000) / (4800 - 4000);
-//		else mu = 0.0;
-//		break;
-//	case beaty:
-//		if (input <= 3150) mu = 0.0;
-//		else if (input <= 4000) mu = (input - 3150) / (4000 - 3150);
-//		else if (input < 4800) mu = 1.0 - (input - 4000) / (4800 - 4000);
-//		else mu = 0.0;
-//		break;
-//	case vbeaty:
-//		if (input <= 4200) mu = 0.0;
-//		else if (input < 5000) mu = (input - 4200) / (5000 - 4200);
-//		else mu = 1.0;
-//		break;
-//	default:
-//		Helpers::print_debug("ERROR: undefined beatiness class requested.\n");
-//		mu = 0.0;
-//		break;
-//	}
-//	return mu;
-//}
 
 double OptiAlgo::FLSystem::ROutClass(double input, RGBClassIDs flClass) {
 	double none[] = { 0.0-85.0, 0.0, 85.0 };
@@ -665,21 +633,26 @@ LightsInfo OptiAlgo::FLSystem::Infer(AudioProps input, array<OutParams, 3> color
 	out_str << "\n";
 
 
-	if (input.beatiness_avg > BEATINESS_LOUDNESS_THRESH && max(TempoInClass(input.tempo_avg, fast), TempoInClass(input.tempo_avg, vfast)) > BEATINESS_TEMPO_THRESH) {
-		if (isStrobing <= 0) {
-			// For strobing, just using speed as tempo_avg causes a lag of a 16th note (quarter of a beat)
-			// (instead of falling on the next 'ta', it falls on the 'ka' after that, in the ta-ka-di-mi system)
-			// Dividing by 5 gives you one 16th note; multiplying by 4 sets it for one quarter note (one beat)
-			strobing_speed = (int)(4 * input.tempo_avg / 5);
-			while (strobing_speed <= 255) strobing_speed *= 2; // Double it to make strobing look nice
-			strobing_speed /= 2; // Compensate for overshoot
-		}
-		out_crisp.strobing_speed = (int)strobing_speed;
-		isStrobing = STROBING_COOLDOWN;
+	if (song_selected) {
+		// TODO: whether to strobe is specified by values from GUI; talk to Brandon and Emerson to pass it through song_section_buffer
 	}
-	else {
-		if (isStrobing > 0) isStrobing--;
-		else strobing_speed = 0;
+	else if (auto_strobe) {
+		if (input.beatiness_avg > BEATINESS_LOUDNESS_THRESH && max(TempoInClass(input.tempo_avg, fast), TempoInClass(input.tempo_avg, vfast)) > BEATINESS_TEMPO_THRESH) {
+			if (isStrobing <= 0) {
+				// For strobing, just using speed as tempo_avg causes a lag of a 16th note (quarter of a beat)
+				// (instead of falling on the next 'ta', it falls on the 'ka' after that, in the ta-ka-di-mi system)
+				// Dividing by 5 gives you one 16th note; multiplying by 4 sets it for one quarter note (one beat)
+				strobing_speed = (int)(4 * input.tempo_avg / 5);
+				while (strobing_speed <= 255) strobing_speed *= 2; // Double it to make strobing look nice
+				strobing_speed /= 2; // Compensate for overshoot
+			}
+			out_crisp.strobing_speed = (int)strobing_speed;
+			isStrobing = STROBING_COOLDOWN;
+		}
+		else {
+			if (isStrobing > 0) isStrobing--;
+			else strobing_speed = 0;
+		}
 	}
 
 
@@ -701,14 +674,23 @@ LightsInfo OptiAlgo::FLSystem::Infer(AudioProps input, array<OutParams, 3> color
 static queue<AudioInfo> audio_buffer = queue<AudioInfo>();
 static queue<SECTION> song_section_buffer = queue<SECTION>();
 
+bool OptiAlgo::song_selected = false;
+bool OptiAlgo::auto_strobe = false;
+
 OptiAlgo::OptiAlgo()
 {
-	srand(static_cast<unsigned int>(time(NULL)));
 	audio_buffer = queue<AudioInfo>();
-	terminate = false;
+	song_section_buffer = queue<SECTION>();
+
+	current_section = verse;
+
 	color_scheme[0] = r;
 	color_scheme[1] = b;
 	color_scheme[2] = g;
+
+	song_selected = false;
+	auto_strobe = false;
+	terminate = false;
 }
 
 bool OptiAlgo::receive_audio_input_sample(AudioInfo audio_sample)
@@ -779,6 +761,9 @@ void OptiAlgo::start_algo()
 	// Initialize input variables
 	AudioInfo audio_sample, smoothed_input;
 	AudioProps input = AudioProps();
+	AudioProps input_prev_section = AudioProps();
+	AudioProps temp;
+	SECTION new_section;
 	double cur_freq, cur_tempo, cur_loud;
 	bool got_freq, got_tempo, got_loud;
 	int nudges_to_silence = NUDGES_TO_SILENCE;
@@ -815,15 +800,19 @@ void OptiAlgo::start_algo()
 			got_loud = audio_sample.get_loudness(cur_loud);
 			audio_buffer.pop();
 
-			// Flush buffers if section changes
-			// TODO: test section change
-			if (!song_section_buffer.empty()) {
-				//Helpers::print_debug("[FL] Section change!\n");
-				input.freq_hist.clear();
-				input.tempo_hist.clear();
-				input.loudness_hist.clear();
-				input.loudness_max_hist.clear();
-				input.loudness_nomax_hist.clear();
+			// Switch input context if section changes
+			if (song_selected && !song_section_buffer.empty()) {
+				new_section = song_section_buffer.front();
+				if (new_section != current_section) {
+					Helpers::print_debug("[FL] Detected section change; switching input context.\n");
+
+					current_section = new_section;
+
+					temp = input;
+					input = input_prev_section;
+					input_prev_section = AudioProps(temp);
+				}
+				song_section_buffer.pop();
 			}
 
 			// Are we still silent?
@@ -985,16 +974,20 @@ void OptiAlgo::start_algo()
 	else Helpers::print_debug("OptiAlgo: stopped.\n");
 }
 
-void OptiAlgo::start(bool songSelected)
+void OptiAlgo::start(bool song_selected, bool auto_strobe = false)
 {
+	if (song_selected) auto_strobe = false;
+	this->auto_strobe = auto_strobe;
+
 	start_algo();
 	//test_lights();
 }
 
-void OptiAlgo::start(bool songSelected, array<OutParams, 3> color_scheme)
+void OptiAlgo::start(bool song_selected, array<OutParams, 3> color_scheme, bool auto_strobe = false)
 {
 	this->color_scheme = color_scheme;
-	start(songSelected);
+
+	start(song_selected, auto_strobe);
 }
 
 void OptiAlgo::stop()
