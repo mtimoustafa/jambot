@@ -274,6 +274,26 @@ void WavManipulation::startanalysis(){
 	dataStore("Hey Jude VCV", secs, "C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VCV.wav", 
 		"C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VCV.txt");
 	freqSnip("Hey Jude VCV.csv");
+	secs.push_back(SongSection("Verse", 0.8));
+	secs.push_back(SongSection("Chorus1", 24.8));
+	secs.push_back(SongSection("Chorus2", 53.4));
+	dataStore("Hey Jude VCC", secs, "C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VCC.wav",
+		"C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VCC.txt");
+	freqSnip("Hey Jude VCC.csv");
+	//VVC
+	//secs.push_back(SongSection("Verse1", 0.8));
+	//secs.push_back(SongSection("Verse2", 24));
+	//secs.push_back(SongSection("Chorus", 47.8));	 
+	//dataStore("Hey Jude VVC", secs, "C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VVC.wav",
+	//	"C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VVC.txt");
+	//freqSnip("Hey Jude VVC.csv");
+	////VCV
+	//secs.push_back(SongSection("Verse1", 0.8));
+	//secs.push_back(SongSection("Chorus", 24.8));
+	//secs.push_back(SongSection("Verse2", 53.6));
+	//dataStore("Hey Jude VCV", secs, "C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VCV.wav", 
+	//	"C:\\Users\\emerson\\Documents\\School\\FYDP\\Sample Music\\Hey Jude VCV.txt");
+	//freqSnip("Hey Jude VCV.csv");
 	start("Test");
 	//parseTxt("testlyrics");
 }
@@ -466,14 +486,15 @@ void WavManipulation::freqcomparison(){
 			if (kill)
 				break;
 		}
+		duration = 0;
 		//clearqueue();
 		//checkfrequency = true;
 		try{
 			while (j < NUM_FREQ){
 				while (input.empty()){
 					if (kill){
-						return; 
-					} 
+						return;
+					}
 				}
 				if (inFreq != 0.0)
 					freqdiff.push_back((input.front() - inFreq));
@@ -494,30 +515,30 @@ void WavManipulation::freqcomparison(){
 				vdiff.push_back(diff2);
 
 				if (diff1 < diff2){
-					choruscount += 1;
+					choruscount += 2;
 				}
 				else if (diff2 < diff1){
-					versecount += 1;
+					versecount += 2;
 				}
 				else{}
+
 
 				aveFreq += inFreq;
 				avechorus += chorus[j];
 				aveverse += verse[j];
 				j++;
 			}
-			duration = 0;
 			j = 0;
 			if (first){
 				for (int i = 0; i < NUM_FREQ - 1; i++){
 
 					if (abs(chorusdiff[i] - freqdiff[i])
 						< abs(versediff[i] - freqdiff[i])){
-						choruscount += 3;
+						choruscount += 4;
 					}
 					else if (abs(chorusdiff[i] - freqdiff[i])
 						> abs(versediff[i] - freqdiff[i])){
-						versecount += 3;
+						versecount += 4;
 					}
 					else{}
 				}
@@ -527,16 +548,15 @@ void WavManipulation::freqcomparison(){
 
 					if (abs(chorusdiff[i + NUM_DIFF] - freqdiff[i])
 						< abs(versediff[i + NUM_DIFF] - freqdiff[i])){
-						choruscount += 3;
+						choruscount += 4;
 					}
 					else if (abs(chorusdiff[i + NUM_DIFF] - freqdiff[i])
 						> abs(versediff[i + NUM_DIFF] - freqdiff[i])){
-						versecount += 3;
+						versecount += 4;
 					}
 					else{}
 				}
 			}
-
 			aveFreq = aveFreq / freq.size();
 			avechorus = avechorus / chorus.size();
 			aveverse = aveverse / verse.size();
@@ -550,7 +570,7 @@ void WavManipulation::freqcomparison(){
 			}
 			else{}
 
-  			freqdiff.clear();
+			freqdiff.clear();
 			freq.clear();
 			cdiff.clear();
 			vdiff.clear();
@@ -629,8 +649,9 @@ void WavManipulation::freqcomparison(){
 				choruscount = versecount = 0;
 				inFreq = 0.0;
 				first = true;
+
+
 			}
-   			
 		}
 		catch (exception e){
 			err_str = "";
@@ -639,10 +660,9 @@ void WavManipulation::freqcomparison(){
 			strcat(err_str, "\n");
 			Helpers::print_debug(err_str);
 		}
-
 	}
-	if (kill) Helpers::print_debug("WavManipulation: terminated.\n");
-	else Helpers::print_debug("WavManipulation: stopped.\n");
+		if (kill) Helpers::print_debug("WavManipulation: terminated.\n");
+		else Helpers::print_debug("WavManipulation: stopped.\n");
 }
 bool WavManipulation::checklyricrepeats(string name){
 	for (int i = 0; i < lyrics.size(); i++){
@@ -761,6 +781,7 @@ int WavManipulation::freqSnip(string csvname){
 void WavManipulation::start(string fileName){
 	freqSnip(fileName);
 	JamBot::initialReading(true);	//Tell JamBot to start other threads
+	//freqSnip(fileName);
 	freqcomparison();
 }
 void WavManipulation::stop(){

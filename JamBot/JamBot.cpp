@@ -537,7 +537,7 @@ static void displayLyricsNonmodal(GtkWidget *widget, gpointer window)
 
 	gtk_box_pack_start(GTK_BOX(GTK_DIALOG(lyricsDialog)->vbox), lyricsLabel, false, false, 5);
 
-	gtk_label_set_justify(GTK_LABEL(lyricsLabel), GTK_JUSTIFY_FILL);
+	gtk_label_set_justify(GTK_LABEL(lyricsLabel), GTK_JUSTIFY_LEFT);
 
 	gtk_widget_show_all(lyricsDialog);
 }
