@@ -5,7 +5,7 @@
 
 using namespace std;
 
-enum OutParams { r, b, g };
+enum OutParams { r, g, b };
 
 class AudioInfo
 {

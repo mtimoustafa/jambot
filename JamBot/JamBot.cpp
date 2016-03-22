@@ -13,6 +13,7 @@
 #include <fstream>
 #include <string>
 #include <deque>
+#include <array>
 
 #define MAX_LOADSTRING 100
 
@@ -45,7 +46,8 @@ void CloseAllThreads();
 void ErrorHandler(LPTSTR lpszFunction);
 const gchar *textInput;
 GtkWidget *window, *lyricsEntry, *lyricsLabel, *intensityProgBarInstru, *intensityProgBarVoice, *freqLabelInstru, *freqLabelVoice, *statusLabel;
-GtkWidget *freeplay, *concert;	// For use in selecting run-mode
+GtkWidget *freeplay, *concert;	//For use in selecting run-mode
+GtkWidget *freqHighColours, *freqLowColours, *tempoColours;	//For use in selecting colours
 GtkWidget *textEntry, *songSelectBox, *numChannelBox;
 GList *songList = NULL;
 string waveFilePath, lyricsPath;
@@ -73,11 +75,12 @@ cairo_t *crWave;
 bool doneReading = false;
 bool autoStrobe = false;
 bool concertMode = false;
+array<OutParams, 3> colourScheme;
 
 // Functions to run components in threads
 DWORD WINAPI AudioInputThread(LPVOID lpParam) { inputChannelReader = InputChannelReader(); Helpers::print_debug("START audio input.\n"); inputChannelReader.start(songSelectedFlag, numberOfChannels); return 0; }
 DWORD WINAPI WavGenThread(LPVOID lpParam) { wavmanipulation = WavManipulation(); Helpers::print_debug("START wav manip.\n"); wavmanipulation.start(csvFileName); return 0; }
-DWORD WINAPI OptiAlgoThread(LPVOID lpParam) { optiAlgo = OptiAlgo(); Helpers::print_debug("START opti algo.\n"); optiAlgo.start(concertMode, autoStrobe); return 0; }
+DWORD WINAPI OptiAlgoThread(LPVOID lpParam) { optiAlgo = OptiAlgo(); Helpers::print_debug("START opti algo.\n"); optiAlgo.start(concertMode, colourScheme, autoStrobe); return 0; }
 DWORD WINAPI AudioOutputThread(LPVOID lpParam) { lightsTest = DMXOutput(); Helpers::print_debug("START audio output.\n"); lightsTest.start(); return 0; }
 
 
@@ -609,7 +612,12 @@ void updateGlobals()
 		numberOfChannels = 1;
 
 	// Concert mode enabled?
-	concertMode = numberOfChannels == 2 && position > 0 || csvFileName.compare("None.csv") != 0;
+	concertMode = numberOfChannels == 2 && (position > 0 || csvFileName.compare("None.csv") != 0);
+
+	// Get user selected colours
+	colourScheme[0] = (OutParams)gtk_combo_box_get_active(GTK_COMBO_BOX(freqLowColours));	//Low freq
+	colourScheme[1] = (OutParams)gtk_combo_box_get_active(GTK_COMBO_BOX(freqHighColours));	//High freq
+	colourScheme[2] = (OutParams)gtk_combo_box_get_active(GTK_COMBO_BOX(tempoColours));	//High tempo
 }
 
 static void startJamming(GtkWidget *button) {
@@ -809,13 +817,13 @@ int gtkStart(int argc, char* argv[])
 {
 	GtkWidget *window, *overAllWindowBox;
 	GtkWidget *emersonButtonBox;
-	GtkWidget *firstLayerBox, *lyricsBox, *songControlBox, *songInputBox, *songControlOverAllBox, *voiceProgressBox, *outputLyrics, *testButton, *songStatusBox, *freqColours, *tempoColours;
-	GtkWidget *displayBox, *playStopBox;
+	GtkWidget *firstLayerBox, *lyricsBox, *songControlBox, *songInputBox, *songControlOverAllBox, *voiceProgressBox, *outputLyrics, *testButton, *songStatusBox;
+	GtkWidget *freqBox, *tempoBox, *freqHighLabelCol, *freqLowLabelCol, *tempoLabelCol;
 	GtkWidget *secondLayerBox, *tabBox, *songProgressBox;
 	GtkWidget *thirdLayerBox, *sectionBox;
 	GtkWidget *playButton, *progressBar, *progressBarTest, *showModalDialog, *showNonmodalDialog, *fileSelectDialog, *emersonButton;
 	GtkWidget *startJambot, *graphBox;
-	GtkWidget *label;
+	GtkWidget *label, *freqLabel, *tempoLabel, *freqHighListLabel, *freqLowListLabel, *tempoListLabel;
 
 	gtk_init(&argc, &argv);
 	lyrics = "";
@@ -847,6 +855,16 @@ int gtkStart(int argc, char* argv[])
 	/*radio buttons for number of channels*/
 	numChannelBox = gtk_vbox_new(false, 0);
 	gtk_box_pack_start(GTK_BOX(firstLayerBox), numChannelBox, true, true, 5);
+
+	/*dropdowns for frequency colour changer*/
+	freqBox = gtk_vbox_new(false, 0);
+	gtk_box_pack_start(GTK_BOX(firstLayerBox), freqBox, true, true, 5);
+
+	/*dropdowns for tempo colour changer*/
+	tempoBox = gtk_vbox_new(false, 0);
+	gtk_box_pack_start(GTK_BOX(firstLayerBox), tempoBox, true, true, 5);
+	tempoLabelCol = gtk_hbox_new(false, 0);
+	gtk_box_pack_start(GTK_BOX(tempoBox), tempoLabelCol, true, true, 5);
 
 	/*second layer box, contains song value tab box*/
 	secondLayerBox = gtk_hbox_new(false, 0);
@@ -1009,6 +1027,54 @@ int gtkStart(int argc, char* argv[])
 	//gtk_box_pack_start(GTK_BOX(tabBox), tabs, false, false, 5);
 
 	/*========================================== First Layer Part ==========================================*/
+	/*frequency combo boxes*/
+	GtkListStore *freqList = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_STRING);
+	gtk_list_store_insert_with_values(freqList, NULL, -1, 0, "red", 1, "", -1);
+	gtk_list_store_insert_with_values(freqList, NULL, -1, 0, "green", 1, " ", -1);
+	gtk_list_store_insert_with_values(freqList, NULL, -1, 0, "blue", 1, " ", -1);
+
+	freqHighColours = gtk_combo_box_new_with_model(GTK_TREE_MODEL(freqList));
+	freqLowColours = gtk_combo_box_new_with_model(GTK_TREE_MODEL(freqList));
+	tempoColours = gtk_combo_box_new_with_model(GTK_TREE_MODEL(freqList));
+
+	column = gtk_cell_renderer_text_new();
+	gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(freqHighColours), column, TRUE);
+	gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(freqHighColours), column, "cell-background", 0, "text", 1, NULL);
+	gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(freqLowColours), column, TRUE);
+	gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(freqLowColours), column, "cell-background", 0, "text", 1, NULL);
+	gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(tempoColours), column, TRUE);
+	gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(tempoColours), column, "cell-background", 0, "text", 1, NULL);
+
+	gtk_combo_box_set_active(GTK_COMBO_BOX(freqHighColours), 2);
+	gtk_combo_box_set_active(GTK_COMBO_BOX(freqLowColours), 0);
+	gtk_combo_box_set_active(GTK_COMBO_BOX(tempoColours), 1);
+
+	// Frequency lists
+	freqLabel = gtk_label_new("Frequency");
+	gtk_box_pack_start(GTK_BOX(freqBox), freqLabel, true, true, 5);
+	// Start of low frequency list
+	freqLowLabelCol = gtk_hbox_new(false, 0);
+	gtk_box_pack_start(GTK_BOX(freqBox), freqLowLabelCol, true, true, 5);
+	freqLowListLabel = gtk_label_new("Low:");
+	gtk_box_pack_start(GTK_BOX(freqLowLabelCol), freqLowListLabel, true, true, 5);
+	gtk_box_pack_start(GTK_BOX(freqLowLabelCol), freqLowColours, true, true, 5);
+	// Start of high frequency list
+	freqHighLabelCol = gtk_hbox_new(false, 0);
+	gtk_box_pack_start(GTK_BOX(freqBox), freqHighLabelCol, true, true, 5);
+	freqHighListLabel = gtk_label_new("High:");
+	gtk_box_pack_start(GTK_BOX(freqHighLabelCol), freqHighListLabel, true, true, 5);
+	gtk_box_pack_start(GTK_BOX(freqHighLabelCol), freqHighColours, true, true, 5);
+
+	// Tempo lists
+	tempoLabel = gtk_label_new("Tempo");
+	gtk_box_pack_start(GTK_BOX(tempoBox), tempoLabel, true, true, 5);
+	// Start of high tempo list
+	tempoLabelCol = gtk_hbox_new(false, 0);
+	gtk_box_pack_start(GTK_BOX(tempoBox), tempoLabelCol, true, true, 5);
+	tempoLabel = gtk_label_new("High:");
+	gtk_box_pack_start(GTK_BOX(tempoLabelCol), tempoLabel, true, true, 5);
+	gtk_box_pack_start(GTK_BOX(tempoLabelCol), tempoColours, true, true, 5);
+
 	/*play button*/
 	playButton = gtk_button_new_with_label("Play");
 	gtk_box_pack_start(GTK_BOX(songControlBox), playButton, true, true, 5);
@@ -1032,9 +1098,6 @@ int gtkStart(int argc, char* argv[])
 	GtkCellRenderer *column2;
 	//gtk_init(&argc, &argv);
 
-	GtkListStore *channelListStore = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_STRING);
-	
-	gtk_list_store_insert_with_values(channelListStore, NULL, 0, 0, "red", 1, "Single Channel", -1);
 	freeplay = gtk_radio_button_new_with_label(NULL, "Freeplay");
 	gtk_box_pack_start(GTK_BOX(numChannelBox), freeplay, true, true, 5);
 
