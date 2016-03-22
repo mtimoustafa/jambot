@@ -6,19 +6,13 @@
 #include "soundfile.h"
 
 using namespace std;
-class SectionLyric{
-public:
-	string lyric;
-	int numLines;
-	SectionLyric(string, int);
-	~SectionLyric();
-};
 
 class SongSection{
 public:
 	string Name;
 	double startTime;
-	SongSection(string, double);
+	bool strobe;
+	SongSection(string, double, bool);
 	~SongSection();
 };
 class SecAnlys{
@@ -27,8 +21,9 @@ public:
 	vector<float> pitch;
 	int duration;
 	string lyric;
+	bool strobe; 
 	SecAnlys();
-	SecAnlys(string, vector<float>, int);
+	SecAnlys(string, vector<float>, int, bool);
 	SecAnlys(string, string);
 	~SecAnlys();
 };

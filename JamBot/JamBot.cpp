@@ -94,6 +94,7 @@ INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 using namespace std;
 
 // Get the horizontal and vertical screen sizes in pixel
+// Depricated
 void GetDesktopResolution(int& horizontal, int& vertical)
 {
 	RECT desktop;
@@ -117,6 +118,8 @@ void JamBot::updateLyrics(string text) {
 	//int vertical = 0;
 	//GetDesktopResolution(horizontal, vertical);
 	lyrics = text + "\n";
+
+	//Depricated, using JUSTIFY_FILL instead
 	//temp = lyrics;
 	//istringstream iss(text); 
 	//vector<string> tokens;
@@ -144,6 +147,7 @@ void JamBot::updateLyrics(string text) {
 	//font = font + to_string(font_size);
 	//font_desc = pango_font_description_from_string(font.c_str());
 	//gtk_widget_modify_font(lyricsLabel, font_desc);
+	gtk_label_set_justify(GTK_LABEL(lyricsLabel), GTK_JUSTIFY_FILL);
 	gtk_label_set_text(GTK_LABEL(lyricsLabel), lyrics.c_str());
 	gtk_widget_show_all(lyricsLabel);
 }
@@ -300,15 +304,14 @@ static void submitSongSection() {
 		for (int i = 0; i < sectionNameDetails.size(); i++) {
 			name = gtk_entry_get_text(GTK_ENTRY(sectionNameDetails[i]));
 			time = gtk_entry_get_text(GTK_ENTRY(sectionTimeDetails[i]));
-			section.push_back(SongSection(name, strtod((char*)time, NULL)));
+			section.push_back(SongSection(name, strtod((char*)time,NULL), false)); // Add check box
 		}
 		int position = lyricsPath.find_last_of('/\\');
 		string fileName = lyricsPath.substr(position + 1);
 		fileName = fileName.substr(0, fileName.size() - 4);
 
-		masterCSV.open("CSV\\masterCSV.csv", ios_base::app);
-		masterCSV << fileName + "\n";
-		masterCSV.close();
+		wavmanipulation.dataStore(fileName, section, waveFilePath, lyricsPath);
+
 
 		bool submit = true;
 		for (int i = 0; i < csvList.size(); i++)
@@ -320,7 +323,10 @@ static void submitSongSection() {
 		}
 		if (submit)
 		{
-			wavmanipulation.dataStore(fileName, section, waveFilePath, lyricsPath);
+			masterCSV.open("CSV\\masterCSV.csv", ios_base::app);
+			masterCSV << fileName + "\n";
+			masterCSV.close();
+
 			csvList.push_back(fileName);
 
 			gtk_list_store_insert_with_values(liststore, NULL, -1, 0, "red", 1, (char*)fileName.c_str(), -1);
