@@ -506,7 +506,7 @@ void WavManipulation::freqcomparison(){
 				aveverse += verse[j];
 				j++;
 			}
-
+			duration = 0;
 			j = 0;
 			if (first){
 				for (int i = 0; i < NUM_FREQ - 1; i++){

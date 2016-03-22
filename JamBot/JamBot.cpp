@@ -108,26 +108,38 @@ void GetDesktopResolution(int& horizontal, int& vertical)
 void JamBot::updateLyrics(string text) {
 	int font_size = 35;
 	int max_size = 0;
+	string font = "Ariel Bold ";
+	string temp = "";
 	//int horizontal = 0;
 	//int vertical = 0;
 	//GetDesktopResolution(horizontal, vertical);
 	lyrics = text + "\n";
+	//temp = lyrics;
 	//istringstream iss(text); 
 	//vector<string> tokens;
-	//copy(istream_iterator<string>(iss),
-	//	istream_iterator<string>(),
-	//	back_inserter(tokens));
+	//std::string delimiter = "\n";
+
+	//size_t pos = 0;
+	//std::string token;
+	//while ((pos = temp.find(delimiter)) != std::string::npos) {
+	//	token = temp.substr(0, pos);
+	//	tokens.push_back(token);
+	//	//std::cout << token << std::endl;
+	//	temp.erase(0, pos + delimiter.length());
+	//}
+	//tokens.push_back(token);
+	////std::cout << lyrics << std::endl;
 	//for (int i = 0; i < tokens.size(); i++){
 	//	if (tokens[i].length() > max_size)
 	//		max_size = tokens[i].length();
 	//}
 	//if (max_size >= 50){
-	//	font_size = max_size/2 + 20;
+	//	font_size = max_size/1.5;
 	//}
+
 	//PangoFontDescription *font_desc = pango_font_description_new();
-	//pango_font_description_set_family(font_desc, "Ariel Bold");
-	//pango_font_description_set_size(font_desc, font_size);
-	////font_desc = pango_font_description_from_string("Ariel Bold 35");
+	//font = font + to_string(font_size);
+	//font_desc = pango_font_description_from_string(font.c_str());
 	//gtk_widget_modify_font(lyricsLabel, font_desc);
 	gtk_label_set_text(GTK_LABEL(lyricsLabel), lyrics.c_str());
 	gtk_widget_show_all(lyricsLabel);
@@ -519,11 +531,13 @@ static void displayLyricsNonmodal(GtkWidget *widget, gpointer window)
 
 	lyricsLabel = gtk_label_new(lyrics.c_str());
 	PangoFontDescription *font_desc;
-	font_desc = pango_font_description_from_string("Ariel Bold 35");
+	font_desc = pango_font_description_from_string("Ariel Bold 30");
 	gtk_widget_modify_font(lyricsLabel, font_desc);
 	pango_font_description_free(font_desc);
 
 	gtk_box_pack_start(GTK_BOX(GTK_DIALOG(lyricsDialog)->vbox), lyricsLabel, false, false, 5);
+
+	gtk_label_set_justify(GTK_LABEL(lyricsLabel), GTK_JUSTIFY_FILL);
 
 	gtk_widget_show_all(lyricsDialog);
 }
