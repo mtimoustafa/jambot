@@ -103,7 +103,7 @@ double OptiAlgo::AudioProps::tempo_add_and_avg(double val)
 {
 	double avg = 0.0;
 	tempo_hist.push_front(val);
-	if (tempo_hist.size() > IN_HIST_BUF_SIZE) tempo_hist.pop_back();
+	if (tempo_hist.size() > 1) tempo_hist.pop_back();
 	for each (double val in tempo_hist)
 		avg += val;
 	avg /= (double)tempo_hist.size();
@@ -633,10 +633,10 @@ LightsInfo OptiAlgo::FLSystem::Infer(AudioProps input, array<OutParams, 3> color
 	out_str << "\n";
 
 
-	if (song_selected) {
+	if (concert_mode) {
 		// TODO: whether to strobe is specified by values from GUI; talk to Brandon and Emerson to pass it through song_section_buffer
 	}
-	else if (auto_strobe) {
+	else if (allow_strobing) {
 		if (input.beatiness_avg > BEATINESS_LOUDNESS_THRESH && max(TempoInClass(input.tempo_avg, fast), TempoInClass(input.tempo_avg, vfast)) > BEATINESS_TEMPO_THRESH) {
 			if (isStrobing <= 0) {
 				// For strobing, just using speed as tempo_avg causes a lag of a 16th note (quarter of a beat)
@@ -672,15 +672,15 @@ LightsInfo OptiAlgo::FLSystem::Infer(AudioProps input, array<OutParams, 3> color
 #pragma region OptiAlgo
 
 static queue<AudioInfo> audio_buffer = queue<AudioInfo>();
-static queue<SECTION> song_section_buffer = queue<SECTION>();
+static queue<SectionInfo> song_section_buffer = queue<SectionInfo>();
 
-bool OptiAlgo::song_selected = false;
-bool OptiAlgo::auto_strobe = false;
+bool OptiAlgo::concert_mode = false;
+bool OptiAlgo::allow_strobing = false;
 
 OptiAlgo::OptiAlgo()
 {
 	audio_buffer = queue<AudioInfo>();
-	song_section_buffer = queue<SECTION>();
+	song_section_buffer = queue<SectionInfo>();
 
 	current_section = verse;
 
@@ -688,8 +688,8 @@ OptiAlgo::OptiAlgo()
 	color_scheme[1] = b;
 	color_scheme[2] = g;
 
-	song_selected = false;
-	auto_strobe = false;
+	concert_mode = false;
+	allow_strobing = false;
 	terminate = false;
 }
 
@@ -700,10 +700,10 @@ bool OptiAlgo::receive_audio_input_sample(AudioInfo audio_sample)
 	return audio_buffer.size() < AUDIO_BUF_SIZE;
 }
 
-bool OptiAlgo::receive_song_section(SECTION audio_sample)
+bool OptiAlgo::receive_song_section(SectionInfo song_section)
 {
 	if (song_section_buffer.size() < AUDIO_BUF_SIZE)
-		song_section_buffer.push(audio_sample);
+		song_section_buffer.push(song_section);
 	return song_section_buffer.size() < AUDIO_BUF_SIZE;
 }
 
@@ -763,7 +763,7 @@ void OptiAlgo::start_algo()
 	AudioProps input = AudioProps();
 	AudioProps input_prev_section = AudioProps();
 	AudioProps temp;
-	SECTION new_section;
+	SectionInfo new_section;
 	double cur_freq, cur_tempo, cur_loud;
 	bool got_freq, got_tempo, got_loud;
 	int nudges_to_silence = NUDGES_TO_SILENCE;
@@ -801,16 +801,17 @@ void OptiAlgo::start_algo()
 			audio_buffer.pop();
 
 			// Switch input context if section changes
-			if (song_selected && !song_section_buffer.empty()) {
+			if (concert_mode && !song_section_buffer.empty()) {
 				new_section = song_section_buffer.front();
-				if (new_section != current_section) {
+				if (new_section.section != current_section) {
 					Helpers::print_debug("[FL] Detected section change; switching input context.\n");
 
-					current_section = new_section;
+					current_section = new_section.section;
+					// TODO: set strobing boolean here
 
-					temp = input;
+					/*temp = input;
 					input = input_prev_section;
-					input_prev_section = AudioProps(temp);
+					input_prev_section = AudioProps(temp);*/
 				}
 				song_section_buffer.pop();
 			}
@@ -868,11 +869,12 @@ void OptiAlgo::start_algo()
 				}
 
 				if (got_tempo) {
-					if (input.tempo_hist.size() >= IN_HIST_BUF_SIZE && abs(cur_tempo - input.tempo_avg) > TEMPO_CLOSENESS_THRESH) {
+					if (input.tempo_hist.size() > 0 && abs(cur_tempo - input.tempo_avg) > TEMPO_CLOSENESS_THRESH) {
 						input.delta_tempo_add_and_avg(cur_tempo);
 						if (input.delta_tempo_hist.size() >= TEMPO_NUDGES_TO_CHANGE) {
-							input.tempo_hist = input.delta_tempo_hist;
-							input.tempo_avg = input.delta_tempo_avg;
+							input.tempo_hist.clear();
+							input.tempo_add_and_avg(cur_tempo);
+							//input.tempo_avg = input.delta_tempo_avg;
 							input.delta_tempo_hist.clear();
 						}
 					}
@@ -962,7 +964,7 @@ void OptiAlgo::start_algo()
 
 		}
 		catch (exception e)
-		{	
+		{
 			err_str = "";
 			strcat(err_str, "ERROR: OptiAlgo: ");
 			strcat(err_str, e.what());
@@ -977,7 +979,7 @@ void OptiAlgo::start_algo()
 void OptiAlgo::start(bool song_selected, bool auto_strobe = false)
 {
 	if (song_selected) auto_strobe = false;
-	this->auto_strobe = auto_strobe;
+	allow_strobing = auto_strobe;
 
 	start_algo();
 	//test_lights();

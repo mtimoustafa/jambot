@@ -1,6 +1,7 @@
 #ifndef CONSTRUCTS_INCLUDE
 #define CONSTRUCTS_INCLUDE
 
+#include <Constants.h>
 #include <deque>
 
 using namespace std;
@@ -29,6 +30,7 @@ public:
 	void set_loudness(double freq);
 	bool get_tempo(double & tempo) const;
 	void set_tempo(double freq);
+	void clear_tempo();
 };
 
 
@@ -45,6 +47,16 @@ public:
 
 	unsigned char * convert_to_output(unsigned char lightsOutput[]);
 	static LightsInfo average_and_smooth(deque<LightsInfo> outputs);
+};
+
+class SectionInfo
+{
+public:
+	SECTION section;
+	bool should_strobe;
+
+	SectionInfo();
+	SectionInfo(SECTION section, bool should_strobe);
 };
 
 #endif

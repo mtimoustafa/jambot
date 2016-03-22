@@ -142,6 +142,9 @@ void AudioInfo::set_tempo(double freq)
 	else
 		*_tempo = freq;
 }
+void AudioInfo::clear_tempo() {
+	_tempo = NULL;
+}
 
 #pragma endregion
 
@@ -236,6 +239,23 @@ LightsInfo LightsInfo::average_and_smooth(deque<LightsInfo> outputs)
 	if (avg.white_intensity < OUT_PARAM_TOO_SMALL_THRESH) avg.white_intensity = 0;
 
 	return avg;
+}
+
+#pragma endregion
+
+
+#pragma region SectionInfo // For sending section info from WavGen to OptiAlgo
+
+SectionInfo::SectionInfo()
+{
+	section = verse;
+	should_strobe = false;
+}
+
+SectionInfo::SectionInfo(SECTION section, bool should_strobe)
+{
+	this->section = section;
+	this->should_strobe = should_strobe;
 }
 
 #pragma endregion

@@ -245,6 +245,11 @@ void InputChannelReader::analyseBuffer(paData *data)
 		//Helpers::print_debug(("[IN] Average sample TEMPO (bpm): " + to_string(tempo.estimateTempo()) + "\n").c_str());
 		tempo.reset();
 	}
+	else
+	{
+		audioSamples.clear_tempo();
+		Helpers::print_debug("[IN] Average sample TEMPO (bpm): -------\n");
+	}
 
 	OptiAlgo::receive_audio_input_sample(audioSamples);	//Send to OptiAlgo
 	JamBot::updateSongValues(frequency, average, tempo.estimateTempo());

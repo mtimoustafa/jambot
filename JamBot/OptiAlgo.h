@@ -110,18 +110,18 @@ class OptiAlgo
 	bool terminate;
 	array<OutParams, 3> color_scheme; // Set by GUI to tell FL algorithms how to map colors to inputs
 	SECTION current_section;
-	static bool song_selected;
-	static bool auto_strobe;
+	static bool concert_mode;
+	static bool allow_strobing;
 
 public:
 	OptiAlgo();
 
 	static bool receive_audio_input_sample(AudioInfo); // returns false if internal buffer is full
-	static bool receive_song_section(SECTION); // returns false if internal buffer is full
+	static bool receive_song_section(SectionInfo); // returns false if internal buffer is full
 
 	void test_lights();
 	void start_algo();
-	void start(bool song_selected, bool auto_strobe);
+	void start(bool, bool);
 	void start(bool, array<OutParams, 3>, bool);
 	void stop();
 };
