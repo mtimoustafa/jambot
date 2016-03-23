@@ -707,7 +707,7 @@ void WavManipulation::parseTxt(string filename){
 		char * err_str;
 		err_str = "";
 		strcat(err_str, "ERROR: WavManipulation: ");
-		strcat(err_str, e.what());
+		strcat(err_str, "File Doesn't Exist");
 		strcat(err_str, "\n");
 		Helpers::print_debug(err_str);
 		return;
