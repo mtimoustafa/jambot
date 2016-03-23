@@ -411,6 +411,11 @@ static void selectWaveFile(GtkWidget *widget) {
 	gtk_widget_destroy(dialog);
 }
 
+static void getCheckBoxValue()
+{
+	autoStrobe = !autoStrobe;
+}
+
 static void selectLyrics(GtkWidget *button, gpointer window) {
 	GtkWidget *dialog;
 	gchar *fileName;
@@ -676,6 +681,8 @@ static void startJamming(GtkWidget *button) {
 
 		if (concertMode)
 		{
+			gint position = gtk_combo_box_get_active(GTK_COMBO_BOX(songSelectBox));
+			csvFileName = csvList[position] + ".csv";
 			gtk_label_set_text(GTK_LABEL(statusLabel), "Concert Mode: Initiated");
 
 			songSelectedFlag = true;
@@ -904,10 +911,9 @@ static void stopUpdating()
 int gtkStart(int argc, char* argv[])
 {
 	GtkWidget *window, *overAllWindowBox;
-	GtkWidget *emersonButtonBox;
-	GtkWidget *lightColourControlBox, *colourControlDropdownLayer, *freqControlBox, *tempoControlBox, *secondLayerBox, *tempLabel, *freqControlFrame, *tempoControlFrame, *radioButtonFrame;
+	GtkWidget *emersonButtonBox, *strobbingCheckbox;
+	GtkWidget *preFirstLayerBox, *secondLayerBox, *tempLabel, *freqControlFrame, *tempoControlFrame, *radioButtonFrame, *checkBoxFrame;
 	GtkWidget *firstLayerBox, *lyricsBox, *songControlBox, *songInputBox, *songControlOverAllBox, *voiceProgressBox, *outputLyrics, *testButton, *songStatusBox;
-	GtkWidget *freqBox, *tempoBox, *freqHighLabelCol, *freqLowLabelCol, *tempoLabelCol;
 	GtkWidget *tabBox, *songProgressBox;
 	GtkWidget *thirdLayerBox, *sectionBox;
 	GtkWidget *playButton, *progressBar, *progressBarTest, *showModalDialog, *showNonmodalDialog, *emersonButton;
@@ -941,30 +947,31 @@ int gtkStart(int argc, char* argv[])
 	firstLayerBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	gtk_box_pack_start(GTK_BOX(overAllWindowBox), firstLayerBox, false, false, 5);
 	gtk_widget_set_size_request(firstLayerBox, 400, 100);
-
-
+	
 	/*radio buttons for number of channels*/
+	GtkWidget *prefirstLayerVbox1 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+	gtk_widget_set_size_request(prefirstLayerVbox1, 90, 100);
+	gtk_box_pack_start(GTK_BOX(firstLayerBox), prefirstLayerVbox1, false, false, 5);
+	
 	radioButtonFrame = gtk_frame_new("Run Mode");
-	gtk_box_pack_start(GTK_BOX(firstLayerBox), radioButtonFrame, false, false, 5);
+	gtk_box_pack_start(GTK_BOX(prefirstLayerVbox1), radioButtonFrame, false, false, 5);
 	numChannelBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 
-	/*dropdowns for tempo colour changer*/
-	lightColourControlBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-	gtk_container_set_border_width(GTK_CONTAINER(firstLayerBox), 0);
-	gtk_box_pack_start(GTK_BOX(firstLayerBox), lightColourControlBox, false, false, 5);
-
-	/*dropdown box for colour changer (control)*/
-	colourControlDropdownLayer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	gtk_box_pack_start(GTK_BOX(lightColourControlBox), colourControlDropdownLayer, false, false, 5);
-
 	/*box for frequency colour control*/
-
-	freqControlBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-	gtk_box_pack_start(GTK_BOX(colourControlDropdownLayer), freqControlBox, false, false, 5);
+	GtkWidget *prefirstLayerVbox2 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+	gtk_box_pack_start(GTK_BOX(firstLayerBox), prefirstLayerVbox2, false, false, 5);
+	freqControlFrame = gtk_frame_new("Frequency");
+	gtk_box_pack_start(GTK_BOX(prefirstLayerVbox2), freqControlFrame, false, false, 5);
 
 	/*box for tempo colour control*/
-	tempoControlBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-	gtk_box_pack_start(GTK_BOX(colourControlDropdownLayer), tempoControlBox, false, false, 5);
+	GtkWidget *prefirstLayerVbox3 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+	gtk_box_pack_start(GTK_BOX(firstLayerBox), prefirstLayerVbox3, false, false, 5);
+	tempoControlFrame = gtk_frame_new("Tempo");
+	gtk_box_pack_start(GTK_BOX(prefirstLayerVbox3), tempoControlFrame, false, false, 5);
+
+	/*check box frame*/
+	checkBoxFrame = gtk_frame_new("Strobing");
+	gtk_box_pack_start(GTK_BOX(prefirstLayerVbox3), checkBoxFrame, false, false, 5);
 
 
 	/*second layer box, contains song value tab box*/
@@ -1161,12 +1168,9 @@ int gtkStart(int argc, char* argv[])
 	/*Frequency Control Box*/
 
 	/*the frame*/
-	freqControlFrame = gtk_frame_new("Frequency");
 	gtk_widget_set_size_request(freqControlFrame, 150, 100);
-	gtk_box_pack_start(GTK_BOX(freqControlBox), freqControlFrame, false, false, 5);
 	GtkWidget *vbox1 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_add(GTK_CONTAINER(freqControlFrame), vbox1);
-
 	GtkWidget *hbox1 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 
 	/*label for low*/
@@ -1189,8 +1193,7 @@ int gtkStart(int argc, char* argv[])
 
 
 	/*Tempo Control Box*/
-	tempoControlFrame = gtk_frame_new("Tempo");
-	gtk_box_pack_start(GTK_BOX(tempoControlBox), tempoControlFrame, false, false, 5);
+	gtk_widget_set_size_request(tempoControlFrame, 150, 40);
 	GtkWidget *hbox3 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	gtk_container_add(GTK_CONTAINER(tempoControlFrame), hbox3);
 
@@ -1199,7 +1202,22 @@ int gtkStart(int argc, char* argv[])
 	gtk_box_pack_start(GTK_BOX(hbox3), tempLabel, false, false, 5);
 
 	/*drop down for high*/
+	gtk_widget_set_valign(tempoControlFrame, GTK_ALIGN_START);
 	gtk_box_pack_start(GTK_BOX(hbox3), tempoColours, false, false, 5);
+
+	/*strobing check box*/
+	gtk_widget_set_size_request(checkBoxFrame, 150, 30);
+	GtkWidget *hbox4 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+	gtk_container_add(GTK_CONTAINER(checkBoxFrame), hbox4);
+
+	/*check box for auto strobing*/
+	strobbingCheckbox = gtk_check_button_new_with_label("Auto Strobing");
+	gtk_widget_set_valign(strobbingCheckbox, GTK_ALIGN_CENTER);
+	gtk_box_pack_start(GTK_BOX(hbox4), strobbingCheckbox, false, false, 5);
+	g_signal_connect(GTK_CHECK_BUTTON(strobbingCheckbox), "toggled", G_CALLBACK(getCheckBoxValue), NULL);
+
+
+
 
 	/*play button*/
 	playButton = gtk_button_new_with_label("Play");
@@ -1222,11 +1240,11 @@ int gtkStart(int argc, char* argv[])
 	gtk_container_add(GTK_CONTAINER(radioButtonFrame), numChannelBox);
 
 	freeplay = gtk_radio_button_new_with_label(NULL, "Freeplay");
-	gtk_box_pack_start(GTK_BOX(numChannelBox), freeplay, false, false, 5);
+	gtk_box_pack_start(GTK_BOX(numChannelBox), freeplay, true, true, 5);
 
 	concert = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(freeplay), "Concert");
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(concert), true);
-	gtk_box_pack_start(GTK_BOX(numChannelBox), concert, false, false, 5);
+	gtk_box_pack_start(GTK_BOX(numChannelBox), concert, true, true, 5);
 
 	/*status label*/
 	statusLabel = gtk_label_new("Standby");
