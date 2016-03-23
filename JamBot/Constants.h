@@ -47,10 +47,10 @@ const unsigned int OUT_HIST_BUF_SIZE = 10;
 const unsigned int LOUDNESS_MAX_DETECT_BUF_SIZE = 5;
 
 const double MAX_LOUDNESS_THRESH = 500.0;
-const double BEATINESS_LOUDNESS_THRESH = 300.0;
+const double BEATINESS_LOUDNESS_THRESH = 700.0;
 const double BEATINESS_TEMPO_THRESH = 0.5;
 const int MAX_LOUD_INSERTION_COOLDOWN = 4;
-const int STROBING_COOLDOWN = 3;
+const int STROBING_COOLDOWN = 7;
 const double SILENCE_THRESH = 40.0;
 const double FREQ_VALUES_DISTANCE_THRESH = 50.0;
 const double FREQ_HARMONIC_DETECT_THRESH = 10.0;

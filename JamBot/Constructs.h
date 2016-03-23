@@ -42,6 +42,7 @@ public:
 
 	LightsInfo();
 	LightsInfo(bool centered);
+	void Reset();
 
 	bool operator == (const LightsInfo& b) const;
 

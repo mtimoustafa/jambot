@@ -167,6 +167,16 @@ double OptiAlgo::AudioProps::beatiness_hist_add_and_avg(double val)
 	return avg;
 }
 
+string OptiAlgo::AudioProps::print_hist(deque<double> hist) {
+	stringstream out_hist;
+	out_hist << "[ ";
+	for each (double item in hist) {
+		out_hist << item << " ";
+	}
+	out_hist << "]\n";
+	return out_hist.str();
+}
+
 #pragma endregion
 
 #pragma region FuzzyLogic
@@ -616,33 +626,28 @@ LightsInfo OptiAlgo::FLSystem::Infer(AudioProps input, array<OutParams, 3> color
 	ReassignCutoff(color_scheme[1], cutoff2);
 	ReassignCutoff(color_scheme[2], cutoff3);
 
-	out_str << "Rcutoff: ";
-	for (int i = 0; i < 4; i++) {
-		out_str << to_string((RGBClassIDs)i) << ": " << Rcutoff[(RGBClassIDs)i] << "; ";
-	}
-	out_str << "\n";
-	out_str << "Bcutoff: ";
-	for (int i = 0; i < 4; i++) {
-		out_str << to_string((RGBClassIDs)i) << ": " << Bcutoff[(RGBClassIDs)i] << "; ";
-	}
-	out_str << "\n";
-	out_str << "Gcutoff: ";
-	for (int i = 0; i < 4; i++) {
-		out_str << to_string((RGBClassIDs)i) << ": " << Gcutoff[(RGBClassIDs)i] << "; ";
-	}
-	out_str << "\n";
+	//out_str << "Rcutoff: ";
+	//for (int i = 0; i < 4; i++) {
+	//	out_str << to_string((RGBClassIDs)i) << ": " << Rcutoff[(RGBClassIDs)i] << "; ";
+	//}
+	//out_str << "\n";
+	//out_str << "Bcutoff: ";
+	//for (int i = 0; i < 4; i++) {
+	//	out_str << to_string((RGBClassIDs)i) << ": " << Bcutoff[(RGBClassIDs)i] << "; ";
+	//}
+	//out_str << "\n";
+	//out_str << "Gcutoff: ";
+	//for (int i = 0; i < 4; i++) {
+	//	out_str << to_string((RGBClassIDs)i) << ": " << Gcutoff[(RGBClassIDs)i] << "; ";
+	//}
+	//out_str << "\n";
 
 
+	// Set strobing + strobing rate
 	if (concert_mode) {
 		if (allow_strobing) {
-			if (strobing_speed == 0) {
-				// For strobing, just using speed as tempo_avg causes a lag of a 16th note (quarter of a beat)
-				// (instead of falling on the next 'ta', it falls on the 'ka' after that, in the ta-ka-di-mi system)
-				// Dividing by 5 gives you one 16th note; multiplying by 4 sets it for one quarter note (one beat)
-				strobing_speed = (int)(4 * 84.0 / 5);
-				while (strobing_speed <= 255) strobing_speed *= 2; // Double it to make strobing look nice
-				strobing_speed /= 2; // Compensate for overshoot
-			}
+			concert_strobing_rate = 84; // All our songs are in 84 bpm
+			strobing_speed = concert_strobing_rate + 152; // This number makes strobing look nice. Because y0.
 			out_crisp.strobing_speed = (int)strobing_speed;
 		}
 		else {
@@ -653,20 +658,26 @@ LightsInfo OptiAlgo::FLSystem::Infer(AudioProps input, array<OutParams, 3> color
 	else if (allow_strobing) {
 		if (input.beatiness_avg > BEATINESS_LOUDNESS_THRESH && max(TempoInClass(input.tempo_avg, fast), TempoInClass(input.tempo_avg, vfast)) > BEATINESS_TEMPO_THRESH) {
 			if (isStrobing <= 0) {
-				// For strobing, just using speed as tempo_avg causes a lag of a 16th note (quarter of a beat)
-				// (instead of falling on the next 'ta', it falls on the 'ka' after that, in the ta-ka-di-mi system)
-				// Dividing by 5 gives you one 16th note; multiplying by 4 sets it for one quarter note (one beat)
-				strobing_speed = (int)(4 * input.tempo_avg / 5);
-				while (strobing_speed <= 255) strobing_speed *= 2; // Double it to make strobing look nice
-				strobing_speed /= 2; // Compensate for overshoot
+				//// For strobing, just using speed as tempo_avg causes a lag of a 16th note (quarter of a beat)
+				//// (instead of falling on the next 'ta', it falls on the 'ka' after that, in the ta-ka-di-mi system)
+				//// Dividing by 5 gives you one 16th note; multiplying by 4 sets it for one quarter note (one beat)
+				//strobing_speed = (int)(4 * input.tempo_avg / 5);
+				//while (strobing_speed <= 255) strobing_speed *= 2; // Double it to make strobing look nice
+				//strobing_speed /= 2; // Compensate for overshoot
+				strobing_speed = (int)(input.tempo_avg) + 152;
+				if (strobing_speed > 255) strobing_speed = 255;
 			}
-			out_crisp.strobing_speed = (int)strobing_speed;
+			out_crisp.strobing_speed = strobing_speed;
 			isStrobing = STROBING_COOLDOWN;
 		}
 		else {
-			if (isStrobing > 0) isStrobing--;
+			if (isStrobing > 0) {
+				isStrobing--;
+				out_crisp.strobing_speed = strobing_speed;
+			}
 			else strobing_speed = 0;
 		}
+		out_str << isStrobing << "\n";
 	}
 
 
@@ -689,6 +700,7 @@ static queue<AudioInfo> audio_buffer = queue<AudioInfo>();
 static queue<SectionInfo> song_section_buffer = queue<SectionInfo>();
 
 bool OptiAlgo::concert_mode = false;
+int OptiAlgo::concert_strobing_rate = 0;
 bool OptiAlgo::allow_strobing = false;
 
 OptiAlgo::OptiAlgo()
@@ -703,6 +715,7 @@ OptiAlgo::OptiAlgo()
 	color_scheme[2] = g;
 
 	concert_mode = false;
+	concert_strobing_rate = 0;
 	allow_strobing = false;
 	terminate = false;
 }
@@ -778,7 +791,7 @@ void OptiAlgo::start_algo()
 	AudioProps input_prev_section = AudioProps();
 	AudioProps temp;
 	SectionInfo new_section;
-	double cur_freq, cur_tempo, cur_loud;
+	double cur_freq, cur_tempo, cur_loud, cur_loud_max = 0.0, cur_loud_min = 0.0;
 	bool got_freq, got_tempo, got_loud;
 	int nudges_to_silence = NUDGES_TO_SILENCE;
 	bool starting_silence = true;
@@ -791,6 +804,9 @@ void OptiAlgo::start_algo()
 	deque<LightsInfo> delta_out_hist = deque<LightsInfo>();
 	LightsInfo avg_out = LightsInfo(true);
 	LightsInfo old_avg_out;
+	LightsInfo strobing_out = LightsInfo();
+
+
 	// Initialize logging variables
 	bool harmonicDetected = false;
 	char * err_str;
@@ -865,7 +881,7 @@ void OptiAlgo::start_algo()
 					}
 					// Check for frequency anomalies and correct them before inserting
 					else if (input.freq_hist.size() >= IN_HIST_BUF_SIZE && FREQ_ANOMALY_NUDGES_TO_CHANGE > 0 &&
-							abs(cur_freq - input.freq_avg) > FREQ_ANOMALY_DETECT_THRESH)
+						abs(cur_freq - input.freq_avg) > FREQ_ANOMALY_DETECT_THRESH)
 					{
 						input.delta_anomaly_freq_add_and_avg(cur_freq);
 						if (input.delta_anomaly_freq_hist.size() >= FREQ_ANOMALY_NUDGES_TO_CHANGE) {
@@ -883,6 +899,7 @@ void OptiAlgo::start_algo()
 				}
 
 				if (got_tempo) {
+					if (concert_mode) cur_tempo = 84.0;
 					if (input.tempo_hist.size() > 0 && abs(cur_tempo - input.tempo_avg) > TEMPO_CLOSENESS_THRESH) {
 						input.delta_tempo_add_and_avg(cur_tempo);
 						if (input.delta_tempo_hist.size() >= TEMPO_NUDGES_TO_CHANGE) {
@@ -900,19 +917,34 @@ void OptiAlgo::start_algo()
 				if (got_loud)
 				{
 					input.loudness_hist_add_and_avg(cur_loud);
-					if (input.loudness_nomax_hist.size() > 0 && cur_loud - input.loudness_nomax_avg >= MAX_LOUDNESS_THRESH) {
-						input.loudness_max_hist_add_and_avg(cur_loud);
-						max_loud_insertion_cooldown = (max_loud_insertion_cooldown < MAX_LOUD_INSERTION_COOLDOWN) ? max_loud_insertion_cooldown + 1 : MAX_LOUD_INSERTION_COOLDOWN;
-					}
-					else {
-						if (max_loud_insertion_cooldown > 0) max_loud_insertion_cooldown--;
-						else {
-							input.loudness_max_hist_add_and_avg(input.loudness_avg);
+					if (input.loudness_hist.size() >= IN_HIST_BUF_SIZE) {
+						cur_loud_max = 0.0;
+						cur_loud_min = LOUD_UB;
+
+						for each (double loud_val in input.loudness_hist) {
+							cur_loud_max = max(cur_loud_max, loud_val);
+							cur_loud_min = min(cur_loud_min, loud_val);
 						}
-						input.loudness_nomax_hist_add_and_avg(cur_loud);
+						input.loudness_max_hist_add_and_avg(cur_loud_max);
+						input.loudness_nomax_hist_add_and_avg(input.loudness_avg);
+
+						//if (input.loudness_nomax_hist.size() > 0 && cur_loud - input.loudness_nomax_avg >= MAX_LOUDNESS_THRESH) {
+						//	input.loudness_max_hist_add_and_avg(cur_loud);
+						//	max_loud_insertion_cooldown = (max_loud_insertion_cooldown < MAX_LOUD_INSERTION_COOLDOWN) ? max_loud_insertion_cooldown + 1 : MAX_LOUD_INSERTION_COOLDOWN;
+						//}
+						//else {
+						//	if (max_loud_insertion_cooldown > 0) max_loud_insertion_cooldown--;
+						//	else {
+						//		input.loudness_max_hist_add_and_avg(input.loudness_avg);
+						//	}
+						//	input.loudness_nomax_hist_add_and_avg(cur_loud);
+						//}
+						input.beatiness_hist_add_and_avg(input.loudness_max_avg - input.loudness_nomax_avg);
 					}
-					input.beatiness_hist_add_and_avg(input.loudness_max_avg - input.loudness_nomax_avg);
 				}
+				//out_str << AudioProps::print_hist(input.loudness_hist);
+				//out_str << AudioProps::print_hist(input.loudness_max_hist);
+				//out_str << AudioProps::print_hist(input.loudness_nomax_hist);
 			}
 
 			// Fuzzy inference
@@ -920,32 +952,51 @@ void OptiAlgo::start_algo()
 				// Use fuzzy logic system to get output
 				cur_sol = flSystem.Infer(input, color_scheme);
 
-				// Average output
-				if (out_hist.size() >= OUT_HIST_BUF_SIZE && (
-						abs(cur_sol.red_intensity - old_avg_out.red_intensity) > OUTPUT_ANOMALY_DETECT_THRESH ||
-						abs(cur_sol.blue_intensity - old_avg_out.blue_intensity) > OUTPUT_ANOMALY_DETECT_THRESH ||
-						abs(cur_sol.green_intensity - old_avg_out.green_intensity) > OUTPUT_ANOMALY_DETECT_THRESH)) {
-					delta_out_hist.push_front(cur_sol);
-					if (delta_out_hist.size() >= OUTPUT_NUDGES_TO_CHANGE) {
-						delta_out_hist.pop_front();
-						out_hist.push_front(cur_sol);
-						if (out_hist.size() > OUT_HIST_BUF_SIZE) out_hist.pop_back();
+
+				// If strobing, freeze output values to prevent disrupting the strobing rate
+				if (cur_sol.strobing_speed > 0) {
+					if (strobing_out.strobing_speed <= 0) { // If strobing_out is not assigned any values
+						strobing_out = cur_sol;
+					}
+					else {
+						avg_out = strobing_out; // Used to help stop disrupting output
 					}
 				}
 				else {
-					out_hist.push_front(cur_sol);
-					if (out_hist.size() > OUT_HIST_BUF_SIZE) out_hist.pop_back();
-					if (delta_out_hist.size() > 0) delta_out_hist.pop_back();
+					// Average output
+					if (out_hist.size() >= OUT_HIST_BUF_SIZE && (
+						abs(cur_sol.red_intensity - old_avg_out.red_intensity) > OUTPUT_ANOMALY_DETECT_THRESH ||
+						abs(cur_sol.blue_intensity - old_avg_out.blue_intensity) > OUTPUT_ANOMALY_DETECT_THRESH ||
+						abs(cur_sol.green_intensity - old_avg_out.green_intensity) > OUTPUT_ANOMALY_DETECT_THRESH)) {
+						delta_out_hist.push_front(cur_sol);
+						if (delta_out_hist.size() >= OUTPUT_NUDGES_TO_CHANGE) {
+							delta_out_hist.pop_front();
+							out_hist.push_front(cur_sol);
+							if (out_hist.size() > OUT_HIST_BUF_SIZE) out_hist.pop_back();
+						}
+					}
+					else {
+						out_hist.push_front(cur_sol);
+						if (out_hist.size() > OUT_HIST_BUF_SIZE) out_hist.pop_back();
+						if (delta_out_hist.size() > 0) delta_out_hist.pop_back();
+					}
+					avg_out = LightsInfo::average_and_smooth(out_hist);
+					old_avg_out = avg_out;
+					strobing_out.Reset();
 				}
-				avg_out = LightsInfo::average_and_smooth(out_hist);
-				old_avg_out = avg_out;
+
 			}
 			else {
 				// On silence, clear history and output 0's to lights
 				input.ClearProps();
 				out_hist.clear();
+				avg_out.Reset();
+				old_avg_out.Reset();
+				strobing_out.Reset();
 				cur_sol = LightsInfo();
 				avg_out = cur_sol;
+				cur_loud_max = 0.0;
+				cur_loud_min = 0.0;
 			}
 
 			// Log smoothed input
@@ -965,7 +1016,7 @@ void OptiAlgo::start_algo()
 
 			// Log smoothed output
 			out_str << " => ";
-			out_str << "out_avg:[R,G,B,W,Dim,Strobe]=[" << avg_out.red_intensity << ", " << avg_out.green_intensity << ", "
+			out_str << "avg_out:[R,G,B,W,Dim,Strobe]=[" << avg_out.red_intensity << ", " << avg_out.green_intensity << ", "
 				<< avg_out.blue_intensity << ", " << avg_out.white_intensity << ", " << avg_out.dimness << ", "
 				<< avg_out.strobing_speed << "]";
 
@@ -974,7 +1025,11 @@ void OptiAlgo::start_algo()
 			Helpers::print_debug(out_str.str().c_str());
 
 			// Send solution to output controller
-			DMXOutput::updateLightsOutputQueue(avg_out);
+			// (only output if not strobing, as to not disrupt strobing rate)
+			if (strobing_out.strobing_speed > 0 && avg_out.strobing_speed <= 0)
+				DMXOutput::updateLightsOutputQueue(strobing_out);
+			else if (strobing_out.strobing_speed <= 0)
+				DMXOutput::updateLightsOutputQueue(avg_out); 
 
 		}
 		catch (exception e)
@@ -990,21 +1045,16 @@ void OptiAlgo::start_algo()
 	else Helpers::print_debug("OptiAlgo: stopped.\n");
 }
 
-void OptiAlgo::start(bool song_selected, bool auto_strobe = false)
+void OptiAlgo::start(bool concert_mode_on, array<OutParams, 3> color_scheme, bool auto_strobe) //, int concert_strobe_speed)
 {
-	concert_mode = song_selected;
-	if (song_selected) auto_strobe = false;
+	this->color_scheme = color_scheme;
+	concert_mode = concert_mode_on;
+	auto_strobe &= !(concert_mode_on); // Auto-strobe cannot be on when concert mode is on.
+	concert_strobing_rate = 0;//concert_strobing_rate = (concert_mode_on) ? concert_strobe_speed : 0;
 	allow_strobing = auto_strobe;
 
 	start_algo();
 	//test_lights();
-}
-
-void OptiAlgo::start(bool song_selected, array<OutParams, 3> color_scheme, bool auto_strobe = false)
-{
-	this->color_scheme = color_scheme;
-
-	start(song_selected, auto_strobe);
 }
 
 void OptiAlgo::stop()

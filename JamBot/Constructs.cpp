@@ -153,12 +153,7 @@ void AudioInfo::clear_tempo() {
 
 LightsInfo::LightsInfo()
 {
-	red_intensity = 0;
-	green_intensity = 0;
-	blue_intensity = 0;
-	white_intensity = 0;
-	dimness = 0;
-	strobing_speed = 0;
+	Reset();
 }
 
 LightsInfo::LightsInfo(bool centered)
@@ -174,13 +169,18 @@ LightsInfo::LightsInfo(bool centered)
 	}
 	else
 	{
-		red_intensity = 0;
-		green_intensity = 0;
-		blue_intensity = 0;
-		white_intensity = 0;
-		dimness = 0;
-		strobing_speed = 0;
+		Reset();
 	}
+}
+
+void LightsInfo::Reset()
+{
+	red_intensity = 0;
+	green_intensity = 0;
+	blue_intensity = 0;
+	white_intensity = 0;
+	dimness = 0;
+	strobing_speed = 0;
 }
 
 // MUST PASS ARRAY OF SIZE 513

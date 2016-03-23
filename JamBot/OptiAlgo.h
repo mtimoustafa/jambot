@@ -57,6 +57,8 @@ class OptiAlgo
 		double loudness_nomax_hist_add_and_avg(double val);
 		double loudness_max_hist_add_and_avg(double val);
 		double beatiness_hist_add_and_avg(double val);
+
+		static string print_hist(deque<double> hist);
 	};
 
 	class FLSystem
@@ -111,6 +113,7 @@ class OptiAlgo
 	array<OutParams, 3> color_scheme; // Set by GUI to tell FL algorithms how to map colors to inputs
 	SECTION current_section;
 	static bool concert_mode;
+	static int concert_strobing_rate;
 	static bool allow_strobing;
 
 public:
@@ -121,8 +124,7 @@ public:
 
 	void test_lights();
 	void start_algo();
-	void start(bool, bool);
-	void start(bool, array<OutParams, 3>, bool);
+	void start(bool, array<OutParams, 3>, bool); //, int);
 	void stop();
 };
 
