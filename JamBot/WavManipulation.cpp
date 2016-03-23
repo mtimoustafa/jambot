@@ -548,7 +548,7 @@ void WavManipulation::freqcomparison(){
 				}
 			}
 			else{
-				for (int i = 0; i < NUM_FREQ - 1; i++){
+ 				for (int i = 0; i < NUM_FREQ - 1; i++){
 
 					if (abs(chorusdiff[i + NUM_DIFF] - freqdiff[i])
 						< abs(versediff[i + NUM_DIFF] - freqdiff[i])){
@@ -577,6 +577,8 @@ void WavManipulation::freqcomparison(){
 			else{}
 
 			freqdiff.clear();
+			cdiff.clear();
+			vdiff.clear();
 			//first section flip bool first
 			if (first){
 				//duration = ticks + 4;
@@ -586,7 +588,7 @@ void WavManipulation::freqcomparison(){
 			else{
 				ticks = 0;
 				//Section chorus
-				if (choruscount > versecount){
+ 				if (choruscount > versecount){
 					//cycle through the choruses
 					for (int k = 0; k < freqList.size(); k++){
 						if (lowercase(freqList[k].name).find("chorus") != string::npos){
@@ -621,7 +623,7 @@ void WavManipulation::freqcomparison(){
 					Helpers::print_debug(freqList[c].name.c_str());
 					Helpers::print_debug("\n");
 					//Set duration minus a space to account for differing space inbetween sections 
-					duration = freqList[c].duration - (NUM_FREQ * 2) - 2;
+					duration = freqList[c].duration - (NUM_FREQ * 2);
 				}
 				else if (versecount > choruscount){
 					for (int k = 0; k < freqList.size(); k++){
@@ -652,7 +654,7 @@ void WavManipulation::freqcomparison(){
 					OptiAlgo::receive_song_section(SectionInfo(SECTION::verse, freqList[v].strobe));
 					Helpers::print_debug(freqList[v].name.c_str());
 					Helpers::print_debug("\n");
-					duration = freqList[v].duration - (NUM_FREQ * 2) - 2;
+					duration = freqList[v].duration - (NUM_FREQ * 2);
 				}
 				else{
 					Helpers::print_debug("No Section Found");
@@ -730,13 +732,13 @@ int WavManipulation::freqSnip(string csvname){
 	bool even = true;
 	//extract the filenames
 	getline(file, value, ',');
-	getline(file, value, ',');
+	//getline(file, value, ',');
 	getline(file, value, '\n');
 	getline(file, value, ',');
 	wavfile = value;
-	getline(file, value, ',');
-	lyricfile = value;
+	//getline(file, value, ',');
 	getline(file, value, '\n');
+	lyricfile = value;
 
 	getline(file, value, ',');
 	getline(file, value, ',');
@@ -750,7 +752,7 @@ int WavManipulation::freqSnip(string csvname){
 			times.push_back(stod(value));
 
 		getline(file, value, '\n');
-		if (value == "true")
+		if (value == "true" || value == "TRUE")
 			strobes.push_back(true);
 		else
 			strobes.push_back(false);

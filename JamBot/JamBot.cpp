@@ -147,7 +147,7 @@ void JamBot::updateLyrics(string text) {
 	//font = font + to_string(font_size);
 	//font_desc = pango_font_description_from_string(font.c_str());
 	//gtk_widget_modify_font(lyricsLabel, font_desc);
-	gtk_label_set_justify(GTK_LABEL(lyricsLabel), GTK_JUSTIFY_FILL);
+	//gtk_label_set_justify(GTK_LABEL(lyricsLabel), GTK_JUSTIFY_FILL);
 	gtk_label_set_text(GTK_LABEL(lyricsLabel), lyrics.c_str());
 	gtk_widget_show_all(lyricsLabel);
 }

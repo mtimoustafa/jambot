@@ -1,6 +1,6 @@
-Wav File, Lyric File,
-C:\Users\emerson\Documents\School\FYDP\Sample Music\Hey Jude VCC(Corrected).wav,C:\Users\emerson\Documents\School\FYDP\Sample Music\Hey Jude VCC.txt,
+Wav File, Lyric File
+C:\Users\emerson\Documents\School\FYDP\Sample Music\Hey Jude VCC(Corrected).wav,C:\Users\emerson\Documents\School\FYDP\Sample Music\Hey Jude VCC.txt
 Section Name, Start Time, Strobe
-Verse,0,FALSE
-Chorus1,23,FALSE
-Chorus2,52.4,FALSE
+Verse,0.000000,false
+Chorus1,23.800000,false
+Chorus2,52.400000,false
