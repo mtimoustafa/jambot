@@ -1,6 +1,6 @@
-prefix=/devel/target/1315da81bb4f4a54ee1f3f8d6181abe2
+prefix=/usr/i686-w64-mingw32/sys-root/mingw
 exec_prefix=${prefix}
-libdir=${exec_prefix}/lib
+libdir=${prefix}/lib
 includedir=${prefix}/include
 
 Name: cairo-win32-font

@@ -193,7 +193,7 @@ void InputChannelReader::analyseBuffer(paData *data)
 	if (num_channels > 1)
 		average2 = average2 / (double)FRAMES_PER_BUFFER;
 	audioSamples.set_loudness(average);
-	Helpers::print_debug(("[IN] Average sample LOUDNESS [guitar] (dB): " + to_string(average) + "\n").c_str());
+	//Helpers::print_debug(("[IN] Average sample LOUDNESS [guitar] (dB): " + to_string(average) + "\n").c_str());
 
 	// Get frequency of wave
 	fftwf_execute(fft);
@@ -226,8 +226,8 @@ void InputChannelReader::analyseBuffer(paData *data)
 	if (num_channels > 1)
 	{
 		frequency2 = maxIndex2 * SAMPLE_RATE / FFT_SIZE;
-		Helpers::print_debug(("[IN] Frequency peak [voice] (Hz): " + to_string(frequency2) + "\n").c_str());
-		Helpers::print_debug(("[IN] Average sample LOUDNESS [voice] (dB): " + to_string(average2) + "\n").c_str());
+		//Helpers::print_debug(("[IN] Frequency peak [voice] (Hz): " + to_string(frequency2) + "\n").c_str());
+		//Helpers::print_debug(("[IN] Average sample LOUDNESS [voice] (dB): " + to_string(average2) + "\n").c_str());
 
 		// Initiate frequency reads
 		WavManipulation::startReading(average2 > 50.0);
@@ -248,7 +248,7 @@ void InputChannelReader::analyseBuffer(paData *data)
 	else
 	{
 		audioSamples.clear_tempo();
-		Helpers::print_debug("[IN] Average sample TEMPO (bpm): -------\n");
+		//Helpers::print_debug("[IN] Average sample TEMPO (bpm): -------\n");
 	}
 
 	OptiAlgo::receive_audio_input_sample(audioSamples);	//Send to OptiAlgo

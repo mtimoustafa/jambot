@@ -54,7 +54,7 @@ typedef struct _AtkKeyEventStruct AtkKeyEventStruct;
  * supported are events of type "focus:".  Most clients of ATK will prefer to 
  * attach signal handlers for the various ATK signals instead.
  *
- * @see: atk_add_focus_tracker.
+ * see atk_add_focus_tracker.
  **/
 typedef void  (*AtkEventListener) (AtkObject* obj);
 /**
@@ -64,7 +64,7 @@ typedef void  (*AtkEventListener) (AtkObject* obj);
  * called in order to initialize the per-object event registration system
  * used by #AtkEventListener, if any preparation is required.  
  *
- * @see: atk_focus_tracker_init.
+ * see atk_focus_tracker_init.
  **/
 typedef void  (*AtkEventListenerInit) (void);
 /**
@@ -81,7 +81,7 @@ typedef void  (*AtkEventListenerInit) (void);
  * discarded without being passed to the normal GUI recipient; FALSE (zero) if the 
  * event dispatch to the client application should proceed as normal.
  *
- * @see: atk_add_key_event_listener.
+ * see atk_add_key_event_listener.
  **/
 typedef gint  (*AtkKeySnoopFunc)  (AtkKeyEventStruct *event,
 				   gpointer func_data);
@@ -147,8 +147,8 @@ struct _AtkUtilClass
 						  gpointer data);
    void         (* remove_key_event_listener)    (guint               listener_id);
    AtkObject*   (* get_root)                     (void);
-   G_CONST_RETURN gchar* (* get_toolkit_name)    (void);
-   G_CONST_RETURN gchar* (* get_toolkit_version) (void);
+   const gchar* (* get_toolkit_name)             (void);
+   const gchar* (* get_toolkit_version)          (void);
 };
 GType atk_util_get_type (void);
 
@@ -166,80 +166,22 @@ typedef enum {
   ATK_XY_WINDOW
 }AtkCoordType;
 
-/*
- * Adds the specified function to the list of functions to be called
- * when an object receives focus.
- */
 guint    atk_add_focus_tracker     (AtkEventListener      focus_tracker);
-
-/*
- * Removes the specified focus tracker from the list of function
- * to be called when any object receives focus
- */
 void     atk_remove_focus_tracker  (guint                tracker_id);
-
-/*
- * atk_focus_tracker_init:
- * @init: An #AtkEventListenerInit function to be called
- * prior to any focus-tracking requests.
- *
- * Specifies the function to be called for focus tracker initialization.
- * removal. This function should be called by an implementation of the
- * ATK interface if any specific work needs to be done to enable
- * focus tracking.
- */
 void     atk_focus_tracker_init    (AtkEventListenerInit  init);
-
-/*
- * Cause the focus tracker functions which have been specified to be
- * executed for the object.
- */
 void     atk_focus_tracker_notify  (AtkObject            *object);
-
-/*
- * Adds the specified function to the list of functions to be called
- * when an event of type event_type occurs.
- */
 guint	atk_add_global_event_listener (GSignalEmissionHook listener,
 				       const gchar        *event_type);
-
-/*
- * Removes the specified event listener
- */
 void	atk_remove_global_event_listener (guint listener_id);
-
-/*
- * Adds the specified function to the list of functions to be called
- * when an keyboard event occurs.
- */
 guint	atk_add_key_event_listener (AtkKeySnoopFunc listener, gpointer data);
-
-/*
- * Removes the specified event listener
- */
 void	atk_remove_key_event_listener (guint listener_id);
 
-/*
- * Returns the root accessible container for the current application.
- */
 AtkObject* atk_get_root(void);
-
 AtkObject* atk_get_focus_object (void);
 
-/*
- * Returns name string for the GUI toolkit.
- */
-G_CONST_RETURN gchar *atk_get_toolkit_name (void);
-
-/*
- * Returns version string for the GUI toolkit.
- */
-G_CONST_RETURN gchar *atk_get_toolkit_version (void);
-
-/*
- * Gets the current version of ATK
- */
-G_CONST_RETURN gchar *atk_get_version (void);
+const gchar *atk_get_toolkit_name (void);
+const gchar *atk_get_toolkit_version (void);
+const gchar *atk_get_version (void);
 
 /* --- GType boilerplate --- */
 /* convenience macros for atk type implementations, which for a type GtkGadgetAccessible will:
@@ -255,10 +197,77 @@ G_CONST_RETURN gchar *atk_get_version (void);
  *                                     G_IMPLEMENT_INTERFACE (ATK_TYPE_TABLE, gtk_gadget_accessible_table_iface_init))
  */
 
+/**
+ * ATK_DEFINE_TYPE:
+ * @TN: The name of the new type, in Camel case.
+ * @t_n: The name of the new type, in lowercase, with words separated by '_'.
+ * @T_P: The #GType of the parent type.
+ *
+ * A convenience macro for type ATK implementations, which declares a class
+ * initialization function, an instance initialization function (see #GTypeInfo
+ * for information about these) and a static variable named
+ * @t_n _parent_class pointing to the parent class. Furthermore, it
+ * defines a _get_type() function.
+ *
+ * Since: 1.22
+ */
 #define ATK_DEFINE_TYPE(TN, t_n, T_P)			       ATK_DEFINE_TYPE_EXTENDED (TN, t_n, T_P, 0, {})
+
+/**
+ * ATK_DEFINE_TYPE_WITH_CODE:
+ * @TN: The name of the new type, in Camel case.
+ * @t_n: The name of the new type in lowercase, with words separated by '_'.
+ * @T_P: The #GType of the parent type.
+ * @_C_: Custom code that gets inserted in the _get_type() function.
+ *
+ * A convenience macro for ATK type implementations.
+ * Similar to ATK_DEFINE_TYPE(), but allows you to insert custom code into the
+ * _get_type() function, e.g. interface implementations via G_IMPLEMENT_INTERFACE().
+ *
+ * Since: 1.22
+ */
 #define ATK_DEFINE_TYPE_WITH_CODE(TN, t_n, T_P, _C_)	      _ATK_DEFINE_TYPE_EXTENDED_BEGIN (TN, t_n, T_P, 0) {_C_;} _ATK_DEFINE_TYPE_EXTENDED_END()
+
+/**
+ * ATK_DEFINE_ABSTRACT_TYPE:
+ * @TN: The name of the new type, in Camel case.
+ * @t_n: The name of the new type, in lowercase, with words separated by '_'.
+ * @T_P: The #GType of the parent type.
+ *
+ * A convenience macro for ATK type implementations.
+ * Similar to ATK_DEFINE_TYPE(), but defines an abstract type.
+ *
+ * Since: 1.22
+ */
 #define ATK_DEFINE_ABSTRACT_TYPE(TN, t_n, T_P)		       ATK_DEFINE_TYPE_EXTENDED (TN, t_n, T_P, G_TYPE_FLAG_ABSTRACT, {})
+
+/**
+ * ATK_DEFINE_ABSTRACT_TYPE_WITH_CODE:
+ * @TN: The name of the new type, in Camel case.
+ * @t_n: The name of the new type, in lowercase, with words separated by '_'.
+ * @T_P: The #GType of the parent type.
+ * @_C_: Custom code that gets inserted in the _get_type() function.
+ *
+ * A convenience macro for ATK type implementations.
+ * Similar to ATK_DEFINE_TYPE_WITH_CODE(), but defines an abstract type.
+ *
+ * Since: 1.22
+ */
 #define ATK_DEFINE_ABSTRACT_TYPE_WITH_CODE(TN, t_n, T_P, _C_) _ATK_DEFINE_TYPE_EXTENDED_BEGIN (TN, t_n, T_P, G_TYPE_FLAG_ABSTRACT) {_C_;} _ATK_DEFINE_TYPE_EXTENDED_END()
+
+/**
+ * ATK_DEFINE_TYPE_EXTENDED:
+ * @TN: The name of the new type, in Camel case.
+ * @t_n: The name of the new type, in lowercase, with words separated by '_'.
+ * @T_P: The #GType of the parent type.
+ * @_f_: #GTypeFlags to pass to g_type_register_static()
+ * @_C_: Custom code that gets inserted in the _get_type() function.
+ *
+ * The most general convenience macro for ATK type implementations, on which
+ * ATK_DEFINE_TYPE(), etc are based.
+ *
+ * Since: 1.22
+ */
 #define ATK_DEFINE_TYPE_EXTENDED(TN, t_n, T_P, _f_, _C_)      _ATK_DEFINE_TYPE_EXTENDED_BEGIN (TN, t_n, T_P, _f_) {_C_;} _ATK_DEFINE_TYPE_EXTENDED_END()
 
 #define _ATK_DEFINE_TYPE_EXTENDED_BEGIN(TypeName, type_name, TYPE, flags) \

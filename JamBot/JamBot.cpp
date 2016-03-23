@@ -45,7 +45,7 @@ void CloseThread(int id);
 void CloseAllThreads();
 void ErrorHandler(LPTSTR lpszFunction);
 const gchar *textInput;
-GtkWidget *window, *lyricsEntry, *lyricsLabel, *intensityProgBarInstru, *intensityProgBarVoice, *freqLabelInstru, *freqLabelVoice, *statusLabel;
+GtkWidget *window, *lyricsEntry, *lyricsLabel, *intensityProgBarInstru, *intensityProgBarVoice, *freqLabelInstru, *freqLabelVoice, *statusLabel, *globalWindow;
 GtkWidget *freeplay, *concert;	//For use in selecting run-mode
 GtkWidget *freqHighColours, *freqLowColours, *tempoColours;	//For use in selecting colours
 GtkWidget *textEntry, *songSelectBox, *numChannelBox;
@@ -112,7 +112,7 @@ void GetDesktopResolution(int& horizontal, int& vertical)
 void JamBot::updateLyrics(string text) {
 	int font_size = 35;
 	int max_size = 0;
-	string font = "Ariel Bold ";
+	string font = "Arial Bold ";
 	string temp = "";
 	//int horizontal = 0;
 	//int vertical = 0;
@@ -179,16 +179,16 @@ static void dialog_result(GtkWidget *dialog, gint resp, gpointer data) {
 
 static void graphWave() {
 
-	if (graphWaveFlag)
+	/*if (graphWaveFlag)
 	{
 		/*setting up where the graph will be displayed*/
-		gdk_window_clear_area(drawArea->window, 0, 0, 550, graph_y);
+/*		gdk_window_clear_area(drawArea->window, 0, 0, 550, graph_y);
 		cairo_t *crWave = gdk_cairo_create(drawArea->window);
 		cairo_set_source_rgba(crWave, 1, 0.4, 0.3, 0.8);
 		cairo_set_line_width(crWave, 1.3);
 		double halfHeight = (graph_y / 2);
 		/*setting the starting point of the graph*/
-		cairo_move_to(crWave, 0.0, halfHeight);
+/*		cairo_move_to(crWave, 0.0, halfHeight);
 		double interval = graph_x/10000.00;
 		for (int i = 1; i < 10000; i++)
 		{
@@ -208,14 +208,14 @@ static void graphWave() {
 		cairo_rel_line_to(crWave, 0, -1*halfHeight);
 
 		/*move back to origin*/
-		int tick;
+/*		int tick;
 		double x;
 		int numOfTicks = floor(songLength / 5);
 		cairo_move_to(crWave, 0.0, (graph_y/2));
 		for (int i = 0; i < numOfTicks; i++) {
 			x = (graph_x/numOfTicks)*i;
 			/*determine the "tick" length based on 5's or 10's*/
-			if (i % 2)
+/*			if (i % 2)
 			{
 				tick = 5;
 			}
@@ -230,7 +230,7 @@ static void graphWave() {
 		}
 		cairo_stroke(crWave);
 		waveSavedFlag = true;
-	}
+	}*/
 }
 
 static void graphValues()
@@ -278,7 +278,7 @@ static void addNewSection(GtkWidget *widget)
 {
 	GtkWidget *hbox, *tempEntry;
 
-	hbox = gtk_hbox_new(false, 0);
+	hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 
 	tempEntry = gtk_entry_new();
 	sectionNameDetails.push_back(tempEntry);
@@ -288,7 +288,7 @@ static void addNewSection(GtkWidget *widget)
 	sectionTimeDetails.push_back(tempEntry);
 	gtk_box_pack_start(GTK_BOX(hbox), tempEntry, false, false, 5);
 
-	gtk_box_pack_start(GTK_BOX(GTK_DIALOG(sectionDialog)->vbox), hbox, false, false, 5);
+	gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(sectionDialog))), hbox, false, false, 5);
 
 	gtk_widget_show_all(sectionDialog);
 }
@@ -358,38 +358,27 @@ static void displaySectionModal(GtkWidget *widget, gint resp, gpointer *data)
 		{
 			sectionWarningLabel = gtk_label_new("Include lyrics file (.txt) and an audio file (.wav)");
 		}
-		gtk_box_pack_start(GTK_BOX(GTK_DIALOG(sectionDialog)->vbox), sectionWarningLabel, false, false, 5);
+		gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(sectionDialog))), sectionWarningLabel, false, false, 5);
 
-		hbox = gtk_hbox_new(false, 0);
+		hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 		addSectionButton = gtk_button_new_with_label("Add Section");
-		g_signal_connect(GTK_OBJECT(addSectionButton), "clicked", G_CALLBACK(addNewSection), NULL);
+		g_signal_connect(GTK_BUTTON(addSectionButton), "clicked", G_CALLBACK(addNewSection), NULL);
 		gtk_box_pack_start(GTK_BOX(hbox), addSectionButton, true, true, 5);
 
 		submitButton = gtk_button_new_with_label("Submit");
-		g_signal_connect(GTK_OBJECT(submitButton), "clicked", G_CALLBACK(submitSongSection), NULL, NULL);
+		g_signal_connect(GTK_BUTTON(submitButton), "clicked", G_CALLBACK(submitSongSection), NULL, NULL);
 		gtk_box_pack_start(GTK_BOX(hbox), submitButton, true, true, 5);
-		gtk_box_pack_start(GTK_BOX(GTK_DIALOG(sectionDialog)->vbox), hbox, true, true, 5);
+		gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(sectionDialog))), hbox, true, true, 5);
 
 
-		hbox = gtk_hbox_new(false, 0);
+		hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 		label = gtk_label_new("Section Name");
 		gtk_box_pack_start(GTK_BOX(hbox), label, true, true, 5);
 		label = gtk_label_new("Section Time");
 		gtk_box_pack_start(GTK_BOX(hbox), label, true, true, 85);
-		gtk_box_pack_start(GTK_BOX(GTK_DIALOG(sectionDialog)->vbox), hbox, true, true, 5);
+		gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(sectionDialog))), hbox, true, true, 5);
 
-		hbox = gtk_hbox_new(false, 0);
-
-		tempEntry = gtk_entry_new();
-		sectionNameDetails.push_back(tempEntry);
-		gtk_box_pack_start(GTK_BOX(hbox), tempEntry, true, true, 5);
-
-		tempEntry = gtk_entry_new();
-		sectionTimeDetails.push_back(tempEntry);
-		gtk_box_pack_start(GTK_BOX(hbox), tempEntry, true, true, 5);
-		gtk_box_pack_start(GTK_BOX(GTK_DIALOG(sectionDialog)->vbox), hbox, true, true, 5);
-
-		hbox = gtk_hbox_new(false, 0);
+		hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 
 		tempEntry = gtk_entry_new();
 		sectionNameDetails.push_back(tempEntry);
@@ -398,7 +387,18 @@ static void displaySectionModal(GtkWidget *widget, gint resp, gpointer *data)
 		tempEntry = gtk_entry_new();
 		sectionTimeDetails.push_back(tempEntry);
 		gtk_box_pack_start(GTK_BOX(hbox), tempEntry, true, true, 5);
-		gtk_box_pack_start(GTK_BOX(GTK_DIALOG(sectionDialog)->vbox), hbox, true, true, 5);
+		gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(sectionDialog))), hbox, true, true, 5);
+
+		hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+
+		tempEntry = gtk_entry_new();
+		sectionNameDetails.push_back(tempEntry);
+		gtk_box_pack_start(GTK_BOX(hbox), tempEntry, true, true, 5);
+
+		tempEntry = gtk_entry_new();
+		sectionTimeDetails.push_back(tempEntry);
+		gtk_box_pack_start(GTK_BOX(hbox), tempEntry, true, true, 5);
+		gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(sectionDialog))), hbox, true, true, 5);
 
 		gtk_widget_show_all(sectionDialog);
 
@@ -407,7 +407,10 @@ static void displaySectionModal(GtkWidget *widget, gint resp, gpointer *data)
 }
 
 static void selectWaveFile(GtkWidget *widget) {
+
 	GtkWidget *dialog;
+	static gint i = 1;
+
 	dialog = gtk_file_chooser_dialog_new("Choose a file", GTK_WINDOW(window), GTK_FILE_CHOOSER_ACTION_OPEN, GTK_STOCK_OK,
 		GTK_RESPONSE_OK, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, NULL);
 	gtk_widget_show_all(dialog);
@@ -455,8 +458,8 @@ static void selectWaveFile(GtkWidget *widget) {
 		{
 			multiplier = ceil(graph_y / 2) / abs(min);
 		}
-		/*graphWaveFlag = true;
-		graphWave();*/
+		graphWaveFlag = true;
+		graphWave();
 	}
 	else {
 		g_print("You Pressed the cancel button");
@@ -544,7 +547,7 @@ static void displayLyricsNonmodal(GtkWidget *widget, gpointer window)
 	gtk_widget_modify_font(lyricsLabel, font_desc);
 	pango_font_description_free(font_desc);
 
-	gtk_box_pack_start(GTK_BOX(GTK_DIALOG(lyricsDialog)->vbox), lyricsLabel, false, false, 5);
+	gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(lyricsDialog))), lyricsLabel, false, false, 5);
 
 	gtk_label_set_justify(GTK_LABEL(lyricsLabel), GTK_JUSTIFY_LEFT);
 
@@ -577,7 +580,7 @@ static void displayLyrics(GtkWidget *widget, gpointer window)
 	gtk_text_buffer_apply_tag_by_name(lyricsBuffer, "italic", &start, &end);
 
 	gtk_text_view_set_border_window_size(GTK_TEXT_VIEW(lyricsEntry), GTK_TEXT_WINDOW_TEXT, 30);
-	gtk_box_pack_start(GTK_BOX(GTK_DIALOG(lyricsDialog)->vbox), lyricsEntry, false, false, 5);
+	gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(lyricsDialog))), lyricsEntry, false, false, 5);
 
 	gtk_widget_show_all(lyricsDialog);
 	gint response = gtk_dialog_run(GTK_DIALOG(lyricsDialog));
@@ -698,6 +701,7 @@ static void startJamming(GtkWidget *button) {
 			ExitProcess(3);
 		}
 		alreadyJamming = true;
+		onDefaultTab = true;
 	}
 }
 
@@ -723,30 +727,69 @@ static void updateProgress()
 	g_signal_new("pitch-data", G_TYPE_OBJECT, G_SIGNAL_RUN_FIRST, 0, NULL, NULL, NULL, G_TYPE_NONE, 0);
 }
 
+static gboolean updateProgressBar(gpointer loudness)
+{
+	/*int i = 0;
+	//gdouble *j = loudness;
+	int j = (rand() % 100);
+	double loud = j / 100.00;
+	if (counterInstru % 10 == 1)
+	{
+		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 1 * loud);
+		Sleep(100);
+		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.9*loud);
+		Sleep(100);
+		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.8*loud);
+		Sleep(100);
+		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.7*loud);
+		Sleep(100);
+		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.6*loud);
+		Sleep(100);
+		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.5*loud);
+		Sleep(100);
+		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.4*loud);
+		Sleep(100);
+		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.3*loud);
+		Sleep(100);
+		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.2*loud);
+
+	}
+
+	counterInstru++;
+	return G_SOURCE_REMOVE;*/
+}
+
 void JamBot::updateSongValues(float frequency, double loudness, double tempo)
 {
-	//double loud = (loudness / 5000.00);
-	//if (counterInstru % 5 == 1)
-	//{
-	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 1 * loud);
-	//	Sleep(400);
-	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.66*loud);
-	//	Sleep(25);
-	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.33*loud);
-	//	Sleep(25);
-	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.15*loud);
-	//	Sleep(25);
-	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.10*loud);
-	//	Sleep(25);
-	//	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.08*loud);
-	//}
+	/*double* j = &loudness;
+	if (onDefaultTab)
+	{
+		gdk_threads_add_idle((GSourceFunc) updateProgressBar, j);
+		onDefaultTab = false;
+	}
+	/*
+	double loud = (loudness / 2000.00);
+	if (counterInstru % 5 == 1)
+	{
+		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 1 * loud);
+		Sleep(400);
+		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.66*loud);
+		Sleep(25);
+		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.33*loud);
+		Sleep(25);
+		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.15*loud);
+		Sleep(25);
+		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.10*loud);
+		Sleep(25);
+		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(intensityProgBarInstru), 0.08*loud);
+	}
 
-	//if (counterInstru == 10)
-	//{
-	//	gtk_label_set_text(GTK_LABEL(freqLabelInstru), to_string(frequency).c_str());
-	//	counterInstru = 0;
-	//}
-	//counterInstru++;
+	if (counterInstru == 10)
+	{
+		gtk_label_set_text(GTK_LABEL(freqLabelInstru), to_string(frequency).c_str());
+		counterInstru = 0;
+	}
+	counterInstru++;*/
 }
 
 void JamBot::updateVoiceValues(float frequency, double loudness, double tempo)
@@ -831,10 +874,12 @@ int gtkStart(int argc, char* argv[])
 	GtkWidget *startJambot, *graphBox;
 	GtkWidget *label, *freqLabel, *tempoLabel, *freqHighListLabel, *freqLowListLabel, *tempoListLabel;
 
+	/*profit from GTK dank libs effects*/
 	gtk_init(&argc, &argv);
 	lyrics = "";
 	/*=========================== Window ===========================*/
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	globalWindow = gtk_button_new();
 	g_signal_connect(window, "delete-event", G_CALLBACK(delete_event), NULL);
 	g_signal_connect(window, "destroy", G_CALLBACK(destroy), NULL);
 
@@ -842,79 +887,80 @@ int gtkStart(int argc, char* argv[])
 	gtk_window_set_title(GTK_WINDOW(window), "JamBot");
 
 	g_signal_connect(window, "dontcallthis", G_CALLBACK(changeProgressBar), NULL);
+	g_signal_connect(globalWindow, "child-finished", G_CALLBACK(testFunction), NULL);
 	/*=========================== Widget boxes ===========================*/
 	/*start of the window box*/
-	overAllWindowBox = gtk_vbox_new(false, 0);
+	overAllWindowBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 
 	/*song control over all box*/
 	//songControlOverAllBox = gtk_vbox_new(false, 0);
 	//gtk_box_pack_start(GTK_BOX(firstLayerBox), songControlOverAllBox, true, true, 5);
 
 	/*song control box layer 2 AKA song status box*/
-	songStatusBox = gtk_hbox_new(false, 0);
+	songStatusBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	gtk_box_pack_start(GTK_BOX(overAllWindowBox), songStatusBox, true, true, 5);
 
 	/*first layer box*/
-	firstLayerBox = gtk_hbox_new(false, 0);
+	firstLayerBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	gtk_box_pack_start(GTK_BOX(overAllWindowBox), firstLayerBox, true, true, 5);
 
 	/*radio buttons for number of channels*/
-	numChannelBox = gtk_vbox_new(false, 0);
+	numChannelBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_box_pack_start(GTK_BOX(firstLayerBox), numChannelBox, true, true, 5);
 
 	/*dropdowns for frequency colour changer*/
-	freqBox = gtk_vbox_new(false, 0);
+	freqBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_box_pack_start(GTK_BOX(firstLayerBox), freqBox, true, true, 5);
 
 	/*dropdowns for tempo colour changer*/
-	tempoBox = gtk_vbox_new(false, 0);
+	tempoBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_box_pack_start(GTK_BOX(firstLayerBox), tempoBox, true, true, 5);
-	tempoLabelCol = gtk_hbox_new(false, 0);
+	tempoLabelCol = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	gtk_box_pack_start(GTK_BOX(tempoBox), tempoLabelCol, true, true, 5);
 
 	/*second layer box, contains song value tab box*/
-	secondLayerBox = gtk_hbox_new(false, 0);
+	secondLayerBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	gtk_box_pack_start(GTK_BOX(overAllWindowBox), secondLayerBox, true, true, 5);
 
 	/*tab box*/
-	tabBox = gtk_vbox_new(false, 0);
+	tabBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_box_pack_start(GTK_BOX(secondLayerBox), tabBox, true, true, 5);
 
 	/*third layer box, contains section buttons and graph*/
-	thirdLayerBox = gtk_vbox_new(false, 0);
+	thirdLayerBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_box_pack_start(GTK_BOX(overAllWindowBox), thirdLayerBox, true, true, 5);
 
 	/*lyrics box*/
-	lyricsBox = gtk_hbox_new(false, 0);
+	lyricsBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	gtk_box_pack_start(GTK_BOX(overAllWindowBox), lyricsBox, true, true, 5);
 
 	/*song control box layer 1 AKA song control box*/
-	songControlBox = gtk_hbox_new(true, 0);
+	songControlBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	gtk_box_pack_start(GTK_BOX(overAllWindowBox), songControlBox, true, true, 5);
 
 	/*section box*/
-	sectionBox = gtk_hbox_new(false, 0);
+	sectionBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	gtk_box_pack_start(GTK_BOX(thirdLayerBox), sectionBox, true, true, 5);
 
 	/*graph box, this containts the combo box part*/
-	graphBox = gtk_vbox_new(false, 0);
+	graphBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_box_pack_start(GTK_BOX(thirdLayerBox), graphBox, true, true, 5);
 
 	/*=========================== third layer Part ===========================*/
 	GtkWidget *sectionLabelName, *sectionLabelTime, *addSectionButton, *submitSectionButton, *tempEntry, *songBox;
 
 	fileSelectDialog = gtk_button_new_with_label("Select Audio File");
-	g_signal_connect(GTK_OBJECT(fileSelectDialog), "clicked", G_CALLBACK(selectWaveFile), NULL, NULL);
+	g_signal_connect(GTK_DIALOG(fileSelectDialog), "clicked", G_CALLBACK(selectWaveFile), NULL, NULL);
 	gtk_box_pack_start(GTK_BOX(sectionBox), fileSelectDialog, true, true, 5);
 
 	/*select lyrics*/
 	fileSelectDialog = gtk_button_new_with_label("Select Lyrics");
 	gtk_box_pack_start(GTK_BOX(sectionBox), fileSelectDialog, true, true, 5);
-	g_signal_connect(GTK_OBJECT(fileSelectDialog), "clicked", G_CALLBACK(selectLyrics), window);
+	g_signal_connect(GTK_DIALOG(fileSelectDialog), "clicked", G_CALLBACK(selectLyrics), window);
 
 	/*sectionButtonBox*/
 	addSectionButton = gtk_button_new_with_label("Section");
-	g_signal_connect(GTK_OBJECT(addSectionButton), "clicked", G_CALLBACK(displaySectionModal), NULL, NULL);
+	g_signal_connect(GTK_BUTTON(addSectionButton), "clicked", G_CALLBACK(displaySectionModal), NULL, NULL);
 	gtk_box_pack_start(GTK_BOX(sectionBox), addSectionButton, true, true, 5);
 
 	/*combo box part*/
@@ -995,9 +1041,9 @@ int gtkStart(int argc, char* argv[])
 	///*getting the second vbox*/
 	//vbox = gtk_vbox_new(false, 0);
 	///*intensity bar*/
-	//intensityProgBarInstru = gtk_progress_bar_new();
-	////gtk_widget_set_size_request(GTK_WIDGET(intensityProgressBar), 100, 20);
-	//gtk_box_pack_start(GTK_BOX(vbox), intensityProgBarInstru, false, false, 5);
+	intensityProgBarInstru = gtk_progress_bar_new();
+	gtk_widget_set_size_request(GTK_WIDGET(intensityProgBarInstru), 100, 20);
+	gtk_box_pack_start(GTK_BOX(overAllWindowBox), intensityProgBarInstru, false, false, 5);
 	//
 	///*frequency label*/
 	//freqLabelInstru = gtk_label_new("");
@@ -1059,13 +1105,13 @@ int gtkStart(int argc, char* argv[])
 	freqLabel = gtk_label_new("Frequency");
 	gtk_box_pack_start(GTK_BOX(freqBox), freqLabel, true, true, 5);
 	// Start of low frequency list
-	freqLowLabelCol = gtk_hbox_new(false, 0);
+	freqLowLabelCol = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	gtk_box_pack_start(GTK_BOX(freqBox), freqLowLabelCol, true, true, 5);
 	freqLowListLabel = gtk_label_new("Low:");
 	gtk_box_pack_start(GTK_BOX(freqLowLabelCol), freqLowListLabel, true, true, 5);
 	gtk_box_pack_start(GTK_BOX(freqLowLabelCol), freqLowColours, true, true, 5);
 	// Start of high frequency list
-	freqHighLabelCol = gtk_hbox_new(false, 0);
+	freqHighLabelCol = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	gtk_box_pack_start(GTK_BOX(freqBox), freqHighLabelCol, true, true, 5);
 	freqHighListLabel = gtk_label_new("High:");
 	gtk_box_pack_start(GTK_BOX(freqHighLabelCol), freqHighListLabel, true, true, 5);
@@ -1075,7 +1121,7 @@ int gtkStart(int argc, char* argv[])
 	tempoLabel = gtk_label_new("Tempo");
 	gtk_box_pack_start(GTK_BOX(tempoBox), tempoLabel, true, true, 5);
 	// Start of high tempo list
-	tempoLabelCol = gtk_hbox_new(false, 0);
+	tempoLabelCol = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	gtk_box_pack_start(GTK_BOX(tempoBox), tempoLabelCol, true, true, 5);
 	tempoLabel = gtk_label_new("High:");
 	gtk_box_pack_start(GTK_BOX(tempoLabelCol), tempoLabel, true, true, 5);
@@ -1084,19 +1130,19 @@ int gtkStart(int argc, char* argv[])
 	/*play button*/
 	playButton = gtk_button_new_with_label("Play");
 	gtk_box_pack_start(GTK_BOX(songControlBox), playButton, true, true, 5);
-	g_signal_connect(GTK_OBJECT(playButton), "clicked", G_CALLBACK(startJamming), window);
+	g_signal_connect(GTK_BUTTON(playButton), "clicked", G_CALLBACK(startJamming), window);
 	gtk_widget_show(playButton);
 
 	/*pause button*/
 	playButton = gtk_button_new_with_label("Stop");
 	gtk_box_pack_start(GTK_BOX(songControlBox), playButton, true, true, 5);
-	g_signal_connect(GTK_OBJECT(playButton), "clicked", G_CALLBACK(CloseAllThreads), NULL);
+	g_signal_connect(GTK_BUTTON(playButton), "clicked", G_CALLBACK(CloseAllThreads), NULL);
 	gtk_widget_show(playButton);
 
 	/*test button*/
 	testButton = gtk_button_new_with_label("Test");
 	//gtk_box_pack_start(GTK_BOX(songControlBox), testButton, false, false, 5);
-	g_signal_connect(GTK_OBJECT(testButton), "clicked", G_CALLBACK(changeProgressBar), NULL);
+	g_signal_connect(GTK_BUTTON(testButton), "clicked", G_CALLBACK(changeProgressBar), NULL);
 	gtk_widget_show(testButton);
 
 	/*number of channel combo box*/
@@ -1119,7 +1165,7 @@ int gtkStart(int argc, char* argv[])
 
 	/*display lyrics*/
 	outputLyrics = gtk_button_new_with_label("Display Lyrics");
-	g_signal_connect(GTK_OBJECT(outputLyrics), "clicked", G_CALLBACK(displayLyricsNonmodal), window);
+	g_signal_connect(GTK_BUTTON(outputLyrics), "clicked", G_CALLBACK(displayLyricsNonmodal), window);
 	gtk_box_pack_start(GTK_BOX(lyricsBox), outputLyrics, true, true, 5);
 
 	/*================================== the rest =====================================*/

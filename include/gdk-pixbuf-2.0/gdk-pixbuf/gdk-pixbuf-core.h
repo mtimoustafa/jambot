@@ -178,8 +178,9 @@ typedef struct _GdkPixbuf GdkPixbuf;
 
 /**
  * GdkPixbufDestroyNotify:
- * @pixels: The pixel array of the pixbuf that is being finalized.
- * @data: User closure data.
+ * @pixels: (array) (element-type guint8): The pixel array of the pixbuf
+ *   that is being finalized.
+ * @data: (closure): User closure data.
  * 
  * A function of this type is responsible for freeing the pixel array
  * of a pixbuf.  The gdk_pixbuf_new_from_data() function lets you
@@ -236,7 +237,9 @@ GType gdk_pixbuf_get_type (void) G_GNUC_CONST;
 /* Reference counting */
 
 #ifndef GDK_PIXBUF_DISABLE_DEPRECATED
+G_DEPRECATED_FOR(g_object_ref)
 GdkPixbuf *gdk_pixbuf_ref      (GdkPixbuf *pixbuf);
+G_DEPRECATED_FOR(g_object_unref)
 void       gdk_pixbuf_unref    (GdkPixbuf *pixbuf);
 #endif
 
@@ -250,6 +253,11 @@ guchar       *gdk_pixbuf_get_pixels          (const GdkPixbuf *pixbuf);
 int           gdk_pixbuf_get_width           (const GdkPixbuf *pixbuf);
 int           gdk_pixbuf_get_height          (const GdkPixbuf *pixbuf);
 int           gdk_pixbuf_get_rowstride       (const GdkPixbuf *pixbuf);
+gsize         gdk_pixbuf_get_byte_length     (const GdkPixbuf *pixbuf);
+
+guchar       *gdk_pixbuf_get_pixels_with_length (const GdkPixbuf *pixbuf,
+                                                 guint           *length);
+
 
 
 
@@ -270,11 +278,13 @@ GdkPixbuf *gdk_pixbuf_new_subpixbuf (GdkPixbuf *src_pixbuf,
 
 /* Simple loading */
 
+#ifndef __GTK_DOC_IGNORE__
 #ifdef G_OS_WIN32
 /* DLL ABI stability hack. */
 #define gdk_pixbuf_new_from_file gdk_pixbuf_new_from_file_utf8
 #define gdk_pixbuf_new_from_file_at_size gdk_pixbuf_new_from_file_at_size_utf8
 #define gdk_pixbuf_new_from_file_at_scale gdk_pixbuf_new_from_file_at_scale_utf8
+#endif
 #endif
 
 GdkPixbuf *gdk_pixbuf_new_from_file (const char *filename,
@@ -288,6 +298,13 @@ GdkPixbuf *gdk_pixbuf_new_from_file_at_scale (const char *filename,
 					      int         height,
 					      gboolean    preserve_aspect_ratio,
 					      GError    **error);
+GdkPixbuf *gdk_pixbuf_new_from_resource (const char *resource_path,
+					 GError    **error);
+GdkPixbuf *gdk_pixbuf_new_from_resource_at_scale (const char *resource_path,
+						  int         width,
+						  int         height,
+						  gboolean    preserve_aspect_ratio,
+						  GError    **error);
 
 GdkPixbuf *gdk_pixbuf_new_from_data (const guchar *data,
 				     GdkColorspace colorspace,
@@ -310,10 +327,12 @@ void       gdk_pixbuf_fill              (GdkPixbuf    *pixbuf,
 
 /* Saving */
 
+#ifndef __GTK_DOC_IGNORE__
 #ifdef G_OS_WIN32
 /* DLL ABI stability hack. */
 #define gdk_pixbuf_save gdk_pixbuf_save_utf8
 #define gdk_pixbuf_savev gdk_pixbuf_savev_utf8
+#endif
 #endif
 
 gboolean gdk_pixbuf_save           (GdkPixbuf  *pixbuf, 
@@ -334,7 +353,7 @@ gboolean gdk_pixbuf_savev          (GdkPixbuf  *pixbuf,
 
 /**
  * GdkPixbufSaveFunc:
- * @buf: bytes to be written.
+ * @buf: (array length=count) (element-type guint8): bytes to be written.
  * @count: number of bytes in @buf. 
  * @error: (out): A location to return an error.
  * @data: (closure): user data passed to gdk_pixbuf_save_to_callback(). 

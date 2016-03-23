@@ -18,3 +18,7 @@ ipch/**/*.ipch
 JamBot/CSV/
 JamBot/CSV/*
 JamBot/CSV/masterCSV.csv
+share/*
+!share/glib-2.0
+share/glib-2.0/*
+!share/glib-2.0/schemas

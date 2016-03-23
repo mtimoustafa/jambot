@@ -53,7 +53,7 @@ G_BEGIN_DECLS
  *@ATK_ROLE_CHECK_MENU_ITEM: A menu item with a check box
  *@ATK_ROLE_COLOR_CHOOSER: A specialized dialog that lets the user choose a color
  *@ATK_ROLE_COLUMN_HEADER: The header for a column of data
- *@ATK_ROLE_COMBO_BOX: A list of choices the user can select from
+ *@ATK_ROLE_COMBO_BOX: A collapsible list of choices the user can select from
  *@ATK_ROLE_DATE_EDITOR: An object whose purpose is to allow a user to edit a date
  *@ATK_ROLE_DESKTOP_ICON: An inconifed internal frame within a DESKTOP_PANE
  *@ATK_ROLE_DESKTOP_FRAME: A pane that supports internal frames and iconified versions of those internal frames
@@ -139,6 +139,19 @@ G_BEGIN_DECLS
  *@ATK_ROLE_INPUT_METHOD_WINDOW: The object is a window or similar viewport 
  * which is used to allow composition or input of a 'complex character',
  * in other words it is an "input method window." @Since: ATK-1.12.1
+ *@ATK_ROLE_TABLE_ROW: A row in a table.  @Since: ATK-2.1.0
+ *@ATK_ROLE_TREE_ITEM: An object that represents an element of a tree.  @Since: ATK-2.1.0
+ *@ATK_ROLE_DOCUMENT_SPREADSHEET: A document frame which contains a spreadsheet.  @Since: ATK-2.1.0
+ *@ATK_ROLE_DOCUMENT_PRESENTATION: A document frame which contains a presentation or slide content.  @Since: ATK-2.1.0
+ *@ATK_ROLE_DOCUMENT_TEXT: A document frame which contains textual content, such as found in a word processing application.  @Since: ATK-2.1.0
+ *@ATK_ROLE_DOCUMENT_WEB: A document frame which contains HTML or other markup suitable for display in a web browser.  @Since: ATK-2.1.0
+ *@ATK_ROLE_DOCUMENT_EMAIL: A document frame which contains email content to be displayed or composed either in plain text or HTML.  @Since: ATK-2.1.0
+ *@ATK_ROLE_COMMENT: An object found within a document and designed to present a comment, note, or other annotation. In some cases, this object might not be visible until activated.  @Since: ATK-2.1.0
+ *@ATK_ROLE_LIST_BOX: A non-collapsible list of choices the user can select from. @Since: ATK-2.1.0
+ *@ATK_ROLE_GROUPING: A group of related widgets. This group typically has a label. @Since: ATK-2.1.0
+ *@ATK_ROLE_IMAGE_MAP: An image map object. Usually a graphic with multiple hotspots, where each hotspot can be activated resulting in the loading of another document or section of a document. @Since: ATK-2.1.0
+ *@ATK_ROLE_NOTIFICATION: A transitory object designed to present a message to the user, typically at the desktop level rather than inside a particular application.  @Since: ATK-2.1.0
+ *@ATK_ROLE_INFO_BAR: An object designed to present a message to the user within an existing window. @Since: ATK-2.1.0
  *@ATK_ROLE_LAST_DEFINED: not a valid role, used for finding end of the enumeration
  * 
  * Describes the role of an object
@@ -237,6 +250,19 @@ typedef enum
   ATK_ROLE_FORM,
   ATK_ROLE_LINK,
   ATK_ROLE_INPUT_METHOD_WINDOW,
+  ATK_ROLE_TABLE_ROW,
+  ATK_ROLE_TREE_ITEM,
+  ATK_ROLE_DOCUMENT_SPREADSHEET,
+  ATK_ROLE_DOCUMENT_PRESENTATION,
+  ATK_ROLE_DOCUMENT_TEXT,
+  ATK_ROLE_DOCUMENT_WEB,
+  ATK_ROLE_DOCUMENT_EMAIL,
+  ATK_ROLE_COMMENT,
+  ATK_ROLE_LIST_BOX,
+  ATK_ROLE_GROUPING,
+  ATK_ROLE_IMAGE_MAP,
+  ATK_ROLE_NOTIFICATION,
+  ATK_ROLE_INFO_BAR,
   ATK_ROLE_LAST_DEFINED
 } AtkRole;
 
@@ -381,11 +407,11 @@ struct _AtkObjectClass
   /*
    * Gets the accessible name of the object
    */
-  G_CONST_RETURN gchar*    (* get_name)            (AtkObject                *accessible);
+  const gchar*             (* get_name)            (AtkObject                *accessible);
   /*
    * Gets the accessible description of the object
    */
-  G_CONST_RETURN gchar*    (* get_description)     (AtkObject                *accessible);
+  const gchar*             (* get_description)     (AtkObject                *accessible);
   /*
    * Gets the accessible parent of the object
    */
@@ -535,8 +561,8 @@ AtkObject*              atk_implementor_ref_accessible            (AtkImplemento
  * Properties directly supported by AtkObject
  */
 
-G_CONST_RETURN gchar*   atk_object_get_name                       (AtkObject *accessible);
-G_CONST_RETURN gchar*   atk_object_get_description                (AtkObject *accessible);
+const gchar*            atk_object_get_name                       (AtkObject *accessible);
+const gchar*            atk_object_get_description                (AtkObject *accessible);
 AtkObject*              atk_object_get_parent                     (AtkObject *accessible);
 gint                    atk_object_get_n_accessible_children      (AtkObject *accessible);
 AtkObject*              atk_object_ref_accessible_child           (AtkObject *accessible,
@@ -544,7 +570,9 @@ AtkObject*              atk_object_ref_accessible_child           (AtkObject *ac
 AtkRelationSet*         atk_object_ref_relation_set               (AtkObject *accessible);
 AtkRole                 atk_object_get_role                       (AtkObject *accessible);
 #ifndef ATK_DISABLE_DEPRECATED
+G_DEPRECATED_FOR(atk_component_get_layer)
 AtkLayer                atk_object_get_layer                      (AtkObject *accessible);
+G_DEPRECATED_FOR(atk_component_get_mdi_zorder)
 gint                    atk_object_get_mdi_zorder                 (AtkObject *accessible);
 #endif /* ATK_DISABLE_DEPRECATED */
 AtkAttributeSet*        atk_object_get_attributes                 (AtkObject *accessible);
@@ -571,7 +599,7 @@ void                 atk_object_notify_state_change              (AtkObject     
 void                 atk_object_initialize                       (AtkObject                     *accessible,
                                                                   gpointer                      data);
                                     
-G_CONST_RETURN gchar* atk_role_get_name      (AtkRole         role);
+const gchar*          atk_role_get_name      (AtkRole         role);
 AtkRole               atk_role_for_name      (const gchar     *name);
 
 
@@ -582,7 +610,7 @@ gboolean              atk_object_add_relationship              (AtkObject      *
 gboolean              atk_object_remove_relationship           (AtkObject      *object,
 								AtkRelationType relationship,
 								AtkObject      *target);
-G_CONST_RETURN gchar* atk_role_get_localized_name              (AtkRole     role);
+const gchar*          atk_role_get_localized_name              (AtkRole     role);
 
 /* */
 

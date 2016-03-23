@@ -174,6 +174,8 @@ struct _AtkTextRange {
   gchar* content;
 };
 
+GType atk_text_range_get_type (void);
+
 /**
  *AtkTextClipType
  *@ATK_TEXT_CLIP_NONE: No clipping to be done
@@ -355,9 +357,9 @@ AtkTextRange**  atk_text_get_bounded_ranges               (AtkText          *tex
                                                            AtkTextClipType  y_clip_type);
 void          atk_text_free_ranges                        (AtkTextRange     **ranges);
 void 	      atk_attribute_set_free                      (AtkAttributeSet  *attrib_set);
-G_CONST_RETURN gchar*  atk_text_attribute_get_name        (AtkTextAttribute attr);
+const gchar*  atk_text_attribute_get_name                 (AtkTextAttribute attr);
 AtkTextAttribute       atk_text_attribute_for_name        (const gchar      *name);
-G_CONST_RETURN gchar*  atk_text_attribute_get_value       (AtkTextAttribute attr,
+const gchar*  atk_text_attribute_get_value                (AtkTextAttribute attr,
                                                            gint             index_);
 
 G_END_DECLS

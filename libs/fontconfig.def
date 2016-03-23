@@ -12,6 +12,7 @@ EXPORTS
 	FcBlanksDestroy
 	FcBlanksIsMember
 	FcCacheCopySet
+	FcCacheCreateTagFile
 	FcCacheDir
 	FcCacheNumFont
 	FcCacheNumSubdir
@@ -21,6 +22,7 @@ EXPORTS
 	FcCharSetCount
 	FcCharSetCoverage
 	FcCharSetCreate
+	FcCharSetDelChar
 	FcCharSetDestroy
 	FcCharSetEqual
 	FcCharSetFirstPage
@@ -62,6 +64,7 @@ EXPORTS
 	FcConfigSubstituteWithPat
 	FcConfigUptoDate
 	FcDefaultSubstitute
+	FcDirCacheClean
 	FcDirCacheLoad
 	FcDirCacheLoadFile
 	FcDirCacheRead
@@ -90,6 +93,7 @@ EXPORTS
 	FcFreeTypeCharSetAndSpacing
 	FcFreeTypeQuery
 	FcFreeTypeQueryFace
+	FcGetDefaultLangs
 	FcGetLangs
 	FcGetVersion
 	FcInit
@@ -103,11 +107,14 @@ EXPORTS
 	FcLangSetContains
 	FcLangSetCopy
 	FcLangSetCreate
+	FcLangSetDel
 	FcLangSetDestroy
 	FcLangSetEqual
 	FcLangSetGetLangs
 	FcLangSetHasLang
 	FcLangSetHash
+	FcLangSetSubtract
+	FcLangSetUnion
 	FcMatrixCopy
 	FcMatrixEqual
 	FcMatrixMultiply
@@ -192,4 +199,4 @@ EXPORTS
 	FcValuePrint
 	FcValueSave
 LIBRARY libfontconfig-1.dll
-VERSION 5.4
+VERSION 7.2

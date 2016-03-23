@@ -5,6 +5,8 @@
 #ifndef GDK_PIXBUF_FEATURES_H
 #define GDK_PIXBUF_FEATURES_H 1
 
+#include <glib.h>
+
 /**
  * SECTION:initialization_versions
  * @Short_description: 
@@ -42,9 +44,9 @@ Library version numbers.
  */
 
 #define GDK_PIXBUF_MAJOR (2)
-#define GDK_PIXBUF_MINOR (24)
-#define GDK_PIXBUF_MICRO (0)
-#define GDK_PIXBUF_VERSION "2.24.0"
+#define GDK_PIXBUF_MINOR (26)
+#define GDK_PIXBUF_MICRO (3)
+#define GDK_PIXBUF_VERSION "2.26.3"
 
 /* We prefix variable declarations so they can
  * properly get exported/imported from Windows DLLs.

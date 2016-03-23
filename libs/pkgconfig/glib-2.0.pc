@@ -1,6 +1,6 @@
-prefix=/devel/target/9af0ed5b9823f125da25c47653b9c863
+prefix=/usr/i686-w64-mingw32/sys-root/mingw
 exec_prefix=${prefix}
-libdir=${exec_prefix}/lib
+libdir=${prefix}/lib
 includedir=${prefix}/include
 
 glib_genmarshal=glib-genmarshal
@@ -9,7 +9,8 @@ glib_mkenums=glib-mkenums
 
 Name: GLib
 Description: C Utility Library
-Version: 2.28.8
+Version: 2.34.1
+Requires.private: 
 Libs: -L${libdir} -lglib-2.0 -lintl 
-Libs.private: 
+Libs.private:  -lws2_32 -lole32 -lwinmm -lshlwapi  -lintl  
 Cflags: -I${includedir}/glib-2.0 -I${libdir}/glib-2.0/include -mms-bitfields

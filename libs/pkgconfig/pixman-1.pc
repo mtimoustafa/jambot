@@ -1,11 +1,11 @@
-prefix=/devel/target/6d8f37c07dcd9df52e2d31a4ca013477
+prefix=/usr/i686-w64-mingw32/sys-root/mingw
 exec_prefix=${prefix}
-libdir=${exec_prefix}/lib
+libdir=${prefix}/lib
 includedir=${prefix}/include
 
 Name: Pixman
 Description: The pixman library (version 1)
-Version: 0.24.0
+Version: 0.26.0
 Cflags: -I${includedir}/pixman-1 
 Libs: -L${libdir} -lpixman-1 
 
