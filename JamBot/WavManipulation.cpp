@@ -517,10 +517,10 @@ void WavManipulation::freqcomparison(){
 
 				//weighted to 2 for differences
 				if (diff1 < diff2){
-					choruscount += 3;
+					choruscount += 2;
 				}
 				else if (diff2 < diff1){
-					versecount += 3;
+					versecount += 2;
 				}
 				else{}
 
@@ -538,11 +538,11 @@ void WavManipulation::freqcomparison(){
 
 					if (abs(chorusdiff[i] - freqdiff[i])
 						< abs(versediff[i] - freqdiff[i])){
-						choruscount += 5;
+						choruscount += 6;
 					}
 					else if (abs(chorusdiff[i] - freqdiff[i])
 						> abs(versediff[i] - freqdiff[i])){
-						versecount += 5;
+						versecount += 6;
 					}
 					else{}
 				}
@@ -552,11 +552,11 @@ void WavManipulation::freqcomparison(){
 
 					if (abs(chorusdiff[i + NUM_DIFF] - freqdiff[i])
 						< abs(versediff[i + NUM_DIFF] - freqdiff[i])){
-						choruscount += 5;
+						choruscount += 6;
 					}
 					else if (abs(chorusdiff[i + NUM_DIFF] - freqdiff[i])
 						> abs(versediff[i + NUM_DIFF] - freqdiff[i])){
-						versecount += 5;
+						versecount += 6;
 					}
 					else{}
 				}
@@ -621,7 +621,7 @@ void WavManipulation::freqcomparison(){
 					Helpers::print_debug(freqList[c].name.c_str());
 					Helpers::print_debug("\n");
 					//Set duration minus a space to account for differing space inbetween sections 
-					duration = freqList[c].duration - (NUM_FREQ * 2);
+					duration = freqList[c].duration - (NUM_FREQ * 2) - 2;
 				}
 				else if (versecount > choruscount){
 					for (int k = 0; k < freqList.size(); k++){
@@ -652,7 +652,7 @@ void WavManipulation::freqcomparison(){
 					OptiAlgo::receive_song_section(SectionInfo(SECTION::verse, freqList[v].strobe));
 					Helpers::print_debug(freqList[v].name.c_str());
 					Helpers::print_debug("\n");
-					duration = freqList[v].duration - (NUM_FREQ * 2);
+					duration = freqList[v].duration - (NUM_FREQ * 2) - 2;
 				}
 				else{
 					Helpers::print_debug("No Section Found");
@@ -690,7 +690,7 @@ void WavManipulation::parseTxt(string filename){
 	ifstream file(filename);
 	string value;
 	SecAnlys section;
-	try{
+	if (file){
 		//filter through lines and store them in lyrics vector
 		getline(file, value, '[');
 		while (!file.eof()){
@@ -703,13 +703,14 @@ void WavManipulation::parseTxt(string filename){
 		}
 		file.close();
 	}
-	catch (exception e){
+	else{
 		char * err_str;
 		err_str = "";
 		strcat(err_str, "ERROR: WavManipulation: ");
 		strcat(err_str, e.what());
 		strcat(err_str, "\n");
 		Helpers::print_debug(err_str);
+		return;
 	}
 
 }
@@ -729,11 +730,13 @@ int WavManipulation::freqSnip(string csvname){
 	bool even = true;
 	//extract the filenames
 	getline(file, value, ',');
+	getline(file, value, ',');
 	getline(file, value, '\n');
 	getline(file, value, ',');
 	wavfile = value;
-	getline(file, value, '\n');
+	getline(file, value, ',');
 	lyricfile = value;
+	getline(file, value, '\n');
 
 	getline(file, value, ',');
 	getline(file, value, ',');
