@@ -124,4 +124,12 @@
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>
+  <ItemGroup>
+    <Xml Include="..\org.gtk.Settings.ColorChooser.xml">
+      <Filter>Resource Files</Filter>
+    </Xml>
+    <Xml Include="..\org.gtk.Settings.FileChooser.xml">
+      <Filter>Resource Files</Filter>
+    </Xml>
+  </ItemGroup>
 </Project>

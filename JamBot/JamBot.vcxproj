@@ -40,8 +40,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(SolutionDir)\libs\glib-2.0\include;$(SolutionDir)\libs\gtk-2.0\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\include\;$(RemoteDebuggerWorkingDirectory);$(SolutionDir)\bin;$(SolutionDir)\include\gtk-2.0;$(SolutionDir)\include\glib-2.0;$(SolutionDir)\include\cairo;$(SolutionDir)\include\pango-1.0;$(SolutionDir)\include\fontconfig;$(SolutionDir)\include\pixman-1;$(SolutionDir)\include\gio-win32-2.0;$(SolutionDir)\include\gdk-pixbuf-2.0;$(SolutionDir)\include\atk-1.0</IncludePath>
-    <LibraryPath>$(GTKDIR)\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(SolutionDir)\libs\</LibraryPath>
+    <IncludePath>$(SolutionDir)\libs\glib-2.0\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\include\;$(RemoteDebuggerWorkingDirectory);$(SolutionDir)\bin;$(SolutionDir)\include\gtk-3.0;$(SolutionDir)\include\glib-2.0;$(SolutionDir)\include\cairo;$(SolutionDir)\include\pango-1.0;$(SolutionDir)\share\glib-2.0\schemas;$(SolutionDir)\include\fontconfig;$(SolutionDir)\include\pixman-1;$(SolutionDir)\include\gio-win32-2.0;$(SolutionDir)\include\gdk-pixbuf-2.0;$(SolutionDir)\include\atk-1.0</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(SolutionDir)\libs\;$(SolutionDir)\libs\atk-1.0.lib;$(SolutionDir)\libs\cairo.lib;$(SolutionDir)\libs\expat.lib;$(SolutionDir)\libs\fonconfig.lib;$(SolutionDir)\libs\freetype.lib;$(SolutionDir)\libs\ftd2xx.lib;$(SolutionDir)\libs\gio-2.0.lib;$(SolutionDir)\libs\gobject-2.0.lib;$(SolutionDir)\libs\gthread-2.0.lib;$(SolutionDir)\libs\glib-2.0.lib</LibraryPath>
     <SourcePath>D:\Workspace\Jambot\src;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -54,16 +54,20 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalOptions>-mms-bitfields -IC:/gtk/include/gtk-2.0 -IC:/gtk/lib/gtk-2.0/include -IC:/gtk/include/atk-1.0 -IC:/gtk/include/cairo -IC:/gtk/include/gdk-pixbuf-2.0 -IC:/gtk/include/pango-1.0 -IC:/gtk/include/glib-2.0 -IC:/gtk/lib/glib-2.0/include -IC:/gtk/include -IC:/gtk/include/freetype2 -IC:/gtk/include/libpng14  
+      <AdditionalOptions>-mms-bitfields -IC:/GTK9/include/gtk-3.0 -IC:/GTK9/include/atk-1.0 -IC:/GTK9/include/cairo -IC:/GTK9/include/gdk-pixbuf-2.0 -IC:/GTK9/include/glib-2.0 -IC:/GTK9/lib/glib-2.0/include -IC:/GTK9/include/pango-1.0 -IC:/GT9K/include/pixman-1 -IC:/GTK9/include -IC:/GTK9/include/freetype2 -IC:/GTK9/include/libpng15  
  %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>D:\Workspace\Jambot\libs;C:\gtk;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>portaudio_x86.lib;%(AdditionalDependencies);libsoundfile.a;ftd2xx.lib;libfftw3-3.lib;libfftw3f-3.lib;libfftw3l-3.lib;gdk-win32-2.0.lib;gtk-win32-2.0.lib</AdditionalDependencies>
-      <AdditionalOptions>/libpath:C:/gtk/lib gtk-win32-2.0.lib gdk-win32-2.0.lib atk-1.0.lib gio-2.0.lib pangowin32-1.0.lib gdi32.lib pangocairo-1.0.lib gdk_pixbuf-2.0.lib pango-1.0.lib cairo.lib gobject-2.0.lib gmodule-2.0.lib gthread-2.0.lib glib-2.0.lib intl.lib %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>portaudio_x86.lib;%(AdditionalDependencies);libsoundfile.a;ftd2xx.lib;libfftw3-3.lib;libfftw3f-3.lib;libfftw3l-3.lib;gdk-win32-3.0.lib;gtk-win32-3.0.lib</AdditionalDependencies>
+      <AdditionalOptions>/libpath:C:/GTK/lib gtk-win32-3.0.lib gdk-win32-3.0.lib atk-1.0.lib gio-2.0.lib pangowin32-1.0.lib gdi32.lib pangocairo-1.0.lib gdk_pixbuf-2.0.lib pango-1.0.lib cairo.lib gobject-2.0.lib glib-2.0.lib intl.lib  
+ %(AdditionalOptions)</AdditionalOptions>
     </Link>
+    <Xdcmake>
+      <AdditionalDocumentFile>$(SolutionDir)\org.gtk.Settings.FileChooser.gschema.xml;%(AdditionalDocumentFile)</AdditionalDocumentFile>
+    </Xdcmake>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -127,6 +131,10 @@
   <ItemGroup>
     <Image Include="JamBot.ico" />
     <Image Include="small.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="..\org.gtk.Settings.ColorChooser.xml" />
+    <Xml Include="..\org.gtk.Settings.FileChooser.xml" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
