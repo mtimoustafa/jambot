@@ -63,6 +63,7 @@ public:
 	void dataStore(string, vector<SongSection>, string, string);
 	void freqcomparison();
 	static void inputData(vector<float>);
+	static void readCSV(string, string&, string&, vector<string>&, vector<string>&, vector<bool>&);
 	float freqAnalysis(vector<float>);
 	void startanalysis();
 	void start(string);

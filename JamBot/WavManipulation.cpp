@@ -716,7 +716,43 @@ void WavManipulation::parseTxt(string filename){
 	}
 
 }
+void WavManipulation::readCSV(string csvname, string &wav, string &lyric, vector<string> &name, vector<string> &time, vector<bool> &strobe){
+	ifstream file("CSV\\" + csvname);
+	string value = "";
+	bool even = true;
+	//extract the filenames
+	getline(file, value, ',');
+	//getline(file, value, ',');
+	getline(file, value, '\n');
+	getline(file, value, ',');
+	wav = value;
 
+	//getline(file, value, ',');
+	getline(file, value, '\n');
+	lyric = value;
+
+	getline(file, value, ',');
+	getline(file, value, ',');
+	getline(file, value, '\n');
+	//extract start times and names
+	while (!file.eof()){
+		getline(file, value, ',');
+		if (value != "")
+		{
+			name.push_back(value);
+			getline(file, value, ',');
+			if (value != "")
+				time.push_back(value);
+
+			getline(file, value, '\n');
+			if (value == "true" || value == "TRUE")
+				strobe.push_back(true);
+			else
+				strobe.push_back(false);
+		}
+	}
+	file.close();
+}
 //freqSnip(string, string, string)
 //Parameters: csvname: the name of the CSV file, The wav file and lyric file are stored in the csv file
 //This function is meant to be called before live play is started, this collects the data 
