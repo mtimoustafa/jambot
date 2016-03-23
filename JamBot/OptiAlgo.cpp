@@ -634,7 +634,21 @@ LightsInfo OptiAlgo::FLSystem::Infer(AudioProps input, array<OutParams, 3> color
 
 
 	if (concert_mode) {
-		// TODO: whether to strobe is specified by values from GUI; talk to Brandon and Emerson to pass it through song_section_buffer
+		if (allow_strobing) {
+			if (strobing_speed == 0) {
+				// For strobing, just using speed as tempo_avg causes a lag of a 16th note (quarter of a beat)
+				// (instead of falling on the next 'ta', it falls on the 'ka' after that, in the ta-ka-di-mi system)
+				// Dividing by 5 gives you one 16th note; multiplying by 4 sets it for one quarter note (one beat)
+				strobing_speed = (int)(4 * 84.0 / 5);
+				while (strobing_speed <= 255) strobing_speed *= 2; // Double it to make strobing look nice
+				strobing_speed /= 2; // Compensate for overshoot
+			}
+			out_crisp.strobing_speed = (int)strobing_speed;
+		}
+		else {
+			out_crisp.strobing_speed = 0;
+			strobing_speed = 0.0;
+		}
 	}
 	else if (allow_strobing) {
 		if (input.beatiness_avg > BEATINESS_LOUDNESS_THRESH && max(TempoInClass(input.tempo_avg, fast), TempoInClass(input.tempo_avg, vfast)) > BEATINESS_TEMPO_THRESH) {
@@ -682,7 +696,7 @@ OptiAlgo::OptiAlgo()
 	audio_buffer = queue<AudioInfo>();
 	song_section_buffer = queue<SectionInfo>();
 
-	current_section = verse;
+	current_section = none;
 
 	color_scheme[0] = r;
 	color_scheme[1] = b;
@@ -807,7 +821,7 @@ void OptiAlgo::start_algo()
 					Helpers::print_debug("[FL] Detected section change; switching input context.\n");
 
 					current_section = new_section.section;
-					// TODO: set strobing boolean here
+					allow_strobing = new_section.should_strobe;
 
 					/*temp = input;
 					input = input_prev_section;
@@ -978,6 +992,7 @@ void OptiAlgo::start_algo()
 
 void OptiAlgo::start(bool song_selected, bool auto_strobe = false)
 {
+	concert_mode = song_selected;
 	if (song_selected) auto_strobe = false;
 	allow_strobing = auto_strobe;
 

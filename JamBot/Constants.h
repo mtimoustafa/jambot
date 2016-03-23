@@ -65,6 +65,6 @@ const int OUTPUT_NUDGES_TO_CHANGE = 5;
 
 const int NUDGES_TO_SILENCE = 6;
 
-const enum SECTION { chorus, verse };
+const enum SECTION { none, chorus, verse };
 
 #endif
