@@ -86,6 +86,7 @@ WavManipulation::~WavManipulation(){
 	durations.clear();
 	filenames.clear();
 	freqList.clear();
+	lyrics.clear();
 	realTimeBuffer.clear();
 	durationCounter = 0;
 	directoryPath = "";
@@ -482,6 +483,9 @@ void WavManipulation::freqcomparison(){
 				break;
 		}
 		duration = 0;
+		aveFreq = 0;
+		avechorus = 0;
+		aveverse = 0;
 		try{
 			while (j < NUM_FREQ){
 				//Wait for data
@@ -513,10 +517,10 @@ void WavManipulation::freqcomparison(){
 
 				//weighted to 2 for differences
 				if (diff1 < diff2){
-					choruscount += 2;
+					choruscount += 3;
 				}
 				else if (diff2 < diff1){
-					versecount += 2;
+					versecount += 3;
 				}
 				else{}
 
@@ -534,11 +538,11 @@ void WavManipulation::freqcomparison(){
 
 					if (abs(chorusdiff[i] - freqdiff[i])
 						< abs(versediff[i] - freqdiff[i])){
-						choruscount += 4;
+						choruscount += 5;
 					}
 					else if (abs(chorusdiff[i] - freqdiff[i])
 						> abs(versediff[i] - freqdiff[i])){
-						versecount += 4;
+						versecount += 5;
 					}
 					else{}
 				}
@@ -548,18 +552,18 @@ void WavManipulation::freqcomparison(){
 
 					if (abs(chorusdiff[i + NUM_DIFF] - freqdiff[i])
 						< abs(versediff[i + NUM_DIFF] - freqdiff[i])){
-						choruscount += 4;
+						choruscount += 5;
 					}
 					else if (abs(chorusdiff[i + NUM_DIFF] - freqdiff[i])
 						> abs(versediff[i + NUM_DIFF] - freqdiff[i])){
-						versecount += 4;
+						versecount += 5;
 					}
 					else{}
 				}
 			}
-			aveFreq = aveFreq / freq.size();
-			avechorus = avechorus / chorus.size();
-			aveverse = aveverse / verse.size();
+			aveFreq = aveFreq / 4;
+			avechorus = avechorus / 4;
+			aveverse = aveverse / 4;
 			//compare average
 			//weighted least
 			if (abs(aveFreq - avechorus) < abs(aveFreq - aveverse))
@@ -573,9 +577,6 @@ void WavManipulation::freqcomparison(){
 			else{}
 
 			freqdiff.clear();
-			freq.clear();
-			cdiff.clear();
-			vdiff.clear();
 			//first section flip bool first
 			if (first){
 				//duration = ticks + 4;
@@ -620,7 +621,7 @@ void WavManipulation::freqcomparison(){
 					Helpers::print_debug(freqList[c].name.c_str());
 					Helpers::print_debug("\n");
 					//Set duration minus a space to account for differing space inbetween sections 
-					duration = freqList[c].duration - (NUM_FREQ * 2) - NUM_SPACE;
+					duration = freqList[c].duration - (NUM_FREQ * 2);
 				}
 				else if (versecount > choruscount){
 					for (int k = 0; k < freqList.size(); k++){
@@ -651,11 +652,12 @@ void WavManipulation::freqcomparison(){
 					OptiAlgo::receive_song_section(SectionInfo(SECTION::verse, freqList[v].strobe));
 					Helpers::print_debug(freqList[v].name.c_str());
 					Helpers::print_debug("\n");
-					duration = freqList[v].duration - (NUM_FREQ * 2) - NUM_SPACE;
+					duration = freqList[v].duration - (NUM_FREQ * 2);
 				}
 				else{
 					Helpers::print_debug("No Section Found");
 					Helpers::print_debug("\n");
+					duration = 10;
 				}
 				//reset counters
 				choruscount = versecount = 0;
@@ -741,7 +743,9 @@ int WavManipulation::freqSnip(string csvname){
 		getline(file, value, ',');
 		names.push_back(value);
 		getline(file, value, ',');
-		times.push_back(stod(value));
+		if (value != "")
+			times.push_back(stod(value));
+
 		getline(file, value, '\n');
 		if (value == "true")
 			strobes.push_back(true);

@@ -329,7 +329,7 @@ static void submitSongSection() {
 
 			csvList.push_back(fileName);
 
-			gtk_list_store_insert_with_values(liststore, NULL, -1, 0, "red", 1, (char*)fileName.c_str(), -1);
+			gtk_list_store_insert_with_values(liststore, NULL, -1, 0, NULL, 1, (char*)fileName.c_str(), -1);
 			gtk_dialog_response(GTK_DIALOG(sectionDialog), GTK_RESPONSE_CLOSE);
 
 		}
