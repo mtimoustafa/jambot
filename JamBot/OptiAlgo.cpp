@@ -833,11 +833,12 @@ void OptiAlgo::start_algo()
 			// Switch input context if section changes
 			if (concert_mode && !song_section_buffer.empty()) {
 				new_section = song_section_buffer.front();
+
+				allow_strobing = new_section.should_strobe;
 				if (new_section.section != current_section) {
 					Helpers::print_debug("[FL] Detected section change; switching input context.\n");
 
 					current_section = new_section.section;
-					allow_strobing = new_section.should_strobe;
 
 					/*temp = input;
 					input = input_prev_section;

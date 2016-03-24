@@ -111,7 +111,7 @@ void GetDesktopResolution(int& horizontal, int& vertical)
 }
 
 void JamBot::updateLyrics(string text) {
-	int font_size = 30;
+	int font_size = 50;
 	int max_size = 0;
 	string font = "BoostLightSSK Regular ";
 	string temp = "";
@@ -1240,11 +1240,11 @@ int gtkStart(int argc, char* argv[])
 	gtk_container_add(GTK_CONTAINER(radioButtonFrame), numChannelBox);
 
 	freeplay = gtk_radio_button_new_with_label(NULL, "Freeplay");
-	gtk_box_pack_start(GTK_BOX(numChannelBox), freeplay, true, true, 5);
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(freeplay), true);
+	gtk_box_pack_start(GTK_BOX(numChannelBox), freeplay, false, false, 5);
 
 	concert = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(freeplay), "Concert");
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(concert), true);
-	gtk_box_pack_start(GTK_BOX(numChannelBox), concert, true, true, 5);
+	gtk_box_pack_start(GTK_BOX(numChannelBox), concert, false, false, 5);
 
 	/*status label*/
 	statusLabel = gtk_label_new("Standby");
