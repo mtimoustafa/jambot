@@ -5,6 +5,7 @@
 #include "Helpers.h"
 #include "soundfile.h"
 
+
 using namespace std;
 
 class SongSection{
