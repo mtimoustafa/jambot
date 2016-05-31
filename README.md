@@ -5,3 +5,5 @@ as synchronizes song lyrics with song sections, even if not played in order. It 
 and uses fuzzy logic, fast Fourier transform, Tabu Search optimization algorithm, multi-threading, and GTK+.
 
 The bulk of the interesting source code files can be found under /Jambot.
+
+Youtube video link: https://www.youtube.com/watch?v=DrFLKpDgFUo
