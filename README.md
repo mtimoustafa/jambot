@@ -1,5 +1,5 @@
 # jambot
-Jambot was a university capstone design project, built by [Mohamed Moustafa](https://github.com/mtimoustafa), [Brandon Mubarak](https://github.com/bdmubara), [Emerson Shen](https://github.com/emersonshen), and Jack Chia.
+Jambot was a university capstone design project, built by [Mohamed Moustafa](https://github.com/mtimoustafa), [Brandon Mubarak](https://github.com/bdmubara), [Emerson Shen](https://github.com/emersonshen), and [Jack Chia](https://github.com/Zazooka).
 
 Jambot is a Windows program that listens to live audio input from musical instruments, then uses it to create a lightshow in realtime and use it to drive stage lights. It can also synchronize song lyrics to the music, even if the song sections are not played in their usual order.
 
